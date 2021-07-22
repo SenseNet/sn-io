@@ -1,8 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 
-namespace SenseNet.IO
+namespace SenseNet.IO.Tests.Implementations
 {
-    public class Content : IContent
+    [DebuggerDisplay("Path")]
+    public class ContentNode : IContent
     {
         private readonly Dictionary<string, object> _fields = new();
 
@@ -14,5 +17,8 @@ namespace SenseNet.IO
 
         public string Name { get; set; }
         public string Type { get; set; }
+
+        public ContentNode Parent { get; set; }
+        public List<ContentNode> Children { get; } = new List<ContentNode>();
     }
 }
