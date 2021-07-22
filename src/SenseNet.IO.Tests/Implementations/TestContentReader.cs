@@ -6,17 +6,23 @@ namespace SenseNet.IO.Tests.Implementations
     {
         private readonly Dictionary<string, ContentNode> _tree;
 
+        public int EstimatedCount => _tree?.Count ?? 0;
+
+
         public TestContentReader(Dictionary<string, ContentNode> tree)
         {
             _tree = tree;
         }
 
+
         public IEnumerable<IContent> Read(string path)
         {
             var contents = new List<ContentNode>();
-            Walk(_tree[path], contents);
+            if (_tree != null)
+                Walk(_tree[path], contents);
             return contents;
         }
+
         private void Walk(ContentNode content, List<ContentNode> contents)
         {
             contents.Add(content);

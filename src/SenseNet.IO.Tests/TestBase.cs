@@ -20,6 +20,7 @@ namespace SenseNet.IO.Tests
                 var type = name.Split('-')[0];
                 var content = new ContentNode
                 {
+                    Path = path,
                     Name = name,
                     Type = type,
                 };

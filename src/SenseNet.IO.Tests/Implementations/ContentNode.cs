@@ -4,7 +4,7 @@ using System.Diagnostics;
 
 namespace SenseNet.IO.Tests.Implementations
 {
-    [DebuggerDisplay("Path")]
+    [DebuggerDisplay("{Path}")]
     public class ContentNode : IContent
     {
         private readonly Dictionary<string, object> _fields = new();
@@ -15,6 +15,7 @@ namespace SenseNet.IO.Tests.Implementations
             set => _fields[fieldName] = value;
         }
 
+        public string Path { get; set; }
         public string Name { get; set; }
         public string Type { get; set; }
 
