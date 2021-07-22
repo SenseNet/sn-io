@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 using SenseNet.IO.Tests.Implementations;
 
 namespace SenseNet.IO.Tests
@@ -18,13 +14,7 @@ namespace SenseNet.IO.Tests
             {
                 var name = path.Split('/')[^1];
                 var type = name.Split('-')[0];
-                var content = new ContentNode
-                {
-                    Path = path,
-                    Name = name,
-                    Type = type,
-                };
-                content["Id"] = ++id;
+                var content = new ContentNode {Path = path, Name = name, Type = type, ["Id"] = ++id};
                 contents.Add(path, content);
 
                 var parentPath = path.Substring(0, path.Length - name.Length - 1);

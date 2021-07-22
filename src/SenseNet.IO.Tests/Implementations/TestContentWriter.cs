@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SenseNet.IO.Tests.Implementations
 {
@@ -19,7 +16,7 @@ namespace SenseNet.IO.Tests.Implementations
         public void Write(string path, IContent content)
         {
             var contentNode = (ContentNode) content;
-            var parentPath = Path.GetDirectoryName(path).Replace('\\', '/');
+            var parentPath = Path.GetDirectoryName(path)?.Replace('\\', '/') ?? string.Empty;
             var parent = parentPath == "/"
                 ? null
                 : Tree[parentPath];
