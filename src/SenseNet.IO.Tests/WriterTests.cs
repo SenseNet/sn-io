@@ -14,10 +14,10 @@ namespace SenseNet.IO.Tests
             var writer = new TestContentWriter(new Dictionary<string, ContentNode>());
 
             // ACTION
-            await writer.WriteAsync(new ContentNode { Path = "/Root", Name = "Root", Type = "Root" });
-            await writer.WriteAsync(new ContentNode { Path = "/Root/Folder-1", Name = "Folder-1", Type = "Folder" });
-            await writer.WriteAsync(new ContentNode { Path = "/Root/Folder-1/File-1", Name = "File-1", Type = "File" });
-            await writer.WriteAsync(new ContentNode { Path = "/Root/Folder-2", Name = "Folder-2", Type = "Folder" });
+            await writer.WriteAsync("/Root", new ContentNode { Name = "Root", Type = "Root" });
+            await writer.WriteAsync("/Root/Folder-1", new ContentNode { Name = "Folder-1", Type = "Folder" });
+            await writer.WriteAsync("/Root/Folder-1/File-1", new ContentNode { Name = "File-1", Type = "File" });
+            await writer.WriteAsync("/Root/Folder-2", new ContentNode { Name = "Folder-2", Type = "Folder" });
 
             // ASSERT
             var tree = writer.Tree;

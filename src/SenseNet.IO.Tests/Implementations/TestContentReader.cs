@@ -9,16 +9,19 @@ namespace SenseNet.IO.Tests.Implementations
     {
         private readonly Dictionary<string, ContentNode> _tree;
 
+        private readonly string _rootPath;
         private readonly string[] _sortedPaths;
         private int _sortedPathIndex;
 
         public int EstimatedCount => _tree?.Count ?? 0;
         public ContentNode Content { get; private set; }
+        public string RelativePath { get; private set; }
 
 
         public TestContentReader(string rootPath, Dictionary<string, ContentNode> tree)
         {
             _tree = tree;
+            _rootPath = rootPath;
 
             var rootPathTrailing = rootPath + "/";
             _sortedPaths = _tree.Keys
@@ -33,6 +36,8 @@ namespace SenseNet.IO.Tests.Implementations
             if (_sortedPathIndex >= _sortedPaths.Length)
                 return Task.FromResult(false);
             Content = _tree[_sortedPaths[_sortedPathIndex]];
+            RelativePath = ContentPath.GetRelativePath(Content.Path, _rootPath);
+
             _sortedPathIndex++;
             return Task.FromResult(true);
         }

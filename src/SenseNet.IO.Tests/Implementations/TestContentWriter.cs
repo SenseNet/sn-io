@@ -8,18 +8,21 @@ namespace SenseNet.IO.Tests.Implementations
 {
     public class TestContentWriter : IContentWriter
     {
+        private readonly string _rootPath;
         public Dictionary<string, ContentNode> Tree { get; }
 
-        public TestContentWriter(Dictionary<string, ContentNode> tree = null)
+        public TestContentWriter(Dictionary<string, ContentNode> tree, string rootPath = null)
         {
-            Tree = tree ?? new Dictionary<string, ContentNode>();
+            Tree = tree;
+            _rootPath = rootPath ?? string.Empty;
         }
 
-        public Task WriteAsync(IContent content, CancellationToken cancel = default)
+        public Task WriteAsync(string relativePath, IContent content, CancellationToken cancel = default)
         {
+            var path = ContentPath.GetAbsolutePath(relativePath, _rootPath);
             var contentNode = (ContentNode) content;
-            var parentPath = Path.GetDirectoryName(content.Path)?.Replace('\\', '/') ?? string.Empty;
-            var parent = parentPath == "/"
+            var parentPath = ContentPath.GetParentPath(path);
+            var parent = parentPath == "/" || parentPath == string.Empty
                 ? null
                 : Tree[parentPath];
 
@@ -32,7 +35,7 @@ namespace SenseNet.IO.Tests.Implementations
                 parent.Children.Add(contentNode);
             }
 
-            Tree[content.Path] = contentNode;
+            Tree[path] = contentNode;
 
             return Task.CompletedTask;
         }

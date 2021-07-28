@@ -9,6 +9,7 @@ namespace SenseNet.IO
         int EstimatedCount { get; }
 
         TItem Content { get; }
+        string RelativePath { get; }
 
         Task<bool> ReadAsync(CancellationToken cancel = default);
     }

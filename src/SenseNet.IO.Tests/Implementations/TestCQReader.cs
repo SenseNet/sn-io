@@ -20,6 +20,7 @@ namespace SenseNet.IO.Tests.Implementations
         public int EstimatedCount => _tree?.Count ?? 0;
 
         public ContentNode Content { get; private set; }
+        public string RelativePath { get; private set; }
 
         public TestCQReader(string rootPath, int blockSize, Dictionary<string, ContentNode> tree)
         {
@@ -44,6 +45,8 @@ namespace SenseNet.IO.Tests.Implementations
             }
 
             Content = _currentBlock[_currentBlockIndex++];
+            RelativePath = ContentPath.GetRelativePath(Content.Path, _rootPath);
+
             return Task.FromResult(true);
         }
 

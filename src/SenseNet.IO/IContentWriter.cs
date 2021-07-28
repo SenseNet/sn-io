@@ -5,6 +5,6 @@ namespace SenseNet.IO
 {
     public interface IContentWriter
     {
-        Task WriteAsync(IContent content, CancellationToken cancel = default);
+        Task WriteAsync(string relativePath, IContent content, CancellationToken cancel = default);
     }
 }

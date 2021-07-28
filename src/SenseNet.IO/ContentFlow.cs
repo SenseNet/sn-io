@@ -21,7 +21,7 @@ namespace SenseNet.IO
 
             while (await Reader.ReadAsync(cancel))
             {
-                await Writer.WriteAsync(Reader.Content, cancel);
+                await Writer.WriteAsync(Reader.RelativePath, Reader.Content, cancel);
                 ++count;
                 progress?.Report(count * 100.0 / totalCount);
             }
