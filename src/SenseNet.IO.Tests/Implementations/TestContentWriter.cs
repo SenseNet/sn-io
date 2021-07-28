@@ -35,7 +35,6 @@ namespace SenseNet.IO.Tests.Implementations
             Tree[content.Path] = contentNode;
 
             return Task.CompletedTask;
-            ;
         }
     }
 }
