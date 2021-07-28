@@ -69,7 +69,6 @@ namespace SenseNet.IO.Tests
             {
                 "/Root",
                 "/Root/Node-01",
-                "/Root/Node-01/Node-08",
             });
             var flow = new ContentFlow<ContentNode>(
                 new TestCQReader("/Root/Node-01/Node-08", 4, sourceTree),

@@ -33,6 +33,7 @@ namespace SenseNet.IO.Tests.Implementations
         private int _currentBlockIndex;
         public Task<bool> ReadAsync(CancellationToken cancel = default)
         {
+            //TODO: Raise performance: read the next block (background)
             if (_currentBlock == null || _currentBlockIndex >= _currentBlock.Length)
             {
                 _currentBlock = QueryBlock(_rootPath, _blockIndex * _blockSize, _blockSize);
