@@ -1,30 +1,31 @@
 ﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace SenseNet.IO
 {
-    public class ContentFlow : IContentFlow
+    public class ContentFlow<TItem> : IContentFlow<TItem> where TItem : IContent
     {
-        public IContentReader Reader { get; }
+        public IContentReader<TItem> Reader { get; }
         public IContentWriter Writer { get; }
-        public ContentFlow(IContentReader reader, IContentWriter writer)
+        public ContentFlow(IContentReader<TItem> reader, IContentWriter writer)
         {
             Reader = reader;
             Writer = writer;
         }
 
-        public Task TransferAsync(string sourcePath, string targetPath, IProgress<double> progress = null)
+        public async Task TransferAsync(IProgress<double> progress, CancellationToken cancel = default)
         {
             var count = 0;
             var totalCount = Reader.EstimatedCount;
-            foreach (var content in Reader.Read(sourcePath))
+
+            while (await Reader.ReadAsync(cancel))
             {
-                Writer.Write(content.Path, content);
+                await Writer.WriteAsync(Reader.Content, cancel);
                 ++count;
                 progress?.Report(count * 100.0 / totalCount);
             }
 
-            return Task.CompletedTask;
         }
     }
 }

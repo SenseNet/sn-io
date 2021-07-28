@@ -1,4 +1,6 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SenseNet.IO.Tests.Implementations;
 
@@ -8,7 +10,7 @@ namespace SenseNet.IO.Tests
     public class ReaderTests : TestBase
     {
         [TestMethod]
-        public void Reader_1()
+        public async Task Reader_1()
         {
             var tree = CreateTree(new[]
             {
@@ -19,16 +21,16 @@ namespace SenseNet.IO.Tests
             });
 
             // ACTION
-            var reader = new TestContentReader(tree);
-            var result = reader.Read("/Root/Folder-1");
+            var reader = new TestContentReader("/Root/Folder-1", tree);
+            var result = new List<string>();
+            while (await reader.ReadAsync())
+                result.Add(reader.Content.Path);
 
             // ASSERT
-            var contents = result.ToArray();
-            Assert.AreEqual(2, contents.Length);
-            Assert.AreEqual("Folder-1", contents[0].Name);
-            Assert.AreEqual(2, (int)contents[0]["Id"]);
-            Assert.AreEqual("File-1", contents[1].Name);
-            Assert.AreEqual(3, (int)contents[1]["Id"]);
+            var paths = result.ToArray();
+            Assert.AreEqual(2, paths.Length);
+            Assert.AreEqual("/Root/Folder-1", paths[0]);
+            Assert.AreEqual("/Root/Folder-1/File-1", paths[1]);
         }
 
     }

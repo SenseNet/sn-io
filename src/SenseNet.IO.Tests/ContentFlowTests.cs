@@ -25,11 +25,51 @@ namespace SenseNet.IO.Tests
                 "/Root/Folder-2/File-3",
             });
             var targetTree = new Dictionary<string, ContentNode>();
-            var flow = new ContentFlow(new TestContentReader(sourceTree), new TestContentWriter(targetTree));
+            var flow = new ContentFlow<ContentNode>(new TestContentReader("/Root", sourceTree), new TestContentWriter(targetTree));
 
             // ACTION
             var progress = new TestProgress();
-            await flow.TransferAsync("/Root", "/Root", progress);
+            await flow.TransferAsync(progress);
+
+            // ASSERT
+            Assert.AreEqual(sourceTree.Count, targetTree.Count);
+            Assert.AreEqual(targetTree.Count, progress.Log.Count);
+        }
+        [TestMethod]
+        public async Task Flow_2()
+        {
+            var sourceTree = CreateTree(new[]
+            {
+                "/Root",
+                "/Root/Node-01",
+                "/Root/Node-01/Node-02",
+                "/Root/Node-01/Node-02/Node-03",
+                "/Root/Node-01/Node-02/Node-03/Node-04",
+                "/Root/Node-01/Node-02/Node-03/Node-05",
+                "/Root/Node-01/Node-02/Node-06",
+                "/Root/Node-01/Node-02/Node-07",
+                "/Root/Node-01/Node-08",
+                "/Root/Node-01/Node-08/Node-09",
+                "/Root/Node-01/Node-08/Node-10",
+                "/Root/Node-01/Node-08/Node-10/Node-11",
+                "/Root/Node-01/Node-08/Node-10/Node-12",
+                "/Root/Node-01/Node-08/Node-10/Node-13",
+                "/Root/Node-01/Node-08/Node-10/Node-14",
+                "/Root/Node-01/Node-08/Node-10/Node-15",
+                "/Root/Node-01/Node-08/Node-16",
+                "/Root/Node-01/Node-17",
+                "/Root/Node-01/Node-17/Node-18",
+                "/Root/Node-01/Node-17/Node-19",
+                "/Root/Node-01/Node-17/Node-20",
+                "/Root/Node-01/Node-17/Node-20/Node-21",
+                "/Root/Node-01/Node-17/Node-20/Node-22",
+            });
+            var targetTree = new Dictionary<string, ContentNode>();
+            var flow = new ContentFlow<ContentNode>(new TestCQReader("/Root", 4, sourceTree), new TestContentWriter(targetTree));
+
+            // ACTION
+            var progress = new TestProgress();
+            await flow.TransferAsync(progress);
 
             // ASSERT
             Assert.AreEqual(sourceTree.Count, targetTree.Count);

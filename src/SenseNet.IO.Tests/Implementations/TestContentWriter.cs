@@ -1,6 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace SenseNet.IO.Tests.Implementations
 {
@@ -13,10 +15,10 @@ namespace SenseNet.IO.Tests.Implementations
             Tree = tree ?? new Dictionary<string, ContentNode>();
         }
 
-        public void Write(string path, IContent content)
+        public Task WriteAsync(IContent content, CancellationToken cancel = default)
         {
             var contentNode = (ContentNode) content;
-            var parentPath = Path.GetDirectoryName(path)?.Replace('\\', '/') ?? string.Empty;
+            var parentPath = Path.GetDirectoryName(content.Path)?.Replace('\\', '/') ?? string.Empty;
             var parent = parentPath == "/"
                 ? null
                 : Tree[parentPath];
@@ -30,7 +32,10 @@ namespace SenseNet.IO.Tests.Implementations
                 parent.Children.Add(contentNode);
             }
 
-            Tree[path] = contentNode;
+            Tree[content.Path] = contentNode;
+
+            return Task.CompletedTask;
+            ;
         }
     }
 }

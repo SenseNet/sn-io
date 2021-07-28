@@ -1,8 +1,10 @@
-﻿
+﻿using System.Threading;
+using System.Threading.Tasks;
+
 namespace SenseNet.IO
 {
     public interface IContentWriter
     {
-        void Write(string path, IContent content);
+        Task WriteAsync(IContent content, CancellationToken cancel = default);
     }
 }

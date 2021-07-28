@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SenseNet.IO.Tests.Implementations;
 
@@ -8,15 +9,15 @@ namespace SenseNet.IO.Tests
     public class WriterTests : TestBase
     {
         [TestMethod]
-        public void Writer_1()
+        public async Task Writer_1()
         {
             var writer = new TestContentWriter(new Dictionary<string, ContentNode>());
 
             // ACTION
-            writer.Write("/Root", new ContentNode { Name = "Root", Type = "Root" });
-            writer.Write("/Root/Folder-1", new ContentNode { Name = "Folder-1", Type = "Folder" });
-            writer.Write("/Root/Folder-1/File-1", new ContentNode { Name = "File-1", Type = "File" });
-            writer.Write("/Root/Folder-2", new ContentNode { Name = "Folder-2", Type = "Folder" });
+            await writer.WriteAsync(new ContentNode { Path = "/Root", Name = "Root", Type = "Root" });
+            await writer.WriteAsync(new ContentNode { Path = "/Root/Folder-1", Name = "Folder-1", Type = "Folder" });
+            await writer.WriteAsync(new ContentNode { Path = "/Root/Folder-1/File-1", Name = "File-1", Type = "File" });
+            await writer.WriteAsync(new ContentNode { Path = "/Root/Folder-2", Name = "Folder-2", Type = "Folder" });
 
             // ASSERT
             var tree = writer.Tree;

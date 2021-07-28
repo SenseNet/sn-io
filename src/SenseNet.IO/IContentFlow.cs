@@ -1,13 +1,14 @@
 ﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace SenseNet.IO
 {
-    interface IContentFlow
+    interface IContentFlow<out TItem> where TItem : IContent
     {
-        IContentReader Reader { get; }
+        IContentReader<TItem> Reader { get; }
         IContentWriter Writer { get; }
 
-        Task TransferAsync(string sourcePath, string targetPath, IProgress<double> progress = null);
+        Task TransferAsync(IProgress<double> progress, CancellationToken cancel = default);
     }
 }
