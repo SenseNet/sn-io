@@ -3,7 +3,7 @@ using System.Diagnostics;
 
 namespace SenseNet.IO.Tests.Implementations
 {
-    [DebuggerDisplay("{Path}")]
+    [DebuggerDisplay("{Name} ({Path})")]
     public class ContentNode : IContent
     {
         private readonly Dictionary<string, object> _fields = new();
@@ -20,5 +20,18 @@ namespace SenseNet.IO.Tests.Implementations
 
         public ContentNode Parent { get; set; }
         public List<ContentNode> Children { get; } = new List<ContentNode>();
+
+        public ContentNode Clone()
+        {
+            var contentNode = new ContentNode
+            {
+                Name = this.Name,
+                Path = this.Path,
+                Type = this.Type
+            };
+            foreach (var item in _fields)
+                contentNode._fields.Add(item.Key, item.Value);
+            return contentNode;
+        }
     }
 }

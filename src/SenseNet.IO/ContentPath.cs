@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -33,19 +34,34 @@ namespace SenseNet.IO
             if (rootPath.EndsWith('/'))
                 rootPath = rootPath.TrimEnd('/');
 
+            if (string.IsNullOrEmpty(relativePath))
+                return rootPath;
+
             return $"{rootPath}/{relativePath}";
         }
 
         public static string GetParentPath(string path)
         {
-            if (string.IsNullOrEmpty(path))
-                return string.Empty;
-            if(path=="/")
-                return string.Empty;
-            var p = path.LastIndexOf('/');
-            if (p < 0)
-                return string.Empty;
-            return path.Substring(0, p);
+            //if (string.IsNullOrEmpty(path))
+            //    return string.Empty;
+            //if(path=="/")
+            //    return string.Empty;
+            //var p = path.LastIndexOf('/');
+            //if (p < 0)
+            //    return string.Empty;
+            //return path.Substring(0, p);
+
+            return Path.GetDirectoryName(path)?.Replace("\\", "/");
+        }
+
+        public static string GetName(string path)
+        {
+            return Path.GetFileName(path);
+        }
+
+        public static string Combine(params string[] segments)
+        {
+            return Path.Combine(segments).Replace("\\", "/");
         }
     }
 }

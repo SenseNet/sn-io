@@ -19,9 +19,10 @@ namespace SenseNet.IO
             var count = 0;
             var totalCount = Reader.EstimatedCount;
 
+            var rootName = Writer.RootName ?? ContentPath.GetName(Reader.RootPath);
             while (await Reader.ReadAsync(cancel))
             {
-                await Writer.WriteAsync(Reader.RelativePath, Reader.Content, cancel);
+                await Writer.WriteAsync(ContentPath.Combine(rootName, Reader.RelativePath), Reader.Content, cancel);
                 ++count;
                 progress?.Report(count * 100.0 / totalCount);
             }

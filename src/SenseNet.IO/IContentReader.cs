@@ -6,6 +6,7 @@ namespace SenseNet.IO
 {
     public interface IContentReader<out TItem> where TItem : IContent
     {
+        string RootPath { get; }
         int EstimatedCount { get; }
 
         TItem Content { get; }
