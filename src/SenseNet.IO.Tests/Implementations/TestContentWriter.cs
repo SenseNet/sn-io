@@ -20,10 +20,10 @@ namespace SenseNet.IO.Tests.Implementations
         public string ContainerPath { get; }
         public string RootName { get; }
 
-        public Task WriteAsync(string relativePath, IContent content, CancellationToken cancel = default)
+        public Task WriteAsync(string path, IContent content, CancellationToken cancel = default)
         {
-            var path = ContentPath.GetAbsolutePath(relativePath, ContainerPath);
-            var parentPath = ContentPath.GetParentPath(path);
+            var absolutePath = ContentPath.GetAbsolutePath(path, ContainerPath);
+            var parentPath = ContentPath.GetParentPath(absolutePath);
             var contentNode = (ContentNode) content;
             var parent = parentPath == "/" || parentPath == string.Empty
                 ? null
@@ -39,7 +39,7 @@ namespace SenseNet.IO.Tests.Implementations
             }
 
 
-            Tree[path] = contentNode;
+            Tree[absolutePath] = contentNode;
 
             return Task.CompletedTask;
         }
