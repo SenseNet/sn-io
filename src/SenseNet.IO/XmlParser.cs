@@ -18,7 +18,7 @@ namespace SenseNet.IO
             }
             var typeElement = xml.SelectSingleNode("/ContentMetaData/ContentType") as XmlElement;
             var nameElement = xml.SelectSingleNode("/ContentMetaData/ContentName") as XmlElement;
-            var content = new Content
+            var content = new IoContent
             {
                 Name = nameElement?.InnerXml, // not required
                 Type = typeElement?.InnerXml  // required
@@ -27,7 +27,7 @@ namespace SenseNet.IO
             return content;
         }
 
-        private void ParseFields(Content content, XmlDocument xml)
+        private void ParseFields(IoContent content, XmlDocument xml)
         {
             //UNDONE: Implement XmlParser.ParseFields
         }

@@ -24,7 +24,7 @@ namespace SenseNet.IO
             var name = json["ContentName"]?.Value<string>();
             var type = json["ContentType"]?.Value<string>();
 
-            var content = new Content
+            var content = new IoContent
             {
                 Name = name,
                 Type = type
@@ -34,7 +34,7 @@ namespace SenseNet.IO
             return content;
         }
 
-        private void ParseFields(Content content, JObject json)
+        private void ParseFields(IoContent content, JObject json)
         {
             //UNDONE: Implement JsonParser.ParseFields
         }

@@ -10,7 +10,7 @@ namespace SenseNet.IO.Tests.Implementations
     /// Simulates ContentQuery-based block reader
     /// </summary>
     // ReSharper disable once InconsistentNaming
-    internal class TestCQReader : IContentReader<ContentNode>
+    internal class TestCQReader : IContentReader
     {
         private readonly Dictionary<string, ContentNode> _tree;
         private readonly int _blockSize;
@@ -19,7 +19,7 @@ namespace SenseNet.IO.Tests.Implementations
         public string RootPath { get; }
         public int EstimatedCount => _tree?.Count ?? 0;
 
-        public ContentNode Content { get; private set; }
+        public IContent Content { get; private set; }
         public string RelativePath { get; private set; }
 
         public TestCQReader(string rootPath, int blockSize, Dictionary<string, ContentNode> tree)

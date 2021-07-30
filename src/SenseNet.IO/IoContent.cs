@@ -2,7 +2,7 @@
 
 namespace SenseNet.IO
 {
-    public class Content : IContent
+    public class IoContent : IContent
     {
         private readonly Dictionary<string, object> _fields = new();
 
@@ -15,5 +15,15 @@ namespace SenseNet.IO
         public string Path { get; set; }
         public string Name { get; set; }
         public string Type { get; set; }
+
+        public T GetField<T>(string name)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public string ToJson()
+        {
+            throw new System.NotImplementedException();
+        }
     }
 }

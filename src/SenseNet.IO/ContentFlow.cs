@@ -6,9 +6,9 @@ namespace SenseNet.IO
 {
     public class ContentFlow<TItem> : IContentFlow<TItem> where TItem : IContent
     {
-        public IContentReader<TItem> Reader { get; }
+        public IContentReader Reader { get; }
         public IContentWriter Writer { get; }
-        public ContentFlow(IContentReader<TItem> reader, IContentWriter writer)
+        public ContentFlow(IContentReader reader, IContentWriter writer)
         {
             Reader = reader;
             Writer = writer;
@@ -17,14 +17,16 @@ namespace SenseNet.IO
         public async Task TransferAsync(IProgress<double> progress, CancellationToken cancel = default)
         {
             var count = 0;
-            var totalCount = Reader.EstimatedCount;
 
             var rootName = Writer.RootName ?? ContentPath.GetName(Reader.RootPath);
             while (await Reader.ReadAsync(cancel))
             {
                 await Writer.WriteAsync(ContentPath.Combine(rootName, Reader.RelativePath), Reader.Content, cancel);
                 ++count;
-                progress?.Report(count * 100.0 / totalCount);
+
+                var totalCount = Reader.EstimatedCount;
+                if(totalCount > 0)
+                    progress?.Report(count * 100.0 / totalCount);
             }
 
         }

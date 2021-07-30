@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace SenseNet.IO.Tests.Implementations
 {
-    public class TestContentReader : IContentReader<ContentNode>
+    public class TestContentReader : IContentReader
     {
         private readonly Dictionary<string, ContentNode> _tree;
 
@@ -14,7 +14,7 @@ namespace SenseNet.IO.Tests.Implementations
 
         public string RootPath { get; }
         public int EstimatedCount => _tree?.Count ?? 0;
-        public ContentNode Content { get; private set; }
+        public IContent Content { get; private set; }
         public string RelativePath { get; private set; }
 
 

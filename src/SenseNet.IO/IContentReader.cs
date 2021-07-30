@@ -8,7 +8,7 @@ namespace SenseNet.IO
     /// <summary>
     /// Defines an interface for reading items from any content store.
     /// </summary>
-    public interface IContentReader<out TItem> where TItem : IContent
+    public interface IContentReader
     {
         /// <summary>
         /// Gets the absolute repository path of the copied subtree. Cannot be null.
@@ -23,7 +23,7 @@ namespace SenseNet.IO
         /// <summary>
         /// Gets the current content after calling the <see cref="ReadAsync"/> method.
         /// </summary>
-        TItem Content { get; }
+        IContent Content { get; }
 
         /// <summary>
         /// Gets the relative repository path of the current content after calling the <see cref="ReadAsync"/> method.
