@@ -22,12 +22,22 @@ namespace SenseNet.IO.Implementations
         {
             var name = content.Name;
             var src = content.ToJson();
-            var filePath = Path.Combine(_outputDirectory, ContainerPath ?? "", path) + ".Content";
-            var fileDir = Path.GetDirectoryName(filePath);
+            var contentPath = Path.Combine(_outputDirectory, ContainerPath ?? "", path) + ".Content";
+            var fileDir = Path.GetDirectoryName(contentPath);
             if (!Directory.Exists(fileDir))
                 Directory.CreateDirectory(fileDir);
-            using (var writer = new StreamWriter(filePath, false))
+            using (var writer = new StreamWriter(contentPath, false))
                 await writer.WriteAsync(src);
+
+            foreach (var attachment in await content.GetAttachmentsAsync())
+            {
+                var attachmentPath = Path.Combine(fileDir,
+                    content.Name + "." + attachment.FieldName);
+                var inStream = attachment.Stream;
+                if (inStream.Length > 0)
+                    using (var outStream = new FileStream(attachmentPath, FileMode.OpenOrCreate))
+                        await inStream.CopyToAsync(outStream, cancel);
+            }
         }
     }
 }

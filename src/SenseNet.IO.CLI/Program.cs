@@ -97,18 +97,14 @@ namespace SenseNet.IO.CLI
         static async Task Main()
         {
             //var reader = new RepositoryTreeReader("https://localhost:44362", "/Root", 10);
-            //var reader = new RepositoryTreeReader("https://localhost:44362", "/Root/IMS", 10);
-            var reader = new RepositoryTreeReader("https://localhost:44362", "/Root/IMS/BuiltIn/Portal/Admin", 10);
+            var reader = new RepositoryTreeReader("https://localhost:44362", "/Root/IMS", 10);
+            //var reader = new RepositoryTreeReader("https://localhost:44362", "/Root/IMS/BuiltIn/Portal/Admin", 10);
 
             var writer = new FsWriter(@"C:\Users\kavics\Desktop\FsWriter");
             //var writer = new FsWriter(@"C:\Users\kavics\Desktop\FsWriter", null, "XXX");
 
             var flow = new ContentFlow<ClientContentWrapper>(reader, writer);
-            var progress = new Progress(percent =>
-            {
-                Console.Write("{0,10:F1}%\r", percent);
-                Thread.Sleep(1);
-            });
+            var progress = new Progress(percent => { Console.Write("{0,10:F1}%\r", percent); });
             await flow.TransferAsync(progress);
         }
     }

@@ -1,5 +1,9 @@
-﻿using System.IO;
+﻿using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Net.Http;
+using System.Threading;
+using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using SenseNet.Client;
@@ -37,6 +41,34 @@ namespace SenseNet.IO.Implementations
             set => _content["Type"] = value;
         }
 
+        public async Task<Attachment[]> GetAttachmentsAsync()
+        {
+            var result = new List<Attachment>();
+            foreach (var fieldName in _content.FieldNames)
+            {
+                var field = _content[fieldName];
+                if (field is JObject jObject)
+                {
+                    if (jObject["__mediaresource"] is JObject res)
+                    {
+                        var uri = res["media_src"]?.Value<string>();
+                        if (uri != null)
+                        {
+                            var contentType = res["content_type"]?.Value<string>();
+                            result.Add(new Attachment
+                            {
+                                FieldName = fieldName,
+                                ContentType = contentType,
+                                Stream = await GetStream(uri)
+                            });
+                        }
+                    }
+                }
+            }
+
+            return result.ToArray();
+        }
+
         public T GetField<T>(string name)
         {
             var raw = this[name];
@@ -60,6 +92,8 @@ namespace SenseNet.IO.Implementations
 
         public string ToJson()
         {
+
+
             var fields = _content.FieldNames
                 .Except(FieldBlackList)
                 .Where(f => !IsNull(_content[f]))
@@ -90,5 +124,36 @@ namespace SenseNet.IO.Implementations
                     return true;
             return false;
         }
+
+
+
+
+        public async Task<Stream> GetStream(string url)
+        {
+            var server = ClientContext.Current.Server; //UNDONE: do not use static servers
+            var absoluteUrl = server.Url + url;
+            Stream result = null;
+            await RESTCaller.ProcessWebResponseAsync(absoluteUrl, HttpMethod.Get, ClientContext.Current.Server, async response =>
+            {
+                result = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
+            }, CancellationToken.None);
+
+            return result;
+        }
+
+        /*
+        public async Task Download(string url)
+        {
+            string ctd = null;
+            await RESTCaller.ProcessWebResponseAsync(url, HttpMethod.Get, ClientContext.Current.Server, async response =>
+            {
+                if (response == null)
+                    return;
+                using (var stream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false))
+                using (var reader = new StreamReader(stream))
+                    ctd = reader.ReadToEnd();
+            }, CancellationToken.None);
+        }
+        */
     }
 }

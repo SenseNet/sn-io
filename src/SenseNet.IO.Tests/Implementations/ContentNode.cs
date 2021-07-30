@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics;
+using System.Threading.Tasks;
 
 namespace SenseNet.IO.Tests.Implementations
 {
@@ -17,6 +18,20 @@ namespace SenseNet.IO.Tests.Implementations
         public string Path { get; set; }
         public string Name { get; set; }
         public string Type { get; set; }
+
+        public Task<Attachment[]> GetAttachmentsAsync()
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public T GetField<T>(string name)
+        {
+            throw new System.NotImplementedException();
+        }
+        public string ToJson()
+        {
+            throw new System.NotImplementedException();
+        }
 
         public ContentNode Parent { get; set; }
         public List<ContentNode> Children { get; } = new List<ContentNode>();

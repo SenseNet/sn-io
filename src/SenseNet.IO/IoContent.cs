@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace SenseNet.IO
 {
@@ -15,6 +16,11 @@ namespace SenseNet.IO
         public string Path { get; set; }
         public string Name { get; set; }
         public string Type { get; set; }
+
+        public Task<Attachment[]> GetAttachmentsAsync()
+        {
+            throw new System.NotImplementedException();
+        }
 
         public T GetField<T>(string name)
         {

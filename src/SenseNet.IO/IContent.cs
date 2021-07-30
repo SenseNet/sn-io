@@ -1,4 +1,6 @@
-﻿namespace SenseNet.IO
+﻿using System.Threading.Tasks;
+
+namespace SenseNet.IO
 {
     public interface IContent
     {
@@ -7,6 +9,9 @@
         public string Name { get; set; }
         public string Path { get; set; }
         public string Type { get; set; }
+
+        Task<Attachment[]> GetAttachmentsAsync();
+
         T GetField<T>(string name);
 
         string ToJson();
