@@ -28,7 +28,7 @@ namespace SenseNet.IO.Tests
             var targetTree = new Dictionary<string, ContentNode>();
 
             // ACTION
-            var flow = new ContentFlow<ContentNode>(
+            var flow = new ContentFlow(
                 new TestContentReader("/Root", sourceTree),
                 new TestContentWriter(targetTree));
             var progress = new TestProgress();
@@ -49,7 +49,7 @@ namespace SenseNet.IO.Tests
             });
 
             // ACTION
-            var flow = new ContentFlow<ContentNode>(
+            var flow = new ContentFlow(
                 new TestCQReader("/Root/Node-01/Node-08", 4, sourceTree),
                 new TestContentWriter(targetTree));
             var progress = new TestProgress();
@@ -66,7 +66,7 @@ namespace SenseNet.IO.Tests
             var targetTree = new Dictionary<string, ContentNode>();
 
             // ACTION
-            var flow = new ContentFlow<ContentNode>(
+            var flow = new ContentFlow(
                 new TestCQReader("/Root", 4, sourceTree),
                 new TestContentWriter(targetTree));
             var progress = new TestProgress();
@@ -93,7 +93,7 @@ namespace SenseNet.IO.Tests
             });
 
             // ACTION
-            var flow = new ContentFlow<ContentNode>(
+            var flow = new ContentFlow(
                 new TestCQReader("/Root/aa", 5, sourceTree),
                 new TestContentWriter(targetTree));
             var progress = new TestProgress();
@@ -115,7 +115,7 @@ namespace SenseNet.IO.Tests
             });
 
             // ACTION
-            var flow = new ContentFlow<ContentNode>(
+            var flow = new ContentFlow(
                 new TestCQReader("/Root/Node-01/Node-02/Node-03", 4, sourceTree),
                 new TestContentWriter(targetTree, "/Root/Node-99"));
             await flow.TransferAsync(new TestProgress());
@@ -140,7 +140,7 @@ namespace SenseNet.IO.Tests
             });
 
             // ACTION
-            var flow = new ContentFlow<ContentNode>(
+            var flow = new ContentFlow(
                 new TestCQReader("/Root/Node-01/Node-02/Node-03", 4, sourceTree),
                 new TestContentWriter(targetTree, "/Root/Node-99", "Renamed"));
             await flow.TransferAsync(new TestProgress());

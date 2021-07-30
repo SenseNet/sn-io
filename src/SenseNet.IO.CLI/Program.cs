@@ -103,7 +103,7 @@ namespace SenseNet.IO.CLI
             var writer = new FsWriter(@"C:\Users\kavics\Desktop\FsWriter");
             //var writer = new FsWriter(@"C:\Users\kavics\Desktop\FsWriter", null, "XXX");
 
-            var flow = new ContentFlow<ClientContentWrapper>(reader, writer);
+            var flow = new ContentFlow(reader, writer);
             var progress = new Progress(percent => { Console.Write("{0,10:F1}%\r", percent); });
             await flow.TransferAsync(progress);
         }

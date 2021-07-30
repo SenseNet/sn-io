@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace SenseNet.IO
 {
-    interface IContentFlow<out TItem> where TItem : IContent
+    interface IContentFlow
     {
         IContentReader Reader { get; }
         IContentWriter Writer { get; }
