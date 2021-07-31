@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading;
@@ -70,11 +71,24 @@ namespace SenseNet.IO.Implementations
         private async Task<IContent[]> QueryBlockAsync(int skip, int top)
         {
             var query = $"InTree:'{RootPath}' .SORT:Path .TOP:{top} .SKIP:{skip} .AUTOFILTERS:OFF";
-            var queryResult = await Client.Content.QueryAsync(query).ConfigureAwait(false);
+            //var queryResult = await Client.Content.QueryAsync(query).ConfigureAwait(false);
+            var queryResult = await QueryAsync(query).ConfigureAwait(false);
 
             var result = queryResult.Select(x => new ClientContentWrapper(x)).ToArray();
 
             return result;
         }
+        public static async Task<IEnumerable<Content>> QueryAsync(string queryText, ServerContext server = null)
+        {
+            var oDataRequest = new ODataRequest(server)
+            {
+                Path = "/Root",
+                ContentQuery = queryText,
+                Parameters = {{"$format", "export"}}
+            };
+
+            return await Client.Content.LoadCollectionAsync(oDataRequest, server).ConfigureAwait(false);
+        }
+
     }
 }
