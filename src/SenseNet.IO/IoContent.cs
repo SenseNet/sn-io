@@ -16,6 +16,7 @@ namespace SenseNet.IO
         public string Path { get; set; }
         public string Name { get; set; }
         public string Type { get; set; }
+        public PermissionInfo Permissions { get; set; }
 
         public Task<Attachment[]> GetAttachmentsAsync()
         {

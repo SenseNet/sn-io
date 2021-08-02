@@ -24,6 +24,9 @@ namespace SenseNet.IO.Implementations
             var src = content.ToJson();
             var contentPath = Path.Combine(_outputDirectory, ContainerPath ?? "", path) + ".Content";
             var fileDir = Path.GetDirectoryName(contentPath);
+            if (fileDir == null)
+                throw new NotSupportedException("The fileDir cannot be null");
+
             if (!Directory.Exists(fileDir))
                 Directory.CreateDirectory(fileDir);
             using (var writer = new StreamWriter(contentPath, false))
@@ -31,8 +34,8 @@ namespace SenseNet.IO.Implementations
 
             foreach (var attachment in await content.GetAttachmentsAsync())
             {
-                var attachmentPath = Path.Combine(fileDir,
-                    content.Name + "." + attachment.FieldName);
+                var attachmentPath = Path.Combine(fileDir, attachment.FileName);
+
                 var inStream = attachment.Stream;
                 if (inStream.Length > 0)
                     using (var outStream = new FileStream(attachmentPath, FileMode.OpenOrCreate))

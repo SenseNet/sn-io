@@ -41,6 +41,33 @@ namespace SenseNet.IO.Implementations
             set => _content["Type"] = value;
         }
 
+        private bool _isPermissionInfoLoaded;
+        private PermissionInfo _permissionInfo;
+        public PermissionInfo Permissions
+        {
+            get
+            {
+                if (!_isPermissionInfoLoaded)
+                {
+                    var perms = this["__permissions"]?.ToString();
+                    if (perms != null)
+                    {
+                        using(var reader = new JsonTextReader(new StringReader(perms)))
+                            _permissionInfo = JsonSerializer.CreateDefault().Deserialize<PermissionInfo>(reader);
+                    }
+
+                    _isPermissionInfoLoaded = true;
+                }
+
+                return _permissionInfo;
+            }
+            set
+            {
+                _permissionInfo = value;
+                _isPermissionInfoLoaded = true;
+            }
+        }
+
         public async Task<Attachment[]> GetAttachmentsAsync()
         {
             var result = new List<Attachment>();
@@ -57,6 +84,7 @@ namespace SenseNet.IO.Implementations
                             var contentType = res["content_type"]?.Value<string>();
                             result.Add(new Attachment
                             {
+                                FileName = GetAttachmentName(fieldName),
                                 FieldName = fieldName,
                                 ContentType = contentType,
                                 Stream = await GetStream(uri)
@@ -87,32 +115,55 @@ namespace SenseNet.IO.Implementations
         {
             "Actions", "Children", "EffectiveAllowedChildTypes",
             "CreatedById", "ModifiedById", "OwnerId", "ParentId", "SavingState",
-            "InFolder", "InTree"
+            "InFolder", "InTree", "__permissions"
         };
 
         public string ToJson()
         {
-
-
             var fields = _content.FieldNames
                 .Except(FieldBlackList)
                 .Where(f => !IsNull(_content[f]))
-                .ToDictionary(key => key, key => _content[key]);
+                .ToDictionary(key => key, GetFieldValue);
 
             var model = new
             {
                 ContentType = Type,
                 ContentName = Name,
-                Fields = fields
+                Fields = fields,
+                Permissions = Permissions
             };
 
             var writer = new StringWriter();
             JsonSerializer.Create(new JsonSerializerSettings
             {
-                Formatting = Formatting.Indented
+                Formatting = Formatting.Indented,
+                NullValueHandling = NullValueHandling.Ignore
             }).Serialize(writer, model);
 
             return writer.GetStringBuilder().ToString();
+        }
+
+        private object GetFieldValue(string fieldName)
+        {
+            var fieldValue = _content[fieldName];
+            if (fieldValue is JObject jObject)
+            {
+                if (jObject["__mediaresource"] is JObject res)
+                    fieldValue = new {Attachment = GetAttachmentName(fieldName)};
+            }
+            return fieldValue;
+        }
+
+        private string GetAttachmentName(string fieldName)
+        {
+            var contentType = _content["Type"]?.ToString() ?? "";
+            var attachmentName = fieldName == "Binary"
+                ? contentType == "ContentType"
+                    ? _content.Name + ".xml"
+                    : _content.Name
+                : _content.Name + "." + fieldName;
+
+            return attachmentName;
         }
 
         private bool IsNull(object value)
