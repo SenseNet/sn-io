@@ -19,10 +19,28 @@ namespace SenseNet.IO.Implementations
             _content = content;
         }
 
+        private string[] _fieldNames;
+        public string[] FieldNames => _fieldNames ?? (_fieldNames = _content.FieldNames.Except(FieldBlackList).ToArray());
+
         public object this[string fieldName]
         {
-            get => _content[fieldName];
+            get => GetValue(fieldName);
             set => _content[fieldName] = value;
+        }
+
+        private object GetValue(string fieldName)
+        {
+            var token = _content[fieldName] as JToken;
+            if (token == null)
+                return null;
+            if (token.Type == JTokenType.Null)
+                return null;
+            if (token is JObject jObject)
+            {
+                if (jObject["__mediaresource"] is JObject res)
+                    return new { Attachment = GetAttachmentName(fieldName) };
+            }
+            return token;
         }
 
         public string Name

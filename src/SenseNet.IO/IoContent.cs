@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace SenseNet.IO
@@ -6,6 +7,8 @@ namespace SenseNet.IO
     public class IoContent : IContent
     {
         private readonly Dictionary<string, object> _fields = new();
+
+        public string[] FieldNames => _fields.Keys.ToArray();
 
         public object this[string fieldName]
         {

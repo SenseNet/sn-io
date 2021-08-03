@@ -4,6 +4,7 @@ namespace SenseNet.IO
 {
     public interface IContent
     {
+        string[] FieldNames { get; }
         object this[string fieldName] { get; set; }
 
         public string Name { get; set; }
