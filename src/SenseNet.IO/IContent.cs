@@ -13,9 +13,5 @@ namespace SenseNet.IO
         public PermissionInfo Permissions { get; set; }
 
         Task<Attachment[]> GetAttachmentsAsync();
-
-        T GetField<T>(string name);
-
-        string ToJson();
     }
 }

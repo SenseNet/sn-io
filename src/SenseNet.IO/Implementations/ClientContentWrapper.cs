@@ -19,6 +19,12 @@ namespace SenseNet.IO.Implementations
             _content = content;
         }
 
+        private static readonly string[] FieldBlackList = new[]
+        {
+            "Actions", "Children", "EffectiveAllowedChildTypes",
+            "CreatedById", "ModifiedById", "OwnerId", "ParentId", "SavingState",
+            "InFolder", "InTree", "__permissions"
+        };
         private string[] _fieldNames;
         public string[] FieldNames => _fieldNames ?? (_fieldNames = _content.FieldNames.Except(FieldBlackList).ToArray());
 
@@ -115,63 +121,6 @@ namespace SenseNet.IO.Implementations
             return result.ToArray();
         }
 
-        public T GetField<T>(string name)
-        {
-            var raw = this[name];
-            if (raw is JValue jValue)
-            {
-                if (jValue.Value == null)
-                    return default;
-                return jValue.ToObject<T>();
-            }
-
-            //UNDONE: other types are not implemented
-            return default;
-        }
-
-        private static readonly string[] FieldBlackList = new[]
-        {
-            "Actions", "Children", "EffectiveAllowedChildTypes",
-            "CreatedById", "ModifiedById", "OwnerId", "ParentId", "SavingState",
-            "InFolder", "InTree", "__permissions"
-        };
-
-        public string ToJson()
-        {
-            var fields = _content.FieldNames
-                .Except(FieldBlackList)
-                .Where(f => !IsNull(_content[f]))
-                .ToDictionary(key => key, GetFieldValue);
-
-            var model = new
-            {
-                ContentType = Type,
-                ContentName = Name,
-                Fields = fields,
-                Permissions = Permissions
-            };
-
-            var writer = new StringWriter();
-            JsonSerializer.Create(new JsonSerializerSettings
-            {
-                Formatting = Formatting.Indented,
-                NullValueHandling = NullValueHandling.Ignore
-            }).Serialize(writer, model);
-
-            return writer.GetStringBuilder().ToString();
-        }
-
-        private object GetFieldValue(string fieldName)
-        {
-            var fieldValue = _content[fieldName];
-            if (fieldValue is JObject jObject)
-            {
-                if (jObject["__mediaresource"] is JObject res)
-                    fieldValue = new {Attachment = GetAttachmentName(fieldName)};
-            }
-            return fieldValue;
-        }
-
         private string GetAttachmentName(string fieldName)
         {
             var contentType = _content["Type"]?.ToString() ?? "";
@@ -183,19 +132,6 @@ namespace SenseNet.IO.Implementations
 
             return attachmentName;
         }
-
-        private bool IsNull(object value)
-        {
-            if (value == null)
-                return true;
-            if(value is JValue jValue)
-                if (jValue.Value == null)
-                    return true;
-            return false;
-        }
-
-
-
 
         public async Task<Stream> GetStream(string url)
         {
@@ -209,20 +145,5 @@ namespace SenseNet.IO.Implementations
 
             return result;
         }
-
-        /*
-        public async Task Download(string url)
-        {
-            string ctd = null;
-            await RESTCaller.ProcessWebResponseAsync(url, HttpMethod.Get, ClientContext.Current.Server, async response =>
-            {
-                if (response == null)
-                    return;
-                using (var stream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false))
-                using (var reader = new StreamReader(stream))
-                    ctd = reader.ReadToEnd();
-            }, CancellationToken.None);
-        }
-        */
     }
 }

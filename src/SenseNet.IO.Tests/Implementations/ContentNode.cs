@@ -28,15 +28,6 @@ namespace SenseNet.IO.Tests.Implementations
             throw new System.NotImplementedException();
         }
 
-        public T GetField<T>(string name)
-        {
-            throw new System.NotImplementedException();
-        }
-        public string ToJson()
-        {
-            throw new System.NotImplementedException();
-        }
-
         public ContentNode Parent { get; set; }
         public List<ContentNode> Children { get; } = new List<ContentNode>();
 

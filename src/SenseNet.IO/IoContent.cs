@@ -25,15 +25,5 @@ namespace SenseNet.IO
         {
             throw new System.NotImplementedException();
         }
-
-        public T GetField<T>(string name)
-        {
-            throw new System.NotImplementedException();
-        }
-
-        public string ToJson()
-        {
-            throw new System.NotImplementedException();
-        }
     }
 }
