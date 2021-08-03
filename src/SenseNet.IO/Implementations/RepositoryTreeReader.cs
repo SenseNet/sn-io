@@ -74,7 +74,7 @@ namespace SenseNet.IO.Implementations
             //var queryResult = await Client.Content.QueryAsync(query).ConfigureAwait(false);
             var queryResult = await QueryAsync(query).ConfigureAwait(false);
 
-            var result = queryResult.Select(x => new ClientContentWrapper(x)).ToArray();
+            var result = queryResult.Select(x => new RepositoryReaderContent(x)).ToArray();
 
             return result;
         }
