@@ -22,9 +22,9 @@ namespace SenseNet.IO.Implementations
         private readonly Dictionary<string, object> _fields;
 
         public string[] FieldNames { get; }
-        public string Name { get; set; }
-        public string Path { get; set; }
-        public string Type { get; set; }
+        public string Name { get; }
+        public string Path { get; }
+        public string Type { get; }
         public PermissionInfo Permissions { get; set; }
 
         public object this[string fieldName]

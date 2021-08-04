@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -96,18 +97,37 @@ namespace SenseNet.IO.CLI
 
         static async Task Main()
         {
-            var reader = new RepositoryTreeReader("https://localhost:44362", "/Root", 10);
+            //var reader = new RepositoryTreeReader("https://localhost:44362", "/Root", 10);
+            //var reader = new RepositoryTreeReader("https://localhost:44362", "/Root/(apps)", 10);
             //var reader = new RepositoryTreeReader("https://localhost:44362", "/Root/IMS", 10);
             //var reader = new RepositoryTreeReader("https://localhost:44362", "/Root/IMS/BuiltIn/Portal/Admin", 10);
             //var reader = new RepositoryTreeReader("https://localhost:44362", "/Root/System/Settings", 10);
             //var reader = new RepositoryTreeReader("https://localhost:44362", "/Root/System/Schema", 10);
 
+            var reader = new FsReader(@"C:\Users\kavics\Desktop\FsReader", "/Root");
+            //var reader = new FsReader(@"C:\Users\kavics\Desktop\FsReader", "/Root/(apps)");
+            //var reader = new FsReader(@"C:\Users\kavics\Desktop\FsReader", "/Root/IMS");
+            //var reader = new FsReader(@"C:\Users\kavics\Desktop\FsReader", "/Root/IMS/BuiltIn/Portal/Admin");
+            //var reader = new FsReader(@"C:\Users\kavics\Desktop\FsReader", "/Root/System/Settings");
+            //var reader = new FsReader(@"C:\Users\kavics\Desktop\FsReader", "/Root/System/Schema");
+
+            /*
+            using (var writer = new StreamWriter(@"C:\Users\kavics\Desktop\FsWriter\paths.txt"))
+                while (await reader.ReadAsync())
+                {
+                    Console.WriteLine("{0,-20}: {1,-20} {2}", reader.Content.Name, reader.Content.Type, reader.RelativePath);
+                    writer.WriteLine("{0,-40} {1,-20} {2}", reader.Content.Name, reader.Content.Type, reader.RelativePath);
+                }
+            */
+
             var writer = new FsWriter(@"C:\Users\kavics\Desktop\FsWriter");
             //var writer = new FsWriter(@"C:\Users\kavics\Desktop\FsWriter", null, "XXX");
 
             var flow = new ContentFlow(reader, writer);
-            var progress = new Progress(percent => { Console.Write("{0,10:F1}%\r", percent); });
+            var progress = new Progress(percent => { Console.Write("Transferring... {0,5:F1}%\r", percent); });
             await flow.TransferAsync(progress);
+            Console.WriteLine();
+            Console.WriteLine("Done.");
         }
     }
 
