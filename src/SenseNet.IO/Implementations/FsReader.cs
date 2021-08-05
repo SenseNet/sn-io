@@ -66,6 +66,8 @@ namespace SenseNet.IO.Implementations
         {
             var contentName = Path.GetFileName(fsRootPath);
             var metaFilePath = fsRootPath + ".Content";
+            if (!File.Exists(metaFilePath))
+                metaFilePath = null;
             var contentIsDirectory = Directory.Exists(fsRootPath);
 
             return new FsContent(contentName, metaFilePath, contentIsDirectory, null);
