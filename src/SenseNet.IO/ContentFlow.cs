@@ -26,11 +26,12 @@ namespace SenseNet.IO
                     Rename(Reader.Content, rootName);
                 await Writer.WriteAsync(ContentPath.Combine(rootName, Reader.RelativePath), Reader.Content, cancel);
                 Progress(ref count, progress);
-            }
-            while (await Reader.ReadAsync(cancel))
-            {
-                await Writer.WriteAsync(ContentPath.Combine(rootName, Reader.RelativePath), Reader.Content, cancel);
-                Progress(ref count, progress);
+
+                while (await Reader.ReadAsync(cancel))
+                {
+                    await Writer.WriteAsync(ContentPath.Combine(rootName, Reader.RelativePath), Reader.Content, cancel);
+                    Progress(ref count, progress);
+                }
             }
         }
 

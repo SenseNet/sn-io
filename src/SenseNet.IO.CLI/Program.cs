@@ -120,8 +120,8 @@ namespace SenseNet.IO.CLI
                 }
             */
 
-            //var writer = new FsWriter(@"D:\dev\_sn-io-test\FsWriter");
-            var writer = new FsWriter(@"D:\dev\_sn-io-test\FsWriter", "/Root", "XXX");
+            var writer = new FsWriter(@"D:\dev\_sn-io-test\FsWriter");
+            //var writer = new FsWriter(@"D:\dev\_sn-io-test\FsWriter", "/Root", "XXX");
 
             var flow = new ContentFlow(reader, writer);
             var progress = new Progress(percent => { Console.Write("Transferring... {0,5:F1}%\r", percent); });
