@@ -63,7 +63,7 @@ namespace SenseNet.IO.Tests
                 set => _fields[fieldName] = value;
             }
 
-            public string Name { get; }
+            public string Name { get; set; }
             public string Path { get; }
             public string Type { get; }
             public PermissionInfo Permissions { get; set; }
@@ -140,7 +140,7 @@ namespace SenseNet.IO.Tests
                     textBuilders.Add(sb);
                     return new StringWriter(sb);
                 },
-                createBinaryStream: (fsPath, fileMode) => { throw new NotImplementedException(); });
+                createBinaryStream: (fsPath, fileMode) => throw new NotImplementedException());
 
             // ACTION
             var contentFlow = new ContentFlow(reader, writer);
@@ -155,8 +155,146 @@ namespace SenseNet.IO.Tests
             Assert.AreEqual("{\"ContentType\":\"PortalRoot\",\"ContentName\":\"Root\",\"Fields\":{}}",
                 textBuilders[0].ToString().RemoveWhitespaces());
         }
-        [TestMethod] public void FsWriter_Root_Folder() { Assert.Fail(); }
-        [TestMethod] public void FsWriter_Root_Folder_File() { Assert.Fail(); }
-        [TestMethod] public void FsWriter_Root_RenamedFolder_File() { Assert.Fail(); }
+
+        [TestMethod]
+        public async Task FsWriter_Root_Folder()
+        {
+            // ALIGN
+            var checkedPaths = new List<string>();
+            var createdPaths = new List<string>();
+            var textBuilders = new List<StringBuilder>();
+
+            var reader = new TestReader("/Root", new[]
+            {
+                new TestContent("Root", "", "PortalRoot", new Dictionary<string, object>(), new Attachment[0]),
+                new TestContent("F1", "F1", "Folder", new Dictionary<string, object>(), new Attachment[0]),
+            });
+            var writer = new FsWriterMock(
+                outputDirectory: @"Q:\FsRoot",
+                containerPath: null,
+                rootName: null,
+                isDirectoryExists: fsPath => { checkedPaths.Add(fsPath); return false; },
+                createDirectory: fsPath => { createdPaths.Add(fsPath); },
+                createTextWriter: (fsPath, append) =>
+                {
+                    if (append)
+                        throw new NotSupportedException("Invalid 'append', expected: false.");
+                    var sb = new StringBuilder();
+                    textBuilders.Add(sb);
+                    return new StringWriter(sb);
+                },
+                createBinaryStream: (fsPath, fileMode) => throw new NotImplementedException());
+
+            // ACTION
+            var contentFlow = new ContentFlow(reader, writer);
+            await contentFlow.TransferAsync();
+
+            // ASSERT
+            Assert.AreEqual(2, checkedPaths.Count);
+            Assert.AreEqual(@"Q:\FsRoot", checkedPaths[0]);
+            Assert.AreEqual(@"Q:\FsRoot\Root", checkedPaths[1]);
+            Assert.AreEqual(2, createdPaths.Count);
+            Assert.AreEqual(@"Q:\FsRoot", createdPaths[0]);
+            Assert.AreEqual(@"Q:\FsRoot\Root", createdPaths[1]);
+            Assert.AreEqual(2, textBuilders.Count);
+            Assert.AreEqual("{\"ContentType\":\"Folder\",\"ContentName\":\"F1\",\"Fields\":{}}",
+                textBuilders[1].ToString().RemoveWhitespaces());
+        }
+        [TestMethod]
+        public async Task FsWriter_Root_Folder_Folder()
+        {
+            // ALIGN
+            var checkedPaths = new List<string>();
+            var createdPaths = new List<string>();
+            var textBuilders = new List<StringBuilder>();
+
+            var reader = new TestReader("/Root", new[]
+            {
+                new TestContent("Root", "", "PortalRoot", new Dictionary<string, object>(), new Attachment[0]),
+                new TestContent("F1", "F1", "Folder", new Dictionary<string, object>(), new Attachment[0]),
+                new TestContent("F2", "F1/F2", "Folder", new Dictionary<string, object>(), new Attachment[0]),
+            });
+            var writer = new FsWriterMock(
+                outputDirectory: @"Q:\FsRoot",
+                containerPath: null,
+                rootName: null,
+                isDirectoryExists: fsPath => { checkedPaths.Add(fsPath); return false; },
+                createDirectory: fsPath => { createdPaths.Add(fsPath); },
+                createTextWriter: (fsPath, append) =>
+                {
+                    if (append)
+                        throw new NotSupportedException("Invalid 'append', expected: false.");
+                    var sb = new StringBuilder();
+                    textBuilders.Add(sb);
+                    return new StringWriter(sb);
+                },
+                createBinaryStream: (fsPath, fileMode) => throw new NotImplementedException());
+
+            // ACTION
+            var contentFlow = new ContentFlow(reader, writer);
+            await contentFlow.TransferAsync();
+
+            // ASSERT
+            Assert.AreEqual(3, checkedPaths.Count);
+            Assert.AreEqual(@"Q:\FsRoot", checkedPaths[0]);
+            Assert.AreEqual(@"Q:\FsRoot\Root", checkedPaths[1]);
+            Assert.AreEqual(@"Q:\FsRoot\Root\F1", checkedPaths[2]);
+            Assert.AreEqual(3, createdPaths.Count);
+            Assert.AreEqual(@"Q:\FsRoot", createdPaths[0]);
+            Assert.AreEqual(@"Q:\FsRoot\Root", createdPaths[1]);
+            Assert.AreEqual(@"Q:\FsRoot\Root\F1", createdPaths[2]);
+            Assert.AreEqual(3, textBuilders.Count);
+            Assert.AreEqual("{\"ContentType\":\"Folder\",\"ContentName\":\"F1\",\"Fields\":{}}",
+                textBuilders[1].ToString().RemoveWhitespaces());
+            Assert.AreEqual("{\"ContentType\":\"Folder\",\"ContentName\":\"F2\",\"Fields\":{}}",
+                textBuilders[2].ToString().RemoveWhitespaces());
+        }
+        [TestMethod]
+        public async Task FsWriter_Root_RenamedFolder_Folder()
+        {
+            // ALIGN
+            var checkedPaths = new List<string>();
+            var createdPaths = new List<string>();
+            var textBuilders = new List<StringBuilder>();
+
+            var reader = new TestReader("/Root", new[]
+            {
+                //new TestContent("Root", "", "PortalRoot", new Dictionary<string, object>(), new Attachment[0]),
+                new TestContent("F1", "", "Folder", new Dictionary<string, object>(), new Attachment[0]),
+                new TestContent("F2", "F2", "Folder", new Dictionary<string, object>(), new Attachment[0]),
+            });
+            var writer = new FsWriterMock(
+                outputDirectory: @"Q:\FsRoot",
+                containerPath: "/Root",
+                rootName: "Fx",
+                isDirectoryExists: fsPath => { checkedPaths.Add(fsPath); return false; },
+                createDirectory: fsPath => { createdPaths.Add(fsPath); },
+                createTextWriter: (fsPath, append) =>
+                {
+                    if (append)
+                        throw new NotSupportedException("Invalid 'append', expected: false.");
+                    var sb = new StringBuilder();
+                    textBuilders.Add(sb);
+                    return new StringWriter(sb);
+                },
+                createBinaryStream: (fsPath, fileMode) => throw new NotImplementedException());
+
+            // ACTION
+            var contentFlow = new ContentFlow(reader, writer);
+            await contentFlow.TransferAsync();
+
+            // ASSERT
+            Assert.AreEqual(2, checkedPaths.Count);
+            Assert.AreEqual(@"Q:\FsRoot\Root", checkedPaths[0]);
+            Assert.AreEqual(@"Q:\FsRoot\Root\Fx", checkedPaths[1]);
+            Assert.AreEqual(2, createdPaths.Count);
+            Assert.AreEqual(@"Q:\FsRoot\Root", createdPaths[0]);
+            Assert.AreEqual(@"Q:\FsRoot\Root\Fx", createdPaths[1]);
+            Assert.AreEqual(2, textBuilders.Count);
+            Assert.AreEqual("{\"ContentType\":\"Folder\",\"ContentName\":\"Fx\",\"Fields\":{}}",
+                textBuilders[0].ToString().RemoveWhitespaces());
+            Assert.AreEqual("{\"ContentType\":\"Folder\",\"ContentName\":\"F2\",\"Fields\":{}}",
+                textBuilders[1].ToString().RemoveWhitespaces());
+        }
     }
 }

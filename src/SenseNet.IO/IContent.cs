@@ -7,7 +7,7 @@ namespace SenseNet.IO
         string[] FieldNames { get; }
         object this[string fieldName] { get; set; }
 
-        public string Name { get; }
+        public string Name { get; set; }
         public string Path { get; }
         public string Type { get; }
         public PermissionInfo Permissions { get; set; }

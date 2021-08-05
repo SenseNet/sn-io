@@ -24,7 +24,7 @@ namespace SenseNet.IO.Implementations
             set => _fields[fieldName] = value;
         }
 
-        public string Name { get; }
+        public string Name { get; set; }
 
         private string _path;
         public string Path
