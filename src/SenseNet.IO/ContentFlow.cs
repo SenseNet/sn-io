@@ -14,7 +14,7 @@ namespace SenseNet.IO
             Writer = writer;
         }
 
-        public async Task TransferAsync(IProgress<double> progress, CancellationToken cancel = default)
+        public async Task TransferAsync(IProgress<double> progress = null, CancellationToken cancel = default)
         {
             var count = 0;
 
