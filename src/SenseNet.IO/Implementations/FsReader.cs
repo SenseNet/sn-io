@@ -66,30 +66,30 @@ namespace SenseNet.IO.Implementations
         {
             var contentName = Path.GetFileName(fsRootPath);
             var metaFilePath = fsRootPath + ".Content";
-            if (!File.Exists(metaFilePath))
+            if (!IsFileExists(metaFilePath))
                 metaFilePath = null;
-            var contentIsDirectory = Directory.Exists(fsRootPath);
+            var contentIsDirectory = IsDirectoryExists(fsRootPath);
 
-            return new FsContent(contentName, metaFilePath, contentIsDirectory, null);
+            return CreateFsContent(contentName, metaFilePath, contentIsDirectory, null);
         }
 
         private void ReadContents(string currentPath, FsContent currentContent, List<FsContent> container)
         {
-            var dirs = Directory.GetDirectories(currentPath).ToList();
-            var filePaths = Directory.GetFiles(currentPath).ToList();
+            var dirs = GetFsDirectories(currentPath).ToList();
+            var filePaths = GetFsFiles(currentPath).ToList();
             var localContents = new List<FsContent>();
             FsContent content;
-            foreach (var directoryPath in Directory.GetDirectories(currentPath))
+            foreach (var directoryPath in GetFsDirectories(currentPath))
             {
                 // get metaFile's path if exists or null
                 var metaFilePath = directoryPath + ".Content";
-                if (!File.Exists(metaFilePath))
+                if (!IsFileExists(metaFilePath))
                     metaFilePath = null;
                 else
                     filePaths.Remove(metaFilePath);
 
                 // create current content and add to container
-                content = new FsContent(Path.GetFileName(directoryPath), metaFilePath, true, currentContent);
+                content = CreateFsContent(Path.GetFileName(directoryPath), metaFilePath, true, currentContent);
                 container.Add(content);
                 localContents.Add(content);
 
@@ -107,7 +107,7 @@ namespace SenseNet.IO.Implementations
                 var name = Path.GetFileNameWithoutExtension(metaFilePath);
                 var ext = Path.GetExtension(metaFilePath);
 
-                content = new FsContent(name, metaFilePath, false, currentContent);
+                content = CreateFsContent(name, metaFilePath, false, currentContent);
                 container.Add(content);
                 localContents.Add(content);
             }
@@ -122,7 +122,7 @@ namespace SenseNet.IO.Implementations
             foreach (var attachmentPath in attachmentPaths)
             {
                 var name = Path.GetFileName(attachmentPath);
-                content = new FsContent(name, null, false, currentContent, attachmentPath);
+                content = CreateFsContent(name, null, false, currentContent, attachmentPath);
                 container.Add(content);
             }
 
@@ -130,13 +130,38 @@ namespace SenseNet.IO.Implementations
 
         private void ReadAllPaths(string currentPath, List<string> container)
         {
-            var dirs = Directory.GetDirectories(currentPath);
-            foreach (var directoryPath in Directory.GetDirectories(currentPath))
+            var dirs = GetFsDirectories(currentPath);
+            foreach (var directoryPath in dirs)
             {
                 container.Add(directoryPath);
                 ReadAllPaths(directoryPath, container);
             }
-            container.AddRange(Directory.GetFiles(currentPath));
+            container.AddRange(GetFsFiles(currentPath));
+        }
+
+        /* ========================================================================== TESTABILITY */
+
+        protected virtual FsContent CreateFsContent(string name, string metaFilePath, bool isDirectory,
+            FsContent parent, string defaultAttachmentPath = null)
+        {
+            return new FsContent(name, metaFilePath, isDirectory, parent, defaultAttachmentPath);
+        }
+
+        protected virtual bool IsDirectoryExists(string fsPath)
+        {
+            return Directory.Exists(fsPath);
+        }
+        protected virtual bool IsFileExists(string fsPath)
+        {
+            return File.Exists(fsPath);
+        }
+        protected virtual string[] GetFsDirectories(string fsDirectoryPath)
+        {
+            return Directory.GetDirectories(fsDirectoryPath);
+        }
+        protected virtual string[] GetFsFiles(string fsDirectoryPath)
+        {
+            return Directory.GetFiles(fsDirectoryPath);
         }
     }
 }
