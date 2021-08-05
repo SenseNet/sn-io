@@ -72,13 +72,13 @@ namespace SenseNet.IO.Implementations
 
         /* ======================================================= TESTABILITY */
 
-        protected virtual bool IsDirectoryExists(string fileDir)
+        protected virtual bool IsDirectoryExists(string fsPath)
         {
-            return Directory.Exists(fileDir);
+            return Directory.Exists(fsPath);
         }
-        protected virtual void CreateDirectory(string fileDir)
+        protected virtual void CreateDirectory(string fsPath)
         {
-            Directory.CreateDirectory(fileDir);
+            Directory.CreateDirectory(fsPath);
         }
         protected virtual TextWriter CreateTextWriter(string fsPath, bool append)
         {
