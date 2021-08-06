@@ -381,7 +381,7 @@ namespace SenseNet.IO.Tests
                     {
                         FieldName = "Binary",
                         FileName = "File1.txt",
-                        Stream = CreateStream("Text content")
+                        Stream = "Text content".ToStream()
                     }
                 }),
             });
@@ -435,7 +435,7 @@ namespace SenseNet.IO.Tests
             Assert.AreEqual(1, createdBinaryFiles.Count);
             Assert.AreEqual(@"Q:\FsRoot\Root\F1\File1.txt", createdBinaryFiles[0]);
             Assert.AreEqual(1, createdBinaries.Count);
-            Assert.AreEqual("Text content", GetStringFromStream(createdBinaries[0]));
+            Assert.AreEqual("Text content", createdBinaries[0].ReadAsString());
         }
         [TestMethod]
         public async Task FsWriter_Root_Folder_FileMoreAttachments()
@@ -454,9 +454,9 @@ namespace SenseNet.IO.Tests
                 new TestContent("F1", "F1", "Folder", new Dictionary<string, object>(), new Attachment[0]),
                 new TestContent("File1.txt", "F1/File1.txt", "File", new Dictionary<string, object>(), new []
                 {
-                    new Attachment {FieldName = "Binary", FileName = "File1.txt", Stream = CreateStream("Text content 1")},
-                    new Attachment {FieldName = "Bin2", FileName = "File1.txt.Bin2", Stream = CreateStream("Text content 2")},
-                    new Attachment {FieldName = "Bin3", FileName = "File1.txt.Bin3", Stream = CreateStream("Text content 3")},
+                    new Attachment {FieldName = "Binary", FileName = "File1.txt", Stream = "Text content 1".ToStream()},
+                    new Attachment {FieldName = "Bin2", FileName = "File1.txt.Bin2", Stream = "Text content 2".ToStream()},
+                    new Attachment {FieldName = "Bin3", FileName = "File1.txt.Bin3", Stream = "Text content 3".ToStream()},
                 }),
             });
             var writer = new FsWriterMock(
@@ -511,28 +511,9 @@ namespace SenseNet.IO.Tests
             Assert.AreEqual(@"Q:\FsRoot\Root\F1\File1.txt.Bin2", createdBinaryFiles[1]);
             Assert.AreEqual(@"Q:\FsRoot\Root\F1\File1.txt.Bin3", createdBinaryFiles[2]);
             Assert.AreEqual(3, createdBinaries.Count);
-            Assert.AreEqual("Text content 1", GetStringFromStream(createdBinaries[0]));
-            Assert.AreEqual("Text content 2", GetStringFromStream(createdBinaries[1]));
-            Assert.AreEqual("Text content 3", GetStringFromStream(createdBinaries[2]));
-        }
-
-        private Stream CreateStream(string textContent)
-        {
-            var stream = new MemoryStream();
-            var writer = new StreamWriter(stream);
-            writer.Write(textContent);
-            writer.Flush();
-            stream.Position = 0;
-            return stream;
-        }
-        private string GetStringFromStream(MemoryStream stream)
-        {
-            var buffer = stream.GetBuffer();
-            string result;
-            using (var reader = new StreamReader(new MemoryStream(buffer)))
-                result = reader.ReadToEnd().TrimEnd('\0');
-
-            return result;
+            Assert.AreEqual("Text content 1", createdBinaries[0].ReadAsString());
+            Assert.AreEqual("Text content 2", createdBinaries[1].ReadAsString());
+            Assert.AreEqual("Text content 3", createdBinaries[2].ReadAsString());
         }
     }
 }
