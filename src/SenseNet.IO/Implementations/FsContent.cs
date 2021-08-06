@@ -43,14 +43,18 @@ namespace SenseNet.IO.Implementations
             set => _path = value;
         }
 
+        private string _type;
         public string Type
         {
             get
             {
+                if (_type != null)
+                    return _type;
                 if (_metaFilePath == null)
                     return IsDirectory ? "Folder" : "File";
                 return (string)this["Type"];
             }
+            private set => _type = value;
         }
 
         public PermissionInfo Permissions { get; set; }
@@ -162,6 +166,7 @@ namespace SenseNet.IO.Implementations
                 .Deserialize(new JsonTextReader(CreateStreamReader(_metaFilePath)));
 
             var metaFile = (JObject)deserialized;
+            _type = metaFile["ContentType"].Value<string>();
             _fields = ((JObject)metaFile["Fields"]).ToObject<Dictionary<string, object>>();
             _fieldNames = _fields.Keys.ToArray();
             var permsObject = (JObject) metaFile["Permissions"];
