@@ -24,14 +24,15 @@ namespace SenseNet.IO.Implementations
         {
             var name = content.Name;
             var src = ToJson(content);
-            var contentPath = Path.Combine(_outputDirectory, ContainerPath ?? "", path) + ".Content";
+            var containerPath = (ContainerPath ?? "").TrimStart('/');
+            var contentPath = Path.Combine(_outputDirectory, containerPath, path) + ".Content";
             var fileDir = Path.GetDirectoryName(contentPath);
             if (fileDir == null)
                 throw new NotSupportedException("The fileDir cannot be null");
 
-            if (!Directory.Exists(fileDir))
-                Directory.CreateDirectory(fileDir);
-            using (var writer = new StreamWriter(contentPath, false))
+            if (!IsDirectoryExists(fileDir))
+                CreateDirectory(fileDir);
+            using (var writer = CreateTextWriter(contentPath, false))
                 await writer.WriteAsync(src);
 
             foreach (var attachment in await content.GetAttachmentsAsync())
@@ -40,7 +41,7 @@ namespace SenseNet.IO.Implementations
 
                 var inStream = attachment.Stream;
                 if (inStream.Length > 0)
-                    using (var outStream = new FileStream(attachmentPath, FileMode.OpenOrCreate))
+                    using (var outStream = CreateBinaryStream(attachmentPath, FileMode.OpenOrCreate))
                         await inStream.CopyToAsync(outStream, cancel);
             }
         }
@@ -67,6 +68,25 @@ namespace SenseNet.IO.Implementations
             }).Serialize(writer, model);
 
             return writer.GetStringBuilder().ToString();
+        }
+
+        /* ======================================================= TESTABILITY */
+
+        protected virtual bool IsDirectoryExists(string fsPath)
+        {
+            return Directory.Exists(fsPath);
+        }
+        protected virtual void CreateDirectory(string fsPath)
+        {
+            Directory.CreateDirectory(fsPath);
+        }
+        protected virtual TextWriter CreateTextWriter(string fsPath, bool append)
+        {
+            return new StreamWriter(fsPath, append);
+        }
+        protected virtual Stream CreateBinaryStream(string fsPath, FileMode fileMode)
+        {
+            return new FileStream(fsPath, fileMode);
         }
     }
 }

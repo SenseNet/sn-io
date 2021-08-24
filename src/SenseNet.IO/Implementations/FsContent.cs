@@ -24,7 +24,7 @@ namespace SenseNet.IO.Implementations
             set => _fields[fieldName] = value;
         }
 
-        public string Name { get; }
+        public string Name { get; set; }
 
         private string _path;
         public string Path
@@ -43,14 +43,18 @@ namespace SenseNet.IO.Implementations
             set => _path = value;
         }
 
+        private string _type;
         public string Type
         {
             get
             {
+                if (_type != null)
+                    return _type;
                 if (_metaFilePath == null)
                     return IsDirectory ? "Folder" : "File";
                 return (string)this["Type"];
             }
+            private set => _type = value;
         }
 
         public PermissionInfo Permissions { get; set; }
@@ -67,7 +71,7 @@ namespace SenseNet.IO.Implementations
                         FieldName = "Binary",
                         FileName = System.IO.Path.GetFileName(_defaultAttachmentPath),
                         // ReSharper disable once AssignNullToNotNullAttribute
-                        Stream = new FileStream(_defaultAttachmentPath, FileMode.Open)
+                        Stream = CreateFileStream(_defaultAttachmentPath, FileMode.Open)
                     }
                 });
             }
@@ -80,13 +84,13 @@ namespace SenseNet.IO.Implementations
             foreach (var attachmentItem in _attachmentNames)
             {
                 var attachmentPath = System.IO.Path.Combine(directory, attachmentItem.Value);
-                if (File.Exists(attachmentPath))
+                if (IsFileExists(attachmentPath))
                 {
                     attachments.Add(new Attachment
                     {
                         FieldName = attachmentItem.Key,
                         FileName = attachmentItem.Value,
-                        Stream = new FileStream(attachmentPath, FileMode.Open)
+                        Stream = CreateFileStream(attachmentPath, FileMode.Open)
                     });
                 }
             }
@@ -129,7 +133,7 @@ namespace SenseNet.IO.Implementations
                 return EmptyAttachmentNames;
 
             var deserialized = JsonSerializer.CreateDefault()
-                .Deserialize(new JsonTextReader(new StreamReader(_metaFilePath)));
+                .Deserialize(new JsonTextReader(CreateStreamReader(_metaFilePath)));
 
             var names = new Dictionary<string, string>();
             var metaFile = (JObject) deserialized;
@@ -159,14 +163,30 @@ namespace SenseNet.IO.Implementations
             }
 
             var deserialized = JsonSerializer.CreateDefault()
-                .Deserialize(new JsonTextReader(new StreamReader(_metaFilePath)));
+                .Deserialize(new JsonTextReader(CreateStreamReader(_metaFilePath)));
 
             var metaFile = (JObject)deserialized;
+            _type = metaFile["ContentType"].Value<string>();
             _fields = ((JObject)metaFile["Fields"]).ToObject<Dictionary<string, object>>();
             _fieldNames = _fields.Keys.ToArray();
             var permsObject = (JObject) metaFile["Permissions"];
             if(permsObject != null)
                 Permissions = permsObject.ToObject<PermissionInfo>();
+        }
+
+        /* ========================================================================== TESTABILITY */
+
+        protected virtual bool IsFileExists(string fsPath)
+        {
+            return File.Exists(fsPath);
+        }
+        protected virtual TextReader CreateStreamReader(string metaFilePath)
+        {
+            return new StreamReader(metaFilePath);
+        }
+        protected virtual Stream CreateFileStream(string fsPath, FileMode fileMode)
+        {
+            return new FileStream(fsPath, fileMode);
         }
     }
 }
