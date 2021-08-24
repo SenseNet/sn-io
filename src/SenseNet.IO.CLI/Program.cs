@@ -125,17 +125,26 @@ namespace SenseNet.IO.CLI
             //var writer = new FsWriter(@"D:\dev\_sn-io-test\FsWriter", "/Root", "XXX");
 
             var flow = new ContentFlow(reader, writer);
-            var progress = new Progress(percent => { Console.Write("Transferring... {0,5:F1}%\r", percent); });
+            //var progress = new Progress(state =>
+            //{
+            //    Console.Write("Transferring... {0,5:F1}%\r", state.Percent);
+            //});
+            var progress = new Progress(state =>
+            {
+                Console.Write("                             \r");
+                Console.WriteLine(state.Path);
+                Console.Write("Transferring... {0,5:F1}%\r", state.Percent);
+            });
             await flow.TransferAsync(progress);
             Console.WriteLine();
             Console.WriteLine("Done.");
         }
     }
 
-    class Progress : IProgress<double>
+    class Progress : IProgress<(string Path, double Percent)>
     {
-        private readonly Action<double> _callback;
-        public Progress(Action<double> callback) { _callback = callback; }
-        public void Report(double value) { _callback(value); }
+        private readonly Action<(string Path, double Percent)> _callback;
+        public Progress(Action<(string Path, double Percent)> callback) { _callback = callback; }
+        public void Report((string Path, double Percent) value) { _callback(value); }
     }
 }

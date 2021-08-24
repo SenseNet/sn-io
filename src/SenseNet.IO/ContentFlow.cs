@@ -15,7 +15,7 @@ namespace SenseNet.IO
             Writer = writer;
         }
 
-        public async Task TransferAsync(IProgress<double> progress = null, CancellationToken cancel = default)
+        public async Task TransferAsync(IProgress<(string Path, double Percent)> progress = null, CancellationToken cancel = default)
         {
             var count = 0;
 
@@ -25,22 +25,22 @@ namespace SenseNet.IO
                 if (Writer.RootName != null)
                     Rename(Reader.Content, rootName);
                 await Writer.WriteAsync(ContentPath.Combine(rootName, Reader.RelativePath), Reader.Content, cancel);
-                Progress(ref count, progress);
+                Progress(Reader.RelativePath, ref count, progress);
 
                 while (await Reader.ReadAsync(cancel))
                 {
                     await Writer.WriteAsync(ContentPath.Combine(rootName, Reader.RelativePath), Reader.Content, cancel);
-                    Progress(ref count, progress);
+                    Progress(Reader.RelativePath, ref count, progress);
                 }
             }
         }
 
-        private void Progress(ref int count, IProgress<double> progress = null)
+        private void Progress(string path, ref int count, IProgress<(string Path, double Percent)> progress = null)
         {
             ++count;
             var totalCount = Reader.EstimatedCount;
             if (totalCount > 0)
-                progress?.Report(count * 100.0 / totalCount);
+                progress?.Report((path, count * 100.0 / totalCount));
         }
 
         private void Rename(IContent content, string newName)
