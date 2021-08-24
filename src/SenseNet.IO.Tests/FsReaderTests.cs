@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Reflection.Metadata.Ecma335;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json.Linq;
@@ -14,6 +14,7 @@ namespace SenseNet.IO.Tests
     public class FsReaderTests
     {
         #region Nested classes
+        [DebuggerDisplay("{" + nameof(Path) + "}")]
         private class FsContentMock : FsContent
         {
             private readonly Func<string, bool> _isFileExists;
@@ -101,7 +102,7 @@ namespace SenseNet.IO.Tests
         #endregion
 
         [TestMethod]
-        public async Task FsReader_Read_Root()
+        public async Task FsReader_Read_RootFileOnly()
         {
             var directories = new[]
             {
@@ -141,6 +142,51 @@ namespace SenseNet.IO.Tests
             Assert.AreEqual(true, content.Permissions.IsInherited);
             Assert.AreEqual(1, content.Permissions.Entries.Length);
         }
+        [TestMethod]
+        public async Task FsReader_Read_Root()
+        {
+            var directories = new[]
+            {
+                @"Q:\Import",
+                @"Q:\Import\Root",
+            };
+            var files = new Dictionary<string, string>
+            {
+                {@"Q:\Import\Root.Content", "{'ContentType':'PortalRoot','ContentName':'Root','Fields':{},'Permissions':{" +
+                                            "'IsInherited':true,'Entries':[{'Identity':'/Root/IMS/BuiltIn/Portal/Everyone'," +
+                                            "'LocalOnly':true,'Permissions':{'See':'allow'}}]}}"}
+            };
+
+            var reader = new FsReaderMock(@"Q:\Import", "/Root",
+                isFileExists: fsPath => files.ContainsKey(fsPath),
+                isDirectoryExists: fsPath => directories.Contains(fsPath),
+                getFsDirectories: fsPath => GetDirectories(fsPath, directories),
+                getFsFiles: fsPath => { if (fsPath == @"Q:\Import\Root") return new string[0]; throw new Exception("##"); },
+                fsContentIsFileExists: null,
+                fsContentCreateStreamReader: fsPath => new StringReader(files[fsPath]),
+                fsContentCreateFileStream: null);
+
+            var readings = new Dictionary<string, IContent>();
+
+            // ACTION
+            while (await reader.ReadAsync())
+                readings.Add(reader.RelativePath, reader.Content);
+
+            // ASSERT
+            var contents = readings.ToArray();
+            Assert.AreEqual(1, contents.Length);
+            Assert.AreEqual("", contents[0].Key);
+            var content = contents[0].Value;
+            Assert.AreEqual("Root", content.Name);
+            Assert.AreEqual("PortalRoot", content.Type);
+            Assert.AreEqual(0, content.FieldNames.Length);
+            Assert.AreEqual(0, (await content.GetAttachmentsAsync()).Length);
+            Assert.AreEqual(true, content.Permissions.IsInherited);
+            Assert.AreEqual(1, content.Permissions.Entries.Length);
+        }
+
+        //UNDONE: Missing test: ContentName meta-field overrides the name of the filesystem file/folder
+
         [TestMethod]
         public async Task FsReader_Read_Root_TypeFieldIsIrrelevant()
         {
@@ -366,6 +412,160 @@ namespace SenseNet.IO.Tests
             Assert.AreEqual("Bin2", attachments[1].FieldName);
             Assert.AreEqual("F1.txt.Bin2", attachments[1].FileName);
             Assert.AreEqual("Text content 2.", ((MemoryStream)attachments[1].Stream).ReadAsString());
+        }
+
+        /* ============================================================================ TREE */
+
+        [TestMethod]
+        public async Task FsReader_ReadTree_Root()
+        {
+            var directories = new[]
+            {
+                @"Q:",
+                @"Q:\Import",
+                @"Q:\Import\Root",
+                @"Q:\Import\Root\System\F2",
+                @"Q:\Import\Root\System\F1",
+                @"Q:\Import\Root\Content",
+                @"Q:\Import\Root\System\Schema\Aspects",
+                @"Q:\Import\Root\System\Schema\ContentTypes\GenericContent",
+                @"Q:\Import\Root\System\Schema\ContentTypes\GenericContent\Folder",
+                @"Q:\Import\Root\System\Schema\ContentTypes",
+                @"Q:\Import\Root\System\Schema",
+                @"Q:\Import\Root\System",
+            };
+            var files = new Dictionary<string, string>
+            {
+                {@"Q:\Import\Root\F2.Content", "{'ContentType':'Folder','ContentName':'F2','Fields':{}}"},
+                {@"Q:\Import\Root\System\F3.Content", "{'ContentType':'Folder','ContentName':'F3','Fields':{}}"},
+                {@"Q:\Import\Root.Content", "{'ContentType':'PortalRoot','ContentName':'Root','Fields':{}}"},
+                {@"Q:\Import\Root\F1.Content", "{'ContentType':'Folder','ContentName':'F1','Fields':{}}"},
+                {@"Q:\Import\Root\System\Schema\ContentTypes.Content", "{'ContentType':'SystemFolder','ContentName':'ContentTypes','Fields':{}}"},
+                {@"Q:\Import\Root\System\Schema.Content", "{'ContentType':'SystemFolder','ContentName':'Schema','Fields':{}}"},
+                {@"Q:\Import\Root\System.Content", "{'ContentType':'SystemFolder','ContentName':'System','Fields':{}}"},
+                {@"Q:\Import\Root\System\Schema\ContentTypes\GenericContent.Content", "{'ContentType':'ContentType','ContentName':'GenericContent','Fields':{}}"},
+                {@"Q:\Import\Root\System\Schema\Aspects\Aspect1.Content", "{'ContentType':'Aspect','ContentName':'Aspect1','Fields':{}}"},
+                {@"Q:\Import\Root\System\Schema\ContentTypes\GenericContent\Folder.Content", "{'ContentType':'ContentType','ContentName':'Folder','Fields':{}}"},
+                {@"Q:\Import\Root\System\Schema\ContentTypes\GenericContent\File.Content", "{'ContentType':'ContentType','ContentName':'File','Fields':{}}"},
+            };
+
+            var reader = new FsReaderMock(@"Q:\Import", "/Root",
+                isFileExists: fsPath => files.ContainsKey(fsPath),
+                isDirectoryExists: fsPath => directories.Contains(fsPath),
+                getFsDirectories: fsPath => GetDirectories(fsPath, directories),
+                getFsFiles: fsPath => GetFiles(fsPath, files.Keys.ToArray()),
+                fsContentIsFileExists: null,
+                fsContentCreateStreamReader: fsPath => new StringReader(files[fsPath]),
+                fsContentCreateFileStream: null);
+
+            var readings = new Dictionary<string, IContent>();
+            var actualRelativePaths = new List<string>();
+            // ACTION
+
+            while (await reader.ReadAsync())
+            {
+                actualRelativePaths.Add(reader.RelativePath);
+                readings.Add(reader.RelativePath, reader.Content);
+            }
+
+            // ASSERT
+            var contents = readings.ToArray();
+            Assert.AreEqual(15, contents.Length);
+            var expectedRelativePaths = new []
+            {
+                "",
+                "System",
+                "System/Schema",
+                "System/Schema/ContentTypes",
+                "System/Schema/ContentTypes/GenericContent",
+                "System/Schema/ContentTypes/GenericContent/Folder",
+                "System/Schema/ContentTypes/GenericContent/File",
+                "System/Schema/Aspects",
+                "System/Schema/Aspects/Aspect1",
+                "Content",
+                "System/F1",
+                "System/F2",
+                "System/F3",
+                "F1", // "F1" follows the "System" because "F1" is only a metafile.
+                "F2",
+            };
+            AssertSequencesAreEqual(expectedRelativePaths, actualRelativePaths);
+
+        }
+        [TestMethod]
+        public async Task FsReader_ReadTree_RootSystemSchema()
+        {
+            var directories = new[]
+            {
+                @"Q:",
+                @"Q:\Import",
+                @"Q:\Import\Root",
+                @"Q:\Import\Root\System\F2",
+                @"Q:\Import\Root\System\F1",
+                @"Q:\Import\Root\Content",
+                @"Q:\Import\Root\System\Schema\Aspects",
+                @"Q:\Import\Root\System\Schema\ContentTypes\GenericContent",
+                @"Q:\Import\Root\System\Schema\ContentTypes\GenericContent\Folder",
+                @"Q:\Import\Root\System\Schema\ContentTypes",
+                @"Q:\Import\Root\System\Schema",
+                @"Q:\Import\Root\System",
+            };
+            var files = new Dictionary<string, string>
+            {
+                {@"Q:\Import\Root\F2.Content", "{'ContentType':'Folder','ContentName':'F2','Fields':{}}"},
+                {@"Q:\Import\Root\System\F3.Content", "{'ContentType':'Folder','ContentName':'F3','Fields':{}}"},
+                {@"Q:\Import\Root.Content", "{'ContentType':'PortalRoot','ContentName':'Root','Fields':{}}"},
+                {@"Q:\Import\Root\F1.Content", "{'ContentType':'Folder','ContentName':'F1','Fields':{}}"},
+                {@"Q:\Import\Root\System\Schema\ContentTypes.Content", "{'ContentType':'SystemFolder','ContentName':'ContentTypes','Fields':{}}"},
+                {@"Q:\Import\Root\System\Schema.Content", "{'ContentType':'SystemFolder','ContentName':'Schema','Fields':{}}"},
+                {@"Q:\Import\Root\System.Content", "{'ContentType':'SystemFolder','ContentName':'System','Fields':{}}"},
+                {@"Q:\Import\Root\System\Schema\Aspects\Aspect1.Content", "{'ContentType':'Aspect','ContentName':'Aspect1','Fields':{}}"},
+                {@"Q:\Import\Root\System\Schema\ContentTypes\GenericContent.Content", "{'ContentType':'ContentType','ContentName':'GenericContent','Fields':{}}"},
+                {@"Q:\Import\Root\System\Schema\ContentTypes\GenericContent\Folder.Content", "{'ContentType':'ContentType','ContentName':'Folder','Fields':{}}"},
+                {@"Q:\Import\Root\System\Schema\ContentTypes\GenericContent\File.Content", "{'ContentType':'ContentType','ContentName':'File','Fields':{}}"},
+            };
+
+            var reader = new FsReaderMock(@"Q:\Import", "/Root/System/Schema",
+                isFileExists: fsPath => files.ContainsKey(fsPath),
+                isDirectoryExists: fsPath => directories.Contains(fsPath),
+                getFsDirectories: fsPath => GetDirectories(fsPath, directories),
+                getFsFiles: fsPath => GetFiles(fsPath, files.Keys.ToArray()),
+                fsContentIsFileExists: null,
+                fsContentCreateStreamReader: fsPath => new StringReader(files[fsPath]),
+                fsContentCreateFileStream: null);
+
+            var readings = new Dictionary<string, IContent>();
+            var actualRelativePaths = new List<string>();
+            // ACTION
+
+            while (await reader.ReadAsync())
+            {
+                actualRelativePaths.Add(reader.RelativePath);
+                readings.Add(reader.RelativePath, reader.Content);
+            }
+
+            // ASSERT
+            var contents = readings.ToArray();
+            Assert.AreEqual(7, contents.Length);
+            var expectedRelativePaths = new []
+            {
+                "",
+                "ContentTypes",
+                "ContentTypes/GenericContent",
+                "ContentTypes/GenericContent/Folder",
+                "ContentTypes/GenericContent/File",
+                "Aspects",
+                "Aspects/Aspect1",
+            };
+            AssertSequencesAreEqual(expectedRelativePaths, actualRelativePaths);
+
+        }
+
+        private void AssertSequencesAreEqual(IEnumerable<object> expected, IEnumerable<object> actual)
+        {
+            var exp = string.Join(", ", expected.Select(x => x.ToString()));
+            var act = string.Join(", ", actual.Select(x => x.ToString()));
+            Assert.AreEqual(exp, act);
         }
 
         /* ============================================================================ SELF TESTS */
