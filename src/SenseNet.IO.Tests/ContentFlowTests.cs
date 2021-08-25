@@ -184,13 +184,13 @@ namespace SenseNet.IO.Tests
                 "/Root/Node-01/Node-17/Node-20/Node-22",
             });
         }
-        private class TestProgress : IProgress<double>
+        private class TestProgress : IProgress<(string Path, double Percent)>
         {
             public List<double> Log { get; } = new List<double>();
 
-            public void Report(double value)
+            public void Report((string Path, double Percent) value)
             {
-                Log.Add(value);
+                Log.Add(value.Percent);
             }
         }
     }

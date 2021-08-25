@@ -17,7 +17,6 @@ namespace SenseNet.IO.Tests.Implementations
         public IContent Content { get; private set; }
         public string RelativePath { get; private set; }
 
-
         public TestContentReader(string rootPath, Dictionary<string, ContentNode> tree)
         {
             _tree = tree;
@@ -31,7 +30,10 @@ namespace SenseNet.IO.Tests.Implementations
             _sortedPathIndex = 0;
         }
 
-        public Task<bool> ReadAsync(CancellationToken cancel = default)
+        public Task<bool> ReadContentTypesAsync(CancellationToken cancel = default) { throw new System.NotImplementedException(); }
+        public Task<bool> ReadSettingsAsync(CancellationToken cancel = default) { throw new System.NotImplementedException(); }
+        public Task<bool> ReadAspectsAsync(CancellationToken cancel = default) { throw new System.NotImplementedException(); }
+        public Task<bool> ReadAllAsync(CancellationToken cancel = default)
         {
             if (_sortedPathIndex >= _sortedPaths.Length)
                 return Task.FromResult(false);

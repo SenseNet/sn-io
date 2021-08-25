@@ -29,10 +29,27 @@ namespace SenseNet.IO.Implementations
             RootPath = rootPath;
         }
 
+        public Task<bool> ReadContentTypesAsync(CancellationToken cancel = default)
+        {
+            //UNDONE: Implement ReadContentTypesAsync()
+            throw new NotImplementedException();
+        }
+        public Task<bool> ReadSettingsAsync(CancellationToken cancel = default)
+        {
+            //UNDONE: Implement ReadSettingsAsync()
+            throw new NotImplementedException();
+        }
+        public Task<bool> ReadAspectsAsync(CancellationToken cancel = default)
+        {
+            //UNDONE: Implement ReadAspectsAsync()
+            throw new NotImplementedException();
+        }
         private int _contentIndex;
         private List<FsContent> _contents;
-        public Task<bool> ReadAsync(CancellationToken cancel = default)
+        public Task<bool> ReadAllAsync(CancellationToken cancel = default)
         {
+            //UNDONE: Implement ReadAllAsync()
+            throw new NotImplementedException();
             if (_contents == null)
             {
                 var contents = new List<FsContent>();

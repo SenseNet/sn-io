@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -30,10 +29,28 @@ namespace SenseNet.IO.Tests.Implementations
             _tree = tree;
         }
 
+        public Task<bool> ReadContentTypesAsync(CancellationToken cancel = default)
+        {
+            //UNDONE: Implement ReadContentTypesAsync methods well.
+            return Task.FromResult(false);
+        }
+        public Task<bool> ReadSettingsAsync(CancellationToken cancel = default)
+        {
+            //UNDONE: Implement ReadSettingsAsync methods well.
+            return Task.FromResult(false);
+        }
+        public Task<bool> ReadAspectsAsync(CancellationToken cancel = default)
+        {
+            //UNDONE: Implement ReadAspectsAsync methods well.
+            return Task.FromResult(false);
+        }
+
         private ContentNode[] _currentBlock;
         private int _currentBlockIndex;
-        public Task<bool> ReadAsync(CancellationToken cancel = default)
+        public Task<bool> ReadAllAsync(CancellationToken cancel = default)
         {
+            //UNDONE: Implement ReadAllAsync methods well.
+
             //TODO: Raise performance: read the next block (background)
             if (_currentBlock == null || _currentBlockIndex >= _currentBlock.Length)
             {

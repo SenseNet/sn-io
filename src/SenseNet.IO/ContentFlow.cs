@@ -17,17 +17,26 @@ namespace SenseNet.IO
 
         public async Task TransferAsync(IProgress<(string Path, double Percent)> progress = null, CancellationToken cancel = default)
         {
+            if (Reader.RootPath != "/Root")
+            {
+                int q = 1;
+            }
+            await TransferAllAsync(progress, cancel);
+        }
+
+        private async Task TransferAllAsync(IProgress<(string Path, double Percent)> progress = null, CancellationToken cancel = default)
+        {
             var count = 0;
 
             var rootName = Writer.RootName ?? ContentPath.GetName(Reader.RootPath);
-            if (await Reader.ReadAsync(cancel))
+            if (await Reader.ReadAllAsync(cancel))
             {
                 if (Writer.RootName != null)
                     Rename(Reader.Content, rootName);
                 await Writer.WriteAsync(ContentPath.Combine(rootName, Reader.RelativePath), Reader.Content, cancel);
                 Progress(Reader.RelativePath, ref count, progress);
 
-                while (await Reader.ReadAsync(cancel))
+                while (await Reader.ReadAllAsync(cancel))
                 {
                     await Writer.WriteAsync(ContentPath.Combine(rootName, Reader.RelativePath), Reader.Content, cancel);
                     Progress(Reader.RelativePath, ref count, progress);

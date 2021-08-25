@@ -127,7 +127,7 @@ namespace SenseNet.IO.Tests
             var readings = new Dictionary<string, IContent>();
 
             // ACTION
-            while (await reader.ReadAsync())
+            while (await reader.ReadAllAsync())
                 readings.Add(reader.RelativePath, reader.Content);
 
             // ASSERT
@@ -169,7 +169,7 @@ namespace SenseNet.IO.Tests
             var readings = new Dictionary<string, IContent>();
 
             // ACTION
-            while (await reader.ReadAsync())
+            while (await reader.ReadAllAsync())
                 readings.Add(reader.RelativePath, reader.Content);
 
             // ASSERT
@@ -215,7 +215,7 @@ namespace SenseNet.IO.Tests
             var readings = new Dictionary<string, IContent>();
 
             // ACTION
-            while (await reader.ReadAsync())
+            while (await reader.ReadAllAsync())
                 readings.Add(reader.RelativePath, reader.Content);
 
             // ASSERT
@@ -260,7 +260,7 @@ namespace SenseNet.IO.Tests
             var readings = new Dictionary<string, IContent>();
 
             // ACTION
-            while (await reader.ReadAsync())
+            while (await reader.ReadAllAsync())
                 readings.Add(reader.RelativePath, reader.Content);
 
             // ASSERT
@@ -324,7 +324,7 @@ namespace SenseNet.IO.Tests
             var readings = new Dictionary<string, IContent>();
 
             // ACTION
-            while (await reader.ReadAsync())
+            while (await reader.ReadAllAsync())
                 readings.Add(reader.RelativePath, reader.Content);
 
             // ASSERT
@@ -385,7 +385,7 @@ namespace SenseNet.IO.Tests
             var readings = new Dictionary<string, IContent>();
 
             // ACTION
-            while (await reader.ReadAsync())
+            while (await reader.ReadAllAsync())
                 readings.Add(reader.RelativePath, reader.Content);
 
             // ASSERT
@@ -462,7 +462,7 @@ namespace SenseNet.IO.Tests
             var actualRelativePaths = new List<string>();
             // ACTION
 
-            while (await reader.ReadAsync())
+            while (await reader.ReadAllAsync())
             {
                 actualRelativePaths.Add(reader.RelativePath);
                 readings.Add(reader.RelativePath, reader.Content);
@@ -538,7 +538,7 @@ namespace SenseNet.IO.Tests
             var actualRelativePaths = new List<string>();
             // ACTION
 
-            while (await reader.ReadAsync())
+            while (await reader.ReadAllAsync())
             {
                 actualRelativePaths.Add(reader.RelativePath);
                 readings.Add(reader.RelativePath, reader.Content);

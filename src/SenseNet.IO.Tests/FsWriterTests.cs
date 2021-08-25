@@ -99,16 +99,17 @@ namespace SenseNet.IO.Tests
                 _contentsToRead = contentsToRead;
             }
 
-            public Task<bool> ReadAsync(CancellationToken cancel = default)
+            public Task<bool> ReadContentTypesAsync(CancellationToken cancel = default) { throw new NotImplementedException(); }
+            public Task<bool> ReadSettingsAsync(CancellationToken cancel = default) { throw new NotImplementedException(); }
+            public Task<bool> ReadAspectsAsync(CancellationToken cancel = default) { throw new NotImplementedException(); }
+            public Task<bool> ReadAllAsync(CancellationToken cancel = default)
             {
                 if (_contentIndex < _contentsToRead.Length)
                 {
                     Content = _contentsToRead[_contentIndex++];
                     RelativePath = Content.Path;
-
                     return Task.FromResult(true);
                 }
-
                 return Task.FromResult(false);
             }
         }

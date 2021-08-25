@@ -29,9 +29,24 @@ namespace SenseNet.IO.Implementations
             _blockSize = blockSize ?? 10;
         }
 
+        public Task<bool> ReadContentTypesAsync(CancellationToken cancel = default)
+        {
+            //UNDONE: Implement ReadContentTypesAsync()
+            throw new NotImplementedException();
+        }
+        public Task<bool> ReadSettingsAsync(CancellationToken cancel = default)
+        {
+            //UNDONE: Implement ReadSettingsAsync()
+            throw new NotImplementedException();
+        }
+        public Task<bool> ReadAspectsAsync(CancellationToken cancel = default)
+        {
+            //UNDONE: Implement ReadAspectsAsync()
+            throw new NotImplementedException();
+        }
         private IContent[] _currentBlock;
         private int _currentBlockIndex;
-        public async Task<bool> ReadAsync(CancellationToken cancel = default)
+        public async Task<bool> ReadAllAsync(CancellationToken cancel = default)
         {
             if (Content == null)
             {
@@ -67,7 +82,6 @@ namespace SenseNet.IO.Implementations
             var result = await RESTCaller.GetResponseStringAsync(RootPath, "GetContentCountInTree");
             return int.TryParse(result, out var count) ? count : default;
         }
-
         private async Task<IContent[]> QueryBlockAsync(int skip, int top)
         {
             var query = $"InTree:'{RootPath}' .SORT:Path .TOP:{top} .SKIP:{skip} .AUTOFILTERS:OFF";
