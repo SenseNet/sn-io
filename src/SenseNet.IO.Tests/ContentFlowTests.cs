@@ -10,6 +10,8 @@ namespace SenseNet.IO.Tests
     [TestClass]
     public class ContentFlowTests : TestBase
     {
+        /* ============================================================================ SIMPLE TESTS */
+
         [TestMethod]
         public async Task Flow_1()
         {
@@ -41,7 +43,7 @@ namespace SenseNet.IO.Tests
         [TestMethod]
         public async Task Flow_SubTree()
         {
-            var sourceTree = CreateDefaultTree();
+            var sourceTree = CreateSimpleTree();
             var targetTree = CreateTree(new[]
             {
                 "/Root",
@@ -62,7 +64,7 @@ namespace SenseNet.IO.Tests
         [TestMethod]
         public async Task Flow_2()
         {
-            var sourceTree = CreateDefaultTree();
+            var sourceTree = CreateSimpleTree();
             var targetTree = new Dictionary<string, ContentNode>();
 
             // ACTION
@@ -107,7 +109,7 @@ namespace SenseNet.IO.Tests
         [TestMethod]
         public async Task Flow_SubTreeToAnother()
         {
-            var sourceTree = CreateDefaultTree();
+            var sourceTree = CreateSimpleTree();
             var targetTree = CreateTree(new[]
             {
                 "/Root",
@@ -132,7 +134,7 @@ namespace SenseNet.IO.Tests
         [TestMethod]
         public async Task Flow_SubTreeToRenamed()
         {
-            var sourceTree = CreateDefaultTree();
+            var sourceTree = CreateSimpleTree();
             var targetTree = CreateTree(new[]
             {
                 "/Root",
@@ -155,7 +157,169 @@ namespace SenseNet.IO.Tests
             Assert.AreEqual("/Root/Node-99/Renamed/Node-05", actualPaths[4]);
         }
 
-        private Dictionary<string, ContentNode> CreateDefaultTree()
+        /* ============================================================================ 4-PASS TESTS */
+
+        [TestMethod]
+        public async Task Flow_4_Root()
+        {
+            var sourceTree = Create4PassTree();
+            var targetTree = new Dictionary<string, ContentNode>();
+
+            // ACTION
+            var flow = new ContentFlow(
+                new TestCQReader("/Root", 4, sourceTree),
+                new TestContentWriter(targetTree));
+            var progress = new TestProgress();
+            await flow.TransferAsync(progress);
+
+            // ASSERT
+            var actual = string.Join("\r\n", progress.Paths);
+            Assert.AreEqual(sourceTree.Count, targetTree.Count);
+            var expected = @"System/Schema/ContentTypes/ContentType-1
+System/Schema/ContentTypes/ContentType-1/ContentType-3
+System/Schema/ContentTypes/ContentType-1/ContentType-4
+System/Schema/ContentTypes/ContentType-1/ContentType-5
+System/Schema/ContentTypes/ContentType-1/ContentType-5/ContentType-6
+System/Schema/ContentTypes/ContentType-2
+System/Settings/Settings-1.settings
+System/Settings/Settings-2.settings
+System/Settings/Settings-3.settings
+System/Schema/Aspects/Aspect-1
+System/Schema/Aspects/Aspect-2
+
+(apps)
+Content
+Content/Workspace-1
+Content/Workspace-1/DocLib-1
+Content/Workspace-1/DocLib-1/Folder-1
+Content/Workspace-1/DocLib-1/Folder-1/File-1.xlsx
+Content/Workspace-1/DocLib-1/Folder-1/File-2.docx
+Content/Workspace-1/DocLib-1/Folder-2
+Content/Workspace-2
+IMS
+System
+System/Schema
+System/Schema/Aspects
+System/Schema/ContentTypes
+System/Settings
+";
+            Assert.AreEqual(expected.TrimEnd(), actual);
+        }
+        [TestMethod]
+        public async Task Flow_4_Root_Content()
+        {
+            var sourceTree = Create4PassTree();
+            var targetTree = new Dictionary<string, ContentNode>();
+
+            // ACTION
+            var flow = new ContentFlow(
+                new TestCQReader("/Root/Content", 4, sourceTree),
+                new TestContentWriter(targetTree));
+            var progress = new TestProgress();
+            await flow.TransferAsync(progress);
+
+            // ASSERT
+            Assert.AreEqual(8, targetTree.Count);
+            var expected = @"
+Workspace-1
+Workspace-1/DocLib-1
+Workspace-1/DocLib-1/Folder-1
+Workspace-1/DocLib-1/Folder-1/File-1.xlsx
+Workspace-1/DocLib-1/Folder-1/File-2.docx
+Workspace-1/DocLib-1/Folder-2
+Workspace-2
+";
+            var actual = string.Join("\r\n", progress.Paths);
+            Assert.AreEqual(expected.TrimEnd(), actual);
+        }
+        [TestMethod]
+        public async Task Flow_4_Root_System()
+        {
+            var sourceTree = Create4PassTree();
+            var targetTree = new Dictionary<string, ContentNode>();
+
+            // ACTION
+            var flow = new ContentFlow(
+                new TestCQReader("/Root/System", 4, sourceTree),
+                new TestContentWriter(targetTree));
+            var progress = new TestProgress();
+            await flow.TransferAsync(progress);
+
+            // ASSERT
+            var actual = string.Join("\r\n", progress.Paths);
+            //Assert.AreEqual(sourceTree.Count, targetTree.Count);
+            var expected = @"Schema/ContentTypes/ContentType-1
+Schema/ContentTypes/ContentType-1/ContentType-3
+Schema/ContentTypes/ContentType-1/ContentType-4
+Schema/ContentTypes/ContentType-1/ContentType-5
+Schema/ContentTypes/ContentType-1/ContentType-5/ContentType-6
+Schema/ContentTypes/ContentType-2
+Settings/Settings-1.settings
+Settings/Settings-2.settings
+Settings/Settings-3.settings
+Schema/Aspects/Aspect-1
+Schema/Aspects/Aspect-2
+
+Schema
+Schema/Aspects
+Schema/ContentTypes
+Settings
+";
+            Assert.AreEqual(expected.TrimEnd(), actual);
+        }
+        [TestMethod]
+        public async Task Flow_4_Root_System_Schema()
+        {
+            var sourceTree = Create4PassTree();
+            var targetTree = new Dictionary<string, ContentNode>();
+
+            // ACTION
+            var flow = new ContentFlow(
+                new TestCQReader("/Root/System/Schema", 4, sourceTree),
+                new TestContentWriter(targetTree));
+            var progress = new TestProgress();
+            await flow.TransferAsync(progress);
+
+            // ASSERT
+            var actual = string.Join("\r\n", progress.Paths);
+            //Assert.AreEqual(sourceTree.Count, targetTree.Count);
+            var expected = @"ContentTypes/ContentType-1
+ContentTypes/ContentType-1/ContentType-3
+ContentTypes/ContentType-1/ContentType-4
+ContentTypes/ContentType-1/ContentType-5
+ContentTypes/ContentType-1/ContentType-5/ContentType-6
+ContentTypes/ContentType-2
+Aspects/Aspect-1
+Aspects/Aspect-2
+
+Aspects
+ContentTypes
+";
+            Assert.AreEqual(expected.TrimEnd(), actual);
+        }
+        [TestMethod]
+        public async Task Flow_4_Root_System_Settings()
+        {
+            var sourceTree = Create4PassTree();
+            var targetTree = new Dictionary<string, ContentNode>();
+
+            // ACTION
+            var flow = new ContentFlow(
+                new TestCQReader("/Root/System/Settings", 4, sourceTree),
+                new TestContentWriter(targetTree));
+            var progress = new TestProgress();
+            await flow.TransferAsync(progress);
+
+            // ASSERT
+            var actual = string.Join(",", progress.Paths);
+            //Assert.AreEqual(sourceTree.Count, targetTree.Count);
+            var expected = @"Settings-1.settings,Settings-2.settings,Settings-3.settings,";
+            Assert.AreEqual(expected.TrimEnd(), actual);
+        }
+
+        /* ============================================================================ TOOLS */
+
+        private Dictionary<string, ContentNode> CreateSimpleTree()
         {
             return CreateTree(new[]
             {
@@ -184,13 +348,50 @@ namespace SenseNet.IO.Tests
                 "/Root/Node-01/Node-17/Node-20/Node-22",
             });
         }
+
+        private Dictionary<string, ContentNode> Create4PassTree()
+        {
+            return CreateTree(new[]
+            {
+                "/Root",
+                "/Root/(apps)",
+                "/Root/Content",
+                "/Root/Content/Workspace-1",
+                "/Root/Content/Workspace-1/DocLib-1",
+                "/Root/Content/Workspace-1/DocLib-1/Folder-1",
+                "/Root/Content/Workspace-1/DocLib-1/Folder-1/File-1.xlsx",
+                "/Root/Content/Workspace-1/DocLib-1/Folder-1/File-2.docx",
+                "/Root/Content/Workspace-1/DocLib-1/Folder-2",
+                "/Root/Content/Workspace-2",
+                "/Root/IMS",
+                "/Root/System",
+                "/Root/System/Settings",
+                "/Root/System/Settings/Settings-1.settings",
+                "/Root/System/Settings/Settings-2.settings",
+                "/Root/System/Settings/Settings-3.settings",
+                "/Root/System/Schema",
+                "/Root/System/Schema/Aspects",
+                "/Root/System/Schema/Aspects/Aspect-1",
+                "/Root/System/Schema/Aspects/Aspect-2",
+                "/Root/System/Schema/ContentTypes",
+                "/Root/System/Schema/ContentTypes/ContentType-1",
+                "/Root/System/Schema/ContentTypes/ContentType-1/ContentType-3",
+                "/Root/System/Schema/ContentTypes/ContentType-1/ContentType-4",
+                "/Root/System/Schema/ContentTypes/ContentType-1/ContentType-5",
+                "/Root/System/Schema/ContentTypes/ContentType-1/ContentType-5/ContentType-6",
+                "/Root/System/Schema/ContentTypes/ContentType-2",
+            });
+        }
+
         private class TestProgress : IProgress<(string Path, double Percent)>
         {
             public List<double> Log { get; } = new List<double>();
+            public List<string> Paths { get; } = new List<string>();
 
             public void Report((string Path, double Percent) value)
             {
                 Log.Add(value.Percent);
+                Paths.Add(value.Path);
             }
         }
     }

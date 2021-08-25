@@ -13,7 +13,7 @@ namespace SenseNet.IO.Tests
             foreach (var path in paths)
             {
                 var name = path.Split('/')[^1];
-                var type = name.Split('-')[0];
+                var type = GetContentTypeFromName(name);
                 var content = new ContentNode {Path = path, Name = name, Type = type, ["Id"] = ++id};
                 contents.Add(path, content);
 
@@ -27,6 +27,23 @@ namespace SenseNet.IO.Tests
             }
 
             return contents;
+        }
+
+        private string GetContentTypeFromName(string name)
+        {
+            switch (name)
+            {
+                case "Root": return "PortalRoot";
+                case "(apps)": return "SystemFolder";
+                case "Content": return "Folder";
+                case "IMS": return "SystemFolder";
+                case "System": return "SystemFolder";
+                case "Settings": return "SystemFolder";
+                case "Schema": return "SystemFolder";
+                case "Aspects": return "SystemFolder";
+                case "ContentTypes": return "SystemFolder";
+                default: return name.Split('-')[0];
+            }
         }
     }
 }

@@ -13,7 +13,7 @@ namespace SenseNet.IO.Tests.Implementations
         public TestContentWriter(Dictionary<string, ContentNode> tree, string containerPath = null, string rootName = null)
         {
             Tree = tree;
-            ContainerPath = containerPath ?? string.Empty;
+            ContainerPath = containerPath ?? "/";
             RootName = rootName;
         }
 
@@ -24,10 +24,8 @@ namespace SenseNet.IO.Tests.Implementations
         {
             var absolutePath = ContentPath.GetAbsolutePath(path, ContainerPath);
             var parentPath = ContentPath.GetParentPath(absolutePath);
-            var contentNode = (ContentNode) content;
-            var parent = parentPath == "/" || parentPath == string.Empty
-                ? null
-                : Tree[parentPath];
+            var contentNode = new ContentNode {Name = content.Name, Type = content.Type};
+            var parent = parentPath == "/" || string.IsNullOrEmpty(parentPath) ? null : Tree[parentPath];
 
             contentNode.Parent = parent;
             if(parent != null)
