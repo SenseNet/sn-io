@@ -30,9 +30,9 @@ namespace SenseNet.IO.Tests.Implementations
             _sortedPathIndex = 0;
         }
 
-        public Task<bool> ReadContentTypesAsync(CancellationToken cancel = default) { throw new System.NotImplementedException(); }
-        public Task<bool> ReadSettingsAsync(CancellationToken cancel = default) { throw new System.NotImplementedException(); }
-        public Task<bool> ReadAspectsAsync(CancellationToken cancel = default) { throw new System.NotImplementedException(); }
+        public Task<bool> ReadContentTypesAsync(CancellationToken cancel = default) { return Task.FromResult(false); }
+        public Task<bool> ReadSettingsAsync(CancellationToken cancel = default) { return Task.FromResult(false); }
+        public Task<bool> ReadAspectsAsync(CancellationToken cancel = default) { return Task.FromResult(false); }
         public Task<bool> ReadAllAsync(CancellationToken cancel = default)
         {
             if (_sortedPathIndex >= _sortedPaths.Length)
