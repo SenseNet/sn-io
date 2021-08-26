@@ -6,6 +6,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using IdentityModel;
 
 namespace SenseNet.IO.Implementations
 {
@@ -31,18 +32,37 @@ namespace SenseNet.IO.Implementations
             RootPath = rootPath;
         }
 
+        private void Initialize()
+        {
+            if (_fsRootPath != null)
+                return;
+
+            var fsRootPath = RootPath == null
+                ? _fsRootDirectory
+                : Path.Combine(_fsRootDirectory, RootPath.TrimStart('/'));
+            _fsRootPath = Path.GetFullPath(fsRootPath); // normalize path separators
+
+            Task.Run(() => GetContentCount(_fsRootPath));
+        }
+
         public Task<bool> ReadContentTypesAsync(CancellationToken cancel = default)
         {
+            Initialize();
+
             //UNDONE: Implement ReadContentTypesAsync
             return Task.FromResult(false);
         }
         public Task<bool> ReadSettingsAsync(CancellationToken cancel = default)
         {
+            Initialize();
+
             //UNDONE: Implement ReadSettingsAsync
             return Task.FromResult(false);
         }
         public Task<bool> ReadAspectsAsync(CancellationToken cancel = default)
         {
+            Initialize();
+
             //UNDONE: Implement ReadAspectsAsync
             return Task.FromResult(false);
         }
@@ -55,10 +75,7 @@ namespace SenseNet.IO.Implementations
         }
         public Task<bool> ReadAllAsync(CancellationToken cancel = default)
         {
-            var fsRootPath = RootPath == null
-                ? _fsRootDirectory
-                : Path.Combine(_fsRootDirectory, RootPath.TrimStart('/'));
-            _fsRootPath = Path.GetFullPath(fsRootPath); // normalize path separators
+            Initialize();
 
             bool goAhead;
             // ReSharper disable once AssignmentInConditionalExpression
@@ -249,6 +266,59 @@ namespace SenseNet.IO.Implementations
             return container.ToArray();
         }
 
+        private void GetContentCount(string fsPath)
+        {
+            var dirs = GetFsDirectories(fsPath).OrderBy(x => x).ToList();
+            var filePaths = GetFsFiles(fsPath).OrderBy(x => x).ToList();
+            var localContents = new List<FsContent>();
+            FsContent content;
+            foreach (var directoryPath in dirs)
+            {
+                // get metaFile's path if exists or null
+                var metaFilePath = directoryPath + ".Content";
+                if (!IsFileExists(metaFilePath))
+                    metaFilePath = null;
+                else
+                    filePaths.Remove(metaFilePath);
+
+                // create current content and add to container
+                var name = Path.GetFileName(directoryPath);
+                content = CreateFsContent(name, string.Empty, metaFilePath, true);
+                localContents.Add(content);
+            }
+
+            // get metaFile leaves and add to container
+            var metaFilePaths = filePaths
+                .Where(p => p.EndsWith(".content", StringComparison.OrdinalIgnoreCase))
+                .ToArray();
+
+            foreach (var metaFilePath in metaFilePaths)
+            {
+                var name = Path.GetFileNameWithoutExtension(metaFilePath);
+
+                content = CreateFsContent(name, string.Empty, metaFilePath, false);
+                localContents.Add(content);
+            }
+
+            // preprocess attachments if the content has metaFile.
+            var attachmentPaths = filePaths.Except(metaFilePaths).Select(x => x.ToLowerInvariant()).ToList();
+            var attachmentNames = localContents.SelectMany(x => x.GetPreprocessedAttachmentNames());
+            foreach (var attachmentName in attachmentNames)
+                attachmentPaths.Remove(Path.Combine(fsPath, attachmentName).ToLowerInvariant());
+
+            // add contents by files without metaFile.
+            foreach (var attachmentPath in attachmentPaths)
+            {
+                var name = Path.GetFileName(attachmentPath);
+                content = CreateFsContent(name, string.Empty, null, false);
+                localContents.Add(content);
+            }
+
+            EstimatedCount += localContents.Count;
+
+            foreach (var subDir in dirs)
+                GetContentCount(subDir);
+        }
 
         /* ========================================================================== TESTABILITY */
 

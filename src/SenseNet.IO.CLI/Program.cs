@@ -133,7 +133,8 @@ namespace SenseNet.IO.CLI
             {
                 Console.Write("                             \r");
                 Console.WriteLine(state.Path);
-                Console.Write("Transferring... {0,5:F1}%\r", state.Percent);
+                //Console.Write("Transferring... {0,5:F1}%\r", state.Percent);
+                Console.WriteLine("Transferring... {0,5:F1}% {1}\r", state.Percent, reader.EstimatedCount);
             });
             await flow.TransferAsync(progress);
             Console.WriteLine();
