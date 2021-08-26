@@ -104,20 +104,23 @@ namespace SenseNet.IO.Implementations
         /// <param name="name">Name of the content.</param>
         /// <param name="metaFilePath">*.Content file or null.</param>
         /// <param name="isDirectory">True if represents a directory.</param>
-        /// <param name="parent">Parent or null if the root content.</param>
+        /// <param name="relativePath">Relative repository path. The reader's root content path need to be String.Empty.</param>
         /// <param name="defaultAttachmentPath">Path if the content is represented as a raw file (e.g. "readme.txt").</param>
-        public FsContent(string name, string metaFilePath, bool isDirectory, FsContent parent, string defaultAttachmentPath = null)
+        public FsContent(string name, string relativePath, string metaFilePath, bool isDirectory, string defaultAttachmentPath = null)
         {
             Name = name;
             IsDirectory = isDirectory;
-            Parent = parent;
-            if (parent != null)
-                parent.Children.Add(this);
-            else
-                _path = ""; // set explicit empty path if root
+            _path = relativePath;
             _metaFilePath = metaFilePath;
             _defaultAttachmentPath = defaultAttachmentPath;
         }
+
+        //UNDONE: delete this ctor
+        public FsContent(string name, string metaFilePath, bool isDirectory, FsContent parent, string defaultAttachmentPath = null)
+        {
+            throw new NotSupportedException(); 
+        }
+
 
         private readonly string _metaFilePath;
         public bool IsDirectory { get; }
