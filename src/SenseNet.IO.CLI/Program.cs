@@ -104,8 +104,8 @@ namespace SenseNet.IO.CLI
             //var reader = new RepositoryTreeReader("https://localhost:44362", "/Root/System/Settings", 10);
             //var reader = new RepositoryTreeReader("https://localhost:44362", "/Root/System/Schema", 10);
 
-            //var reader = new FsReader(@"D:\dev\_sn-io-test\FsReader", "/Root");
-            var reader = new FsReader(@"D:\dev\_sn-io-test\FsReader", "/Root/GyebiTesztel");
+            var reader = new FsReader(@"D:\dev\_sn-io-test\FsReader", "/Root");
+            //var reader = new FsReader(@"D:\dev\_sn-io-test\FsReader", "/Root/GyebiTesztel");
             //var reader = new FsReader(@"D:\dev\_sn-io-test\FsReader", "/Root/(apps)");
             //var reader = new FsReader(@"D:\dev\_sn-io-test\FsReader", "/Root/IMS");
             //var reader = new FsReader(@"D:\dev\_sn-io-test\FsReader", "/Root/IMS/BuiltIn/Portal/Admin");

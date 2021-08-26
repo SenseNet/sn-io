@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -59,8 +60,33 @@ namespace SenseNet.IO.Implementations
                 : Path.Combine(_fsRootDirectory, RootPath.TrimStart('/'));
             _fsRootPath = Path.GetFullPath(fsRootPath); // normalize path separators
 
-            return ReadTreeAsync(cancel);
+            bool goAhead;
+            // ReSharper disable once AssignmentInConditionalExpression
+            while (goAhead = ReadTree())
+            {
+                if (!(IsContentType(Content) || IsAspect(Content) || IsSettings(Content)))
+                    break;
+            }
+
+            return Task.FromResult(goAhead);
         }
+
+        private bool IsContentType(IContent content)
+        {
+            return ContentPath.Combine(RootPath, content.Path)
+                .StartsWith("/Root/System/Schema/ContentTypes/", StringComparison.OrdinalIgnoreCase);
+        }
+        private bool IsAspect(IContent content)
+        {
+            return ContentPath.Combine(RootPath, content.Path)
+                .StartsWith("/Root/System/Schema/Aspects/", StringComparison.OrdinalIgnoreCase);
+        }
+        private bool IsSettings(IContent content)
+        {
+            return ContentPath.Combine(RootPath, content.Path)
+                .StartsWith("/Root/System/Settings/", StringComparison.OrdinalIgnoreCase);
+        }
+
         private FsContent GetRootContent(string fsRootPath)
         {
             var contentName = Path.GetFileName(fsRootPath);
@@ -92,6 +118,24 @@ namespace SenseNet.IO.Implementations
                     break;
             }
             return Task.FromResult(false);
+        }
+        private bool ReadTree()
+        {
+            if (Content == null)
+                return MoveToFirst();
+            if (MoveToFirstChild())
+                return true;
+            if (MoveToNextSibling())
+                return true;
+            while (true)
+            {
+                if (MoveToParent())
+                    if (MoveToNextSibling())
+                        return true;
+                if (_levels.Count == 0)
+                    break;
+            }
+            return false;
         }
 
         private void SetCurrentContent()
