@@ -45,26 +45,97 @@ namespace SenseNet.IO.Implementations
             Task.Run(() => GetContentCount(_fsRootPath));
         }
 
+        private List<FsContent> _contentTypeContents;
+        private int _contentTypeContentsIndex;
         public Task<bool> ReadContentTypesAsync(CancellationToken cancel = default)
         {
-            Initialize();
+            if (_contentTypeContents == null)
+            {
+                Initialize();
 
-            //UNDONE: Implement ReadContentTypesAsync
-            return Task.FromResult(false);
+                if (!RootPath.Equals("/Root", StringComparison.OrdinalIgnoreCase) && 
+                    !RootPath.Equals("/Root/System", StringComparison.OrdinalIgnoreCase) &&
+                    !RootPath.Equals("/Root/System/Schema", StringComparison.OrdinalIgnoreCase) &&
+                    !RootPath.Equals("/Root/System/Schema/ContentTypes", StringComparison.OrdinalIgnoreCase)
+                    )
+                    return Task.FromResult(false);
+
+                var ctdRootRelPath = "/Root/System/Schema/ContentTypes".Substring(RootPath.Length).TrimStart('/');
+                var ctdRootContent = CreateFsContent("ContentTypes", ctdRootRelPath, null, true);
+                _contentTypeContents = new List<FsContent>();
+                ReadSubTree(ctdRootContent, _contentTypeContents);
+            }
+
+            if (_contentTypeContentsIndex >= _contentTypeContents.Count)
+                return Task.FromResult(false);
+
+            _content = _contentTypeContents[_contentTypeContentsIndex++];
+
+            return Task.FromResult(true);
         }
+
+        private List<FsContent> _settingsContents;
+        private int _settingsContentsIndex;
         public Task<bool> ReadSettingsAsync(CancellationToken cancel = default)
         {
-            Initialize();
+            if (_settingsContents == null)
+            {
+                Initialize();
 
-            //UNDONE: Implement ReadSettingsAsync
-            return Task.FromResult(false);
+                if (!RootPath.Equals("/Root", StringComparison.OrdinalIgnoreCase) &&
+                    !RootPath.Equals("/Root/System", StringComparison.OrdinalIgnoreCase) &&
+                    !RootPath.Equals("/Root/System/Settings", StringComparison.OrdinalIgnoreCase))
+                    return Task.FromResult(false);
+
+                var settingsRootRelPath = "/Root/System/Settings".Substring(RootPath.Length).TrimStart('/');
+                var settingsRootContent = CreateFsContent("Settings", settingsRootRelPath, null, true);
+                _settingsContents = new List<FsContent>();
+                ReadSubTree(settingsRootContent, _settingsContents);
+            }
+
+            if (_settingsContentsIndex >= _settingsContents.Count)
+                return Task.FromResult(false);
+
+            _content = _settingsContents[_settingsContentsIndex++];
+
+            return Task.FromResult(true);
         }
+
+        private List<FsContent> _aspectContents;
+        private int _aspectContentsIndex;
         public Task<bool> ReadAspectsAsync(CancellationToken cancel = default)
         {
-            Initialize();
+            if (_aspectContents == null)
+            {
+                Initialize();
 
-            //UNDONE: Implement ReadAspectsAsync
-            return Task.FromResult(false);
+                if (!RootPath.Equals("/Root", StringComparison.OrdinalIgnoreCase) &&
+                    !RootPath.Equals("/Root/System", StringComparison.OrdinalIgnoreCase) &&
+                    !RootPath.Equals("/Root/System/Schema", StringComparison.OrdinalIgnoreCase) &&
+                    !RootPath.Equals("/Root/System/Schema/Aspects", StringComparison.OrdinalIgnoreCase)
+                )
+                    return Task.FromResult(false);
+
+                var ctdRootRelPath = "/Root/System/Schema/Aspects".Substring(RootPath.Length).TrimStart('/');
+                var ctdRootContent = CreateFsContent("Aspects", ctdRootRelPath, null, true);
+                _aspectContents = new List<FsContent>();
+                ReadSubTree(ctdRootContent, _aspectContents);
+            }
+
+            if (_aspectContentsIndex >= _aspectContents.Count)
+                return Task.FromResult(false);
+
+            _content = _aspectContents[_aspectContentsIndex++];
+
+            return Task.FromResult(true);
+        }
+
+        private void ReadSubTree(FsContent parentContent, List<FsContent> container)
+        {
+            var children = ReadChildren(parentContent);
+            container.AddRange(children);
+            foreach (var child in children)
+                ReadSubTree(child, container);
         }
 
         private class Level
@@ -117,29 +188,14 @@ namespace SenseNet.IO.Implementations
             return content;
         }
 
-        private readonly Stack<Level> _levels = new Stack<Level>();
-        private Task<bool> ReadTreeAsync(CancellationToken cancel)
-        {
-            if (Content == null)
-                return Task.FromResult(MoveToFirst());
-            if (MoveToFirstChild())
-                return Task.FromResult(true);
-            if (MoveToNextSibling())
-                return Task.FromResult(true);
-            while (true)
-            {
-                if (MoveToParent())
-                    if (MoveToNextSibling())
-                        return Task.FromResult(true);
-                if (_levels.Count == 0)
-                    break;
-            }
-            return Task.FromResult(false);
-        }
+        private Stack<Level> _levels;
         private bool ReadTree()
         {
-            if (Content == null)
+            if (_levels == null)
+            {
+                _levels = new Stack<Level>();
                 return MoveToFirst();
+            }
             if (MoveToFirstChild())
                 return true;
             if (MoveToNextSibling())
@@ -155,9 +211,9 @@ namespace SenseNet.IO.Implementations
             return false;
         }
 
-        private void SetCurrentContent()
+        private void SetCurrentContent(Stack<Level> levels)
         {
-            var level = _levels.Peek();
+            var level = levels.Peek();
             _content = level.Contents[level.Index];
         }
         private bool MoveToFirst()
@@ -167,7 +223,7 @@ namespace SenseNet.IO.Implementations
                 return false;
             var level = new Level {Contents = new[] {rootContent}};
             _levels.Push(level);
-            SetCurrentContent();
+            SetCurrentContent(_levels);
             return true;
         }
         private bool MoveToParent()
@@ -177,7 +233,7 @@ namespace SenseNet.IO.Implementations
             _levels.Pop();
             if (_levels.Count == 0)
                 return false;
-            SetCurrentContent();
+            SetCurrentContent(_levels);
             return true;
         }
         private bool MoveToNextSibling()
@@ -187,7 +243,7 @@ namespace SenseNet.IO.Implementations
             if (index >= level.Contents.Length)
                 return false;
             level.Index = index;
-            SetCurrentContent();
+            SetCurrentContent(_levels);
             return true;
         }
         private bool MoveToFirstChild()
@@ -197,7 +253,7 @@ namespace SenseNet.IO.Implementations
                 return false;
             var level = new Level { Contents = contents };
             _levels.Push(level);
-            SetCurrentContent();
+            SetCurrentContent(_levels);
             return true;
 
         }
