@@ -25,23 +25,7 @@ namespace SenseNet.IO.Implementations
         }
 
         public string Name { get; set; }
-
-        private string _path;
-        public string Path
-        {
-            get
-            {
-                if (_path != null)
-                    return _path;
-                if (Parent == null)
-                    return Name;
-                var parentPath = Parent.Path;
-                if (parentPath == "")
-                    return Name;
-                return Parent.Path + "/" + Name;
-            }
-            set => _path = value;
-        }
+        public string Path { get; set; }
 
         private string _type;
         public string Type
@@ -110,22 +94,13 @@ namespace SenseNet.IO.Implementations
         {
             Name = name;
             IsDirectory = isDirectory;
-            _path = relativePath;
+            Path = relativePath;
             _metaFilePath = metaFilePath;
             _defaultAttachmentPath = defaultAttachmentPath;
         }
 
-        //UNDONE: delete this ctor
-        public FsContent(string name, string metaFilePath, bool isDirectory, FsContent parent, string defaultAttachmentPath = null)
-        {
-            throw new NotSupportedException(); 
-        }
-
-
         private readonly string _metaFilePath;
         public bool IsDirectory { get; }
-        public FsContent Parent { get; set; }
-        public List<FsContent> Children { get; } = new List<FsContent>();
 
         private static readonly string[] EmptyAttachmentNames = new string[0];
 
