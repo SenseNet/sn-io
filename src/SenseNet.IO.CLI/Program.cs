@@ -125,16 +125,16 @@ namespace SenseNet.IO.CLI
             //var writer = new FsWriter(@"D:\dev\_sn-io-test\FsWriter", "/Root", "XXX");
 
             var flow = new ContentFlow(reader, writer);
-            //var progress = new Progress(state =>
-            //{
-            //    Console.Write("Transferring... {0,5:F1}%\r", state.Percent);
-            //});
             var progress = new Progress(state =>
             {
-                Console.Write("                             \r");
-                Console.WriteLine(state.Path);
                 Console.Write("Transferring... {0,5:F1}%\r", state.Percent);
             });
+            //var progress = new Progress(state =>
+            //{
+            //    Console.Write("                             \r");
+            //    Console.WriteLine(state.Path);
+            //    Console.Write("Transferring... {0,5:F1}%\r", state.Percent);
+            //});
             await flow.TransferAsync(progress);
             Console.WriteLine();
             Console.WriteLine("Done.");

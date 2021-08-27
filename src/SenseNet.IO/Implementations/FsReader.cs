@@ -42,6 +42,7 @@ namespace SenseNet.IO.Implementations
                 : Path.Combine(_fsRootDirectory, RootPath.TrimStart('/'));
             _fsRootPath = Path.GetFullPath(fsRootPath); // normalize path separators
 
+            EstimatedCount = 1;
             Task.Run(() => GetContentCount(_fsRootPath));
         }
 
@@ -313,7 +314,7 @@ namespace SenseNet.IO.Implementations
             {
                 var name = Path.GetFileName(attachmentPath);
 
-                content = CreateFsContent(name, GetPath(name), null, false);
+                content = CreateFsContent(name, GetPath(name), null, false, attachmentPath);
                 content.InitializeMetadata();
                 localContents.Add(content);
                 container.Add(content);

@@ -31,7 +31,7 @@ namespace SenseNet.IO
 
             public Task<Attachment[]> GetAttachmentsAsync()
             {
-                return Task.FromResult(default(Attachment[]));
+                return Task.FromResult(Array.Empty<Attachment>());
             }
         }
 
