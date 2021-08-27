@@ -124,7 +124,7 @@ namespace SenseNet.IO.CLI
 
             //var writer = new FsWriter(@"D:\dev\_sn-io-test\FsWriter");
             //var writer = new FsWriter(@"D:\dev\_sn-io-test\FsWriter", "/Root", "XXX");
-            var writer = new FsWriter(@"D:\dev\_sn-io-test\FsWriter_NEW");
+            var writer = new FsWriter(@"D:\dev\_sn-io-test\FsWriter_NEW2");
 
             var flow = new ContentFlow(reader, writer);
             var progress = new Progress(state =>

@@ -60,7 +60,7 @@ namespace SenseNet.IO.Implementations
                     )
                     return false;
 
-                _contentTypeContents = await QueryBlockAsync("/Root/System/Schema/ContentTypes", 1, int.MaxValue); // Skip subtree-root
+                _contentTypeContents = await QueryBlockAsync("/Root/System/Schema/ContentTypes", 1, int.MaxValue, false); // Skip subtree-root
             }
 
             if (_contentTypeContentsIndex >= _contentTypeContents.Length)
@@ -83,7 +83,7 @@ namespace SenseNet.IO.Implementations
                     !RootPath.Equals("/Root/System/Settings", StringComparison.OrdinalIgnoreCase))
                     return false;
 
-                _settingsContents = await QueryBlockAsync("/Root/System/Settings", 1, int.MaxValue); // Skip subtree-root
+                _settingsContents = await QueryBlockAsync("/Root/System/Settings", 1, int.MaxValue, false); // Skip subtree-root
             }
 
             if (_settingsContentsIndex >= _settingsContents.Length)
@@ -108,7 +108,7 @@ namespace SenseNet.IO.Implementations
                 )
                     return false;
 
-                _aspectContents = await QueryBlockAsync("/Root/System/Schema/Aspects", 1, int.MaxValue); // Skip subtree-root
+                _aspectContents = await QueryBlockAsync("/Root/System/Schema/Aspects", 1, int.MaxValue, false); // Skip subtree-root
             }
 
             if (_aspectContentsIndex >= _aspectContents.Length)
@@ -120,26 +120,14 @@ namespace SenseNet.IO.Implementations
 
         private IContent[] _currentBlock;
         private int _currentBlockIndex;
-        //UNDONE: delete this method
-        public async Task<bool> ReadAllAsync_OLD(CancellationToken cancel = default)
+        public async Task<bool> ReadAllAsync(CancellationToken cancel = default)
         {
-            if (Content == null)
-            {
-                ClientContext.Current.AddServer(new ServerContext
-                {
-                    Url = _url,
-                    Username = "builtin\\admin",
-                    Password = "admin"
-                });
-
-                // Get tree size before first read
-                EstimatedCount = await GetCountAsync();
-            }
+            await InitializeAsync();
 
             //TODO: Raise performance: read the next block (background)
             if (_currentBlock == null || _currentBlockIndex >= _currentBlock.Length)
             {
-                _currentBlock = await QueryBlockAsync(RootPath, _blockIndex * _blockSize, _blockSize);
+                _currentBlock = await QueryBlockAsync(RootPath, _blockIndex * _blockSize, _blockSize, true);
                 _blockIndex++;
                 _currentBlockIndex = 0;
                 if (_currentBlock == null || _currentBlock.Length == 0)
@@ -148,36 +136,6 @@ namespace SenseNet.IO.Implementations
 
             Content = _currentBlock[_currentBlockIndex++];
             RelativePath = ContentPath.GetRelativePath(Content.Path, RootPath);
-
-            return true;
-        }
-        public async Task<bool> ReadAllAsync(CancellationToken cancel = default)
-        {
-            await InitializeAsync();
-
-            var skip = false;
-            do
-            {
-                //TODO: Raise performance: read the next block (background)
-                if (_currentBlock == null || _currentBlockIndex >= _currentBlock.Length)
-                {
-                    _currentBlock = await QueryBlockAsync(RootPath, _blockIndex * _blockSize, _blockSize);
-                    _blockIndex++;
-                    _currentBlockIndex = 0;
-                    if (_currentBlock == null || _currentBlock.Length == 0)
-                        return false;
-                }
-
-                Content = _currentBlock[_currentBlockIndex++];
-                RelativePath = ContentPath.GetRelativePath(Content.Path, RootPath);
-
-                //TODO: Raise performance: do not query these content instead of skip.
-                skip = Content.Path.StartsWith("/Root/System/Schema/ContentTypes/", StringComparison.OrdinalIgnoreCase) ||
-                       Content.Path.StartsWith("/Root/System/Schema/Aspects/", StringComparison.OrdinalIgnoreCase) ||
-                       Content.Path.StartsWith("/Root/System/Settings/", StringComparison.OrdinalIgnoreCase);
-
-            } while (skip);
-
             return true;
         }
 
@@ -186,13 +144,16 @@ namespace SenseNet.IO.Implementations
             var result = await RESTCaller.GetResponseStringAsync(RootPath, "GetContentCountInTree");
             return int.TryParse(result, out var count) ? count : default;
         }
-        private async Task<IContent[]> QueryBlockAsync(string rootPath, int skip, int top)
+        private async Task<IContent[]> QueryBlockAsync(string rootPath, int skip, int top, bool useTypeRestrictions)
         {
-            var query = $"InTree:'{rootPath}' .SORT:Path .TOP:{top} .SKIP:{skip} .AUTOFILTERS:OFF";
+            var query = useTypeRestrictions
+                ? $"InTree:'{rootPath}' -TypeIs:'ContentType' -TypeIs:'Settings' -TypeIs:'Aspect' .SORT:Path .TOP:{top} .SKIP:{skip} .AUTOFILTERS:OFF"
+                : $"InTree:'{rootPath}' .SORT:Path .TOP:{top} .SKIP:{skip} .AUTOFILTERS:OFF";
             var queryResult = await QueryAsync(query).ConfigureAwait(false);
 
             var result = queryResult.Select(x => new RepositoryReaderContent(x)).ToArray();
 
+            // ReSharper disable once CoVariantArrayConversion
             return result;
         }
         public static async Task<IEnumerable<Content>> QueryAsync(string queryText, ServerContext server = null)
