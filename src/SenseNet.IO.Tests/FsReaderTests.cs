@@ -24,8 +24,8 @@ namespace SenseNet.IO.Tests
             public FsContentMock(Func<string, bool> isFileExists,
                 Func<string, TextReader> createStreamReader,
                 Func<string, FileMode, Stream> createFileStream,
-                string name, string metaFilePath, bool isDirectory, FsContent parent, string defaultAttachmentPath = null)
-                : base(name, metaFilePath, isDirectory, parent, defaultAttachmentPath)
+                string name, string relativePath, string metaFilePath, bool isDirectory, string defaultAttachmentPath = null)
+                : base(name, relativePath, metaFilePath, isDirectory, defaultAttachmentPath)
             {
                 _isFileExists = isFileExists;
                 _createStreamReader = createStreamReader;
@@ -75,11 +75,11 @@ namespace SenseNet.IO.Tests
                 _fsContentCreateFileStream = fsContentCreateFileStream;
             }
 
-            protected override FsContent CreateFsContent(string name, string metaFilePath, bool isDirectory, FsContent parent,
+            protected override FsContent CreateFsContent(string name, string relativePath, string metaFilePath, bool isDirectory,
                 string defaultAttachmentPath = null)
             {
                 return new FsContentMock(_fsContentIsFileExists, _fsContentCreateStreamReader, _fsContentCreateFileStream,
-                    name, metaFilePath, isDirectory, parent, defaultAttachmentPath);
+                    name, relativePath, metaFilePath, isDirectory, defaultAttachmentPath);
             }
 
             protected override bool IsFileExists(string fsPath)
@@ -127,7 +127,7 @@ namespace SenseNet.IO.Tests
             var readings = new Dictionary<string, IContent>();
 
             // ACTION
-            while (await reader.ReadAsync())
+            while (await reader.ReadAllAsync())
                 readings.Add(reader.RelativePath, reader.Content);
 
             // ASSERT
@@ -169,7 +169,7 @@ namespace SenseNet.IO.Tests
             var readings = new Dictionary<string, IContent>();
 
             // ACTION
-            while (await reader.ReadAsync())
+            while (await reader.ReadAllAsync())
                 readings.Add(reader.RelativePath, reader.Content);
 
             // ASSERT
@@ -215,7 +215,7 @@ namespace SenseNet.IO.Tests
             var readings = new Dictionary<string, IContent>();
 
             // ACTION
-            while (await reader.ReadAsync())
+            while (await reader.ReadAllAsync())
                 readings.Add(reader.RelativePath, reader.Content);
 
             // ASSERT
@@ -260,7 +260,7 @@ namespace SenseNet.IO.Tests
             var readings = new Dictionary<string, IContent>();
 
             // ACTION
-            while (await reader.ReadAsync())
+            while (await reader.ReadAllAsync())
                 readings.Add(reader.RelativePath, reader.Content);
 
             // ASSERT
@@ -324,7 +324,7 @@ namespace SenseNet.IO.Tests
             var readings = new Dictionary<string, IContent>();
 
             // ACTION
-            while (await reader.ReadAsync())
+            while (await reader.ReadAllAsync())
                 readings.Add(reader.RelativePath, reader.Content);
 
             // ASSERT
@@ -385,7 +385,7 @@ namespace SenseNet.IO.Tests
             var readings = new Dictionary<string, IContent>();
 
             // ACTION
-            while (await reader.ReadAsync())
+            while (await reader.ReadAllAsync())
                 readings.Add(reader.RelativePath, reader.Content);
 
             // ASSERT
@@ -433,6 +433,7 @@ namespace SenseNet.IO.Tests
                 @"Q:\Import\Root\System\Schema\ContentTypes",
                 @"Q:\Import\Root\System\Schema",
                 @"Q:\Import\Root\System",
+                @"Q:\Import\Root\System\Settings",
             };
             var files = new Dictionary<string, string>
             {
@@ -443,6 +444,8 @@ namespace SenseNet.IO.Tests
                 {@"Q:\Import\Root\System\Schema\ContentTypes.Content", "{'ContentType':'SystemFolder','ContentName':'ContentTypes','Fields':{}}"},
                 {@"Q:\Import\Root\System\Schema.Content", "{'ContentType':'SystemFolder','ContentName':'Schema','Fields':{}}"},
                 {@"Q:\Import\Root\System.Content", "{'ContentType':'SystemFolder','ContentName':'System','Fields':{}}"},
+                {@"Q:\Import\Root\System\Settings\Settings1.Content", "{'ContentType':'Settings','ContentName':'Setting1','Fields':{}}"},
+                {@"Q:\Import\Root\System\Settings\Settings2.Content", "{'ContentType':'Settings','ContentName':'Setting2','Fields':{}}"},
                 {@"Q:\Import\Root\System\Schema\ContentTypes\GenericContent.Content", "{'ContentType':'ContentType','ContentName':'GenericContent','Fields':{}}"},
                 {@"Q:\Import\Root\System\Schema\Aspects\Aspect1.Content", "{'ContentType':'Aspect','ContentName':'Aspect1','Fields':{}}"},
                 {@"Q:\Import\Root\System\Schema\ContentTypes\GenericContent\Folder.Content", "{'ContentType':'ContentType','ContentName':'Folder','Fields':{}}"},
@@ -460,9 +463,24 @@ namespace SenseNet.IO.Tests
 
             var readings = new Dictionary<string, IContent>();
             var actualRelativePaths = new List<string>();
-            // ACTION
 
-            while (await reader.ReadAsync())
+            // ACTION
+            while (await reader.ReadContentTypesAsync())
+            {
+                actualRelativePaths.Add(reader.RelativePath);
+                readings.Add(reader.RelativePath, reader.Content);
+            }
+            while (await reader.ReadSettingsAsync())
+            {
+                actualRelativePaths.Add(reader.RelativePath);
+                readings.Add(reader.RelativePath, reader.Content);
+            }
+            while (await reader.ReadAspectsAsync())
+            {
+                actualRelativePaths.Add(reader.RelativePath);
+                readings.Add(reader.RelativePath, reader.Content);
+            }
+            while (await reader.ReadAllAsync())
             {
                 actualRelativePaths.Add(reader.RelativePath);
                 readings.Add(reader.RelativePath, reader.Content);
@@ -470,21 +488,24 @@ namespace SenseNet.IO.Tests
 
             // ASSERT
             var contents = readings.ToArray();
-            Assert.AreEqual(15, contents.Length);
+            Assert.AreEqual(18, contents.Length);
             var expectedRelativePaths = new []
             {
-                "",
-                "System",
-                "System/Schema",
-                "System/Schema/ContentTypes",
                 "System/Schema/ContentTypes/GenericContent",
                 "System/Schema/ContentTypes/GenericContent/Folder",
                 "System/Schema/ContentTypes/GenericContent/File",
-                "System/Schema/Aspects",
+                "System/Settings/Settings1",
+                "System/Settings/Settings2",
                 "System/Schema/Aspects/Aspect1",
+                "",
                 "Content",
+                "System",
                 "System/F1",
                 "System/F2",
+                "System/Schema",
+                "System/Schema/Aspects",
+                "System/Schema/ContentTypes",
+                "System/Settings",
                 "System/F3",
                 "F1", // "F1" follows the "System" because "F1" is only a metafile.
                 "F2",
@@ -509,6 +530,7 @@ namespace SenseNet.IO.Tests
                 @"Q:\Import\Root\System\Schema\ContentTypes",
                 @"Q:\Import\Root\System\Schema",
                 @"Q:\Import\Root\System",
+                @"Q:\Import\Root\System\Settings",
             };
             var files = new Dictionary<string, string>
             {
@@ -519,8 +541,10 @@ namespace SenseNet.IO.Tests
                 {@"Q:\Import\Root\System\Schema\ContentTypes.Content", "{'ContentType':'SystemFolder','ContentName':'ContentTypes','Fields':{}}"},
                 {@"Q:\Import\Root\System\Schema.Content", "{'ContentType':'SystemFolder','ContentName':'Schema','Fields':{}}"},
                 {@"Q:\Import\Root\System.Content", "{'ContentType':'SystemFolder','ContentName':'System','Fields':{}}"},
-                {@"Q:\Import\Root\System\Schema\Aspects\Aspect1.Content", "{'ContentType':'Aspect','ContentName':'Aspect1','Fields':{}}"},
+                {@"Q:\Import\Root\System\Settings\Settings1.Content", "{'ContentType':'Settings','ContentName':'Setting1','Fields':{}}"},
+                {@"Q:\Import\Root\System\Settings\Settings2.Content", "{'ContentType':'Settings','ContentName':'Setting2','Fields':{}}"},
                 {@"Q:\Import\Root\System\Schema\ContentTypes\GenericContent.Content", "{'ContentType':'ContentType','ContentName':'GenericContent','Fields':{}}"},
+                {@"Q:\Import\Root\System\Schema\Aspects\Aspect1.Content", "{'ContentType':'Aspect','ContentName':'Aspect1','Fields':{}}"},
                 {@"Q:\Import\Root\System\Schema\ContentTypes\GenericContent\Folder.Content", "{'ContentType':'ContentType','ContentName':'Folder','Fields':{}}"},
                 {@"Q:\Import\Root\System\Schema\ContentTypes\GenericContent\File.Content", "{'ContentType':'ContentType','ContentName':'File','Fields':{}}"},
             };
@@ -536,9 +560,24 @@ namespace SenseNet.IO.Tests
 
             var readings = new Dictionary<string, IContent>();
             var actualRelativePaths = new List<string>();
-            // ACTION
 
-            while (await reader.ReadAsync())
+            // ACTION
+            while (await reader.ReadContentTypesAsync())
+            {
+                actualRelativePaths.Add(reader.RelativePath);
+                readings.Add(reader.RelativePath, reader.Content);
+            }
+            while (await reader.ReadSettingsAsync())
+            {
+                actualRelativePaths.Add(reader.RelativePath);
+                readings.Add(reader.RelativePath, reader.Content);
+            }
+            while (await reader.ReadAspectsAsync())
+            {
+                actualRelativePaths.Add(reader.RelativePath);
+                readings.Add(reader.RelativePath, reader.Content);
+            }
+            while (await reader.ReadAllAsync())
             {
                 actualRelativePaths.Add(reader.RelativePath);
                 readings.Add(reader.RelativePath, reader.Content);
@@ -547,15 +586,15 @@ namespace SenseNet.IO.Tests
             // ASSERT
             var contents = readings.ToArray();
             Assert.AreEqual(7, contents.Length);
-            var expectedRelativePaths = new []
+            var expectedRelativePaths = new[]
             {
-                "",
-                "ContentTypes",
                 "ContentTypes/GenericContent",
                 "ContentTypes/GenericContent/Folder",
                 "ContentTypes/GenericContent/File",
-                "Aspects",
                 "Aspects/Aspect1",
+                "",
+                "Aspects",
+                "ContentTypes",
             };
             AssertSequencesAreEqual(expectedRelativePaths, actualRelativePaths);
 

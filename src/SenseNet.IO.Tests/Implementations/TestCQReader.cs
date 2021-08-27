@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -30,10 +29,48 @@ namespace SenseNet.IO.Tests.Implementations
             _tree = tree;
         }
 
+        private int _contentTypeIndex;
+        private ContentNode[] _contentTypes;
+        public Task<bool> ReadContentTypesAsync(CancellationToken cancel = default)
+        {
+            _contentTypes ??= _tree.Values.Where(x => x.Type == "ContentType").ToArray();
+            if (_contentTypeIndex >= _contentTypes.Length)
+                return Task.FromResult(false);
+            Content = _contentTypes[_contentTypeIndex++].Clone();
+            RelativePath = ContentPath.GetRelativePath(Content.Path, RootPath);
+            return Task.FromResult(true);
+        }
+
+        private int _settingsIndex;
+        private ContentNode[] _settings;
+        public Task<bool> ReadSettingsAsync(CancellationToken cancel = default)
+        {
+            _settings ??= _tree.Values.Where(x => x.Type == "Settings").ToArray();
+            if (_settingsIndex >= _settings.Length)
+                return Task.FromResult(false);
+            Content = _settings[_settingsIndex++].Clone();
+            RelativePath = ContentPath.GetRelativePath(Content.Path, RootPath);
+            return Task.FromResult(true);
+        }
+
+        private int _aspectIndex;
+        private ContentNode[] _aspects;
+        public Task<bool> ReadAspectsAsync(CancellationToken cancel = default)
+        {
+            _aspects ??= _tree.Values.Where(x => x.Type == "Aspect").ToArray();
+            if (_aspectIndex >= _aspects.Length)
+                return Task.FromResult(false);
+            Content = _aspects[_aspectIndex++].Clone();
+            RelativePath = ContentPath.GetRelativePath(Content.Path, RootPath);
+            return Task.FromResult(true);
+        }
+
         private ContentNode[] _currentBlock;
         private int _currentBlockIndex;
-        public Task<bool> ReadAsync(CancellationToken cancel = default)
+        public Task<bool> ReadAllAsync(CancellationToken cancel = default)
         {
+            //UNDONE: Implement ReadAllAsync methods well.
+
             //TODO: Raise performance: read the next block (background)
             if (_currentBlock == null || _currentBlockIndex >= _currentBlock.Length)
             {
@@ -55,10 +92,13 @@ namespace SenseNet.IO.Tests.Implementations
             var rootPathTrailing = rootPath + "/";
             var contents = _tree.Keys
                 .Where(x => x.StartsWith(rootPathTrailing) || x == rootPath)
+                .Where(x => !x.StartsWith("/Root/System/Schema/ContentTypes/"))
+                .Where(x => !x.StartsWith("/Root/System/Schema/Aspects/"))
+                .Where(x => !x.StartsWith("/Root/System/Settings/"))
                 .OrderBy(x => x)
                 .Skip(skip)
                 .Take(top)
-                .Select(p=>_tree[p])
+                .Select(p => _tree[p])
                 .ToArray();
 
             return contents;

@@ -3,20 +3,23 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using IdentityModel;
 
 namespace SenseNet.IO.Implementations
 {
     public class FsReader : IContentReader
     {
-        private string _fsRootPath;
+        private readonly string _fsRootDirectory; // Constructor param
         private FsContent _content; // Current IContent
+        private string _fsRootPath;
 
         public string RootPath { get; }
         public int EstimatedCount { get; private set; }
         public IContent Content => _content;
-        public string RelativePath { get; private set; }
+        public string RelativePath => _content.Path;
 
         /// <summary>
         /// Initializes an FsReader instance.
@@ -25,42 +28,152 @@ namespace SenseNet.IO.Implementations
         /// <param name="rootPath">Repository path under the <paramref name="fsRootPath"/>.</param>
         public FsReader(string fsRootPath, [NotNull] string rootPath)
         {
-            _fsRootPath = fsRootPath;
+            _fsRootDirectory = fsRootPath;
             RootPath = rootPath;
         }
 
-        private int _contentIndex;
-        private List<FsContent> _contents;
-        public Task<bool> ReadAsync(CancellationToken cancel = default)
+        private void Initialize()
         {
-            if (_contents == null)
+            if (_fsRootPath != null)
+                return;
+
+            var fsRootPath = RootPath == null
+                ? _fsRootDirectory
+                : Path.Combine(_fsRootDirectory, RootPath.TrimStart('/'));
+            _fsRootPath = Path.GetFullPath(fsRootPath); // normalize path separators
+
+            EstimatedCount = 1;
+            Task.Run(() => GetContentCount(_fsRootPath));
+        }
+
+        private List<FsContent> _contentTypeContents;
+        private int _contentTypeContentsIndex;
+        public Task<bool> ReadContentTypesAsync(CancellationToken cancel = default)
+        {
+            if (_contentTypeContents == null)
             {
-                var contents = new List<FsContent>();
-                var fsRootPath = RootPath == null
-                    ? _fsRootPath
-                    : Path.Combine(_fsRootPath, RootPath.TrimStart('/'));
-                fsRootPath = Path.GetFullPath(fsRootPath); // normalize path separators
+                Initialize();
 
-                var rootContent = GetRootContent(fsRootPath);
-                contents.Add(rootContent);
+                if (!RootPath.Equals("/Root", StringComparison.OrdinalIgnoreCase) && 
+                    !RootPath.Equals("/Root/System", StringComparison.OrdinalIgnoreCase) &&
+                    !RootPath.Equals("/Root/System/Schema", StringComparison.OrdinalIgnoreCase) &&
+                    !RootPath.Equals("/Root/System/Schema/ContentTypes", StringComparison.OrdinalIgnoreCase)
+                    )
+                    return Task.FromResult(false);
 
-                ReadPriorityContents(fsRootPath, rootContent, contents);
-                ReadContents(fsRootPath, rootContent, contents);
-                EstimatedCount = contents.Count;
-                _contents = contents;
+                var ctdRootRelPath = "/Root/System/Schema/ContentTypes".Substring(RootPath.Length).TrimStart('/');
+                var ctdRootContent = CreateFsContent("ContentTypes", ctdRootRelPath, null, true);
+                _contentTypeContents = new List<FsContent>();
+                ReadSubTree(ctdRootContent, _contentTypeContents);
             }
 
-            if (_contentIndex < _contents.Count)
+            if (_contentTypeContentsIndex >= _contentTypeContents.Count)
+                return Task.FromResult(false);
+
+            _content = _contentTypeContents[_contentTypeContentsIndex++];
+
+            return Task.FromResult(true);
+        }
+
+        private List<FsContent> _settingsContents;
+        private int _settingsContentsIndex;
+        public Task<bool> ReadSettingsAsync(CancellationToken cancel = default)
+        {
+            if (_settingsContents == null)
             {
-                _content = _contents[_contentIndex++];
-                _content.InitializeMetadata();
+                Initialize();
 
-                RelativePath = _content.Path;
+                if (!RootPath.Equals("/Root", StringComparison.OrdinalIgnoreCase) &&
+                    !RootPath.Equals("/Root/System", StringComparison.OrdinalIgnoreCase) &&
+                    !RootPath.Equals("/Root/System/Settings", StringComparison.OrdinalIgnoreCase))
+                    return Task.FromResult(false);
 
-                return Task.FromResult(true);
+                var settingsRootRelPath = "/Root/System/Settings".Substring(RootPath.Length).TrimStart('/');
+                var settingsRootContent = CreateFsContent("Settings", settingsRootRelPath, null, true);
+                _settingsContents = new List<FsContent>();
+                ReadSubTree(settingsRootContent, _settingsContents);
             }
 
-            return Task.FromResult(false);
+            if (_settingsContentsIndex >= _settingsContents.Count)
+                return Task.FromResult(false);
+
+            _content = _settingsContents[_settingsContentsIndex++];
+
+            return Task.FromResult(true);
+        }
+
+        private List<FsContent> _aspectContents;
+        private int _aspectContentsIndex;
+        public Task<bool> ReadAspectsAsync(CancellationToken cancel = default)
+        {
+            if (_aspectContents == null)
+            {
+                Initialize();
+
+                if (!RootPath.Equals("/Root", StringComparison.OrdinalIgnoreCase) &&
+                    !RootPath.Equals("/Root/System", StringComparison.OrdinalIgnoreCase) &&
+                    !RootPath.Equals("/Root/System/Schema", StringComparison.OrdinalIgnoreCase) &&
+                    !RootPath.Equals("/Root/System/Schema/Aspects", StringComparison.OrdinalIgnoreCase)
+                )
+                    return Task.FromResult(false);
+
+                var ctdRootRelPath = "/Root/System/Schema/Aspects".Substring(RootPath.Length).TrimStart('/');
+                var ctdRootContent = CreateFsContent("Aspects", ctdRootRelPath, null, true);
+                _aspectContents = new List<FsContent>();
+                ReadSubTree(ctdRootContent, _aspectContents);
+            }
+
+            if (_aspectContentsIndex >= _aspectContents.Count)
+                return Task.FromResult(false);
+
+            _content = _aspectContents[_aspectContentsIndex++];
+
+            return Task.FromResult(true);
+        }
+
+        private void ReadSubTree(FsContent parentContent, List<FsContent> container)
+        {
+            var children = ReadChildren(parentContent);
+            container.AddRange(children);
+            foreach (var child in children)
+                ReadSubTree(child, container);
+        }
+
+        private class Level
+        {
+            public FsContent CurrentContent => Contents[Index];
+            public int Index { get; set; }
+            public FsContent[] Contents { get; set; }
+        }
+        public Task<bool> ReadAllAsync(CancellationToken cancel = default)
+        {
+            Initialize();
+
+            bool goAhead;
+            // ReSharper disable once AssignmentInConditionalExpression
+            while (goAhead = ReadTree())
+            {
+                if (!(IsContentType(Content) || IsAspect(Content) || IsSettings(Content)))
+                    break;
+            }
+
+            return Task.FromResult(goAhead);
+        }
+
+        private bool IsContentType(IContent content)
+        {
+            return ContentPath.Combine(RootPath, content.Path)
+                .StartsWith("/Root/System/Schema/ContentTypes/", StringComparison.OrdinalIgnoreCase);
+        }
+        private bool IsAspect(IContent content)
+        {
+            return ContentPath.Combine(RootPath, content.Path)
+                .StartsWith("/Root/System/Schema/Aspects/", StringComparison.OrdinalIgnoreCase);
+        }
+        private bool IsSettings(IContent content)
+        {
+            return ContentPath.Combine(RootPath, content.Path)
+                .StartsWith("/Root/System/Settings/", StringComparison.OrdinalIgnoreCase);
         }
 
         private FsContent GetRootContent(string fsRootPath)
@@ -71,80 +184,93 @@ namespace SenseNet.IO.Implementations
                 metaFilePath = null;
             var contentIsDirectory = IsDirectoryExists(fsRootPath);
 
-            return CreateFsContent(contentName, metaFilePath, contentIsDirectory, null);
+            var content = CreateFsContent(contentName, string.Empty, metaFilePath, contentIsDirectory, null);
+            content.InitializeMetadata();
+            return content;
         }
 
-        private static readonly string[] PriorityNames = new[] {"System", "Schema", "ContentTypes", "Aspects"};
-        private void ReadPriorityContents(string currentPath, FsContent currentContent, List<FsContent> container)
+        private Stack<Level> _levels;
+        private bool ReadTree()
         {
-            var dirs = GetFsDirectories(currentPath)
-                .Where(x => PriorityNames.Contains(Path.GetFileName(x), StringComparer.OrdinalIgnoreCase))
-                .OrderByDescending(x => x) // ensures that "ContentTypes" precedes "Aspects"
-                .ToList();
-            var filePaths = GetFsFiles(currentPath)
-                .Where(x => PriorityNames.Contains(Path.GetFileNameWithoutExtension(x), StringComparer.OrdinalIgnoreCase))
-                .ToList();
-            var localContents = new List<FsContent>();
-            FsContent content;
-            foreach (var directoryPath in dirs)
+            if (_levels == null)
             {
-                // get metaFile's path if exists or null
-                var metaFilePath = directoryPath + ".Content";
-                if (!IsFileExists(metaFilePath))
-                    metaFilePath = null;
-                else
-                    filePaths.Remove(metaFilePath);
-
-                // create current content and add to container
-                content = CreateFsContent(Path.GetFileName(directoryPath), metaFilePath, true, currentContent);
-                container.Add(content);
-                localContents.Add(content);
-
-                // recursion
-                if (content.Name.Equals("ContentTypes", StringComparison.OrdinalIgnoreCase))
-                    ReadContents(directoryPath, content, container);
-                else if(content.Name.Equals("Aspects", StringComparison.OrdinalIgnoreCase))
-                    ReadContents(directoryPath, content, container);
-                else
-                    ReadPriorityContents(directoryPath, content, container);
+                _levels = new Stack<Level>();
+                return MoveToFirst();
             }
-
-            // get metaFile leaves and add to container
-            var metaFilePaths = filePaths
-                .Where(p => p.EndsWith(".content", StringComparison.OrdinalIgnoreCase))
-                .ToArray();
-
-            foreach (var metaFilePath in metaFilePaths)
+            if (MoveToFirstChild())
+                return true;
+            if (MoveToNextSibling())
+                return true;
+            while (true)
             {
-                var name = Path.GetFileNameWithoutExtension(metaFilePath);
-
-                content = CreateFsContent(name, metaFilePath, false, currentContent);
-                container.Add(content);
-                localContents.Add(content);
+                if (MoveToParent())
+                    if (MoveToNextSibling())
+                        return true;
+                if (_levels.Count == 0)
+                    break;
             }
-
-            // preprocess attachments if the content has metaFile.
-            var attachmentPaths = filePaths.Except(metaFilePaths).Select(x => x.ToLowerInvariant()).ToList();
-            var attachmentNames = localContents.SelectMany(x => x.GetPreprocessedAttachmentNames());
-            foreach (var attachmentName in attachmentNames)
-                attachmentPaths.Remove(Path.Combine(currentPath, attachmentName).ToLowerInvariant());
-
-            // add contents by files without metaFile.
-            foreach (var attachmentPath in attachmentPaths)
-            {
-                var name = Path.GetFileName(attachmentPath);
-                content = CreateFsContent(name, null, false, currentContent, attachmentPath);
-                container.Add(content);
-            }
+            return false;
         }
 
-        private void ReadContents(string currentPath, FsContent currentContent, List<FsContent> container)
+        private void SetCurrentContent(Stack<Level> levels)
         {
-            var dirs = GetFsDirectories(currentPath).OrderBy(x => x).ToList();
-            var filePaths = GetFsFiles(currentPath).OrderBy(x => x).ToList();
+            var level = levels.Peek();
+            _content = level.Contents[level.Index];
+        }
+        private bool MoveToFirst()
+        {
+            var rootContent = GetRootContent(_fsRootPath);
+            if (rootContent == null)
+                return false;
+            var level = new Level {Contents = new[] {rootContent}};
+            _levels.Push(level);
+            SetCurrentContent(_levels);
+            return true;
+        }
+        private bool MoveToParent()
+        {
+            if (_levels.Count == 0)
+                return false;
+            _levels.Pop();
+            if (_levels.Count == 0)
+                return false;
+            SetCurrentContent(_levels);
+            return true;
+        }
+        private bool MoveToNextSibling()
+        {
+            var level = _levels.Peek();
+            var index = level.Index + 1;
+            if (index >= level.Contents.Length)
+                return false;
+            level.Index = index;
+            SetCurrentContent(_levels);
+            return true;
+        }
+        private bool MoveToFirstChild()
+        {
+            var contents = ReadChildren(_levels.Peek().CurrentContent);
+            if (contents.Length == 0)
+                return false;
+            var level = new Level { Contents = contents };
+            _levels.Push(level);
+            SetCurrentContent(_levels);
+            return true;
+
+        }
+        private FsContent[] ReadChildren(FsContent parentContent)
+        {
+            string GetPath(string name) { return ContentPath.Combine(parentContent.Path, name); }
+
+            if (!parentContent.IsDirectory)
+                return new FsContent[0];
+            var fsPath = Path.GetFullPath(Path.Combine(_fsRootPath, parentContent.Path));
+
+            var dirs = GetFsDirectories(fsPath).OrderBy(x => x).ToList();
+            var filePaths = GetFsFiles(fsPath).OrderBy(x => x).ToList();
             var localContents = new List<FsContent>();
+            var container = new List<FsContent>();
             FsContent content;
-            bool isPriorityContent;
             foreach (var directoryPath in dirs)
             {
                 // get metaFile's path if exists or null
@@ -156,16 +282,10 @@ namespace SenseNet.IO.Implementations
 
                 // create current content and add to container
                 var name = Path.GetFileName(directoryPath);
-                content = currentContent.Children.FirstOrDefault(x => x.Name == name);
-                isPriorityContent = content != null;
-                if(!isPriorityContent)
-                    content = CreateFsContent(name, metaFilePath, true, currentContent);
+                content = CreateFsContent(name, GetPath(name), metaFilePath, true);
+                content.InitializeMetadata();
                 localContents.Add(content);
-                if(!isPriorityContent)
-                    container.Add(content);
-
-                // recursion
-                ReadContents(directoryPath, content, container);
+                container.Add(content);
             }
 
             // get metaFile leaves and add to container
@@ -177,42 +297,92 @@ namespace SenseNet.IO.Implementations
             {
                 var name = Path.GetFileNameWithoutExtension(metaFilePath);
 
-                content = currentContent.Children.FirstOrDefault(x => x.Name == name);
-                isPriorityContent = content != null;
-                if (!isPriorityContent)
-                    content = CreateFsContent(name, metaFilePath, false, currentContent);
+                content = CreateFsContent(name, GetPath(name), metaFilePath, false);
+                content.InitializeMetadata();
                 localContents.Add(content);
-                if (!isPriorityContent)
-                    container.Add(content);
+                container.Add(content);
             }
 
             // preprocess attachments if the content has metaFile.
-            var attachmentPaths = filePaths.Except(metaFilePaths).Select(x=>x.ToLowerInvariant()).ToList();
+            var attachmentPaths = filePaths.Except(metaFilePaths).Select(x => x.ToLowerInvariant()).ToList();
             var attachmentNames = localContents.SelectMany(x => x.GetPreprocessedAttachmentNames());
             foreach (var attachmentName in attachmentNames)
-                attachmentPaths.Remove(Path.Combine(currentPath, attachmentName).ToLowerInvariant());
+                attachmentPaths.Remove(Path.Combine(fsPath, attachmentName).ToLowerInvariant());
 
             // add contents by files without metaFile.
             foreach (var attachmentPath in attachmentPaths)
             {
                 var name = Path.GetFileName(attachmentPath);
 
-                content = currentContent.Children.FirstOrDefault(x => x.Name == name);
-                isPriorityContent = content != null;
-                if (!isPriorityContent)
-                    content = CreateFsContent(name, null, false, currentContent);
+                content = CreateFsContent(name, GetPath(name), null, false, attachmentPath);
+                content.InitializeMetadata();
                 localContents.Add(content);
-                if (!isPriorityContent)
-                    container.Add(content);
+                container.Add(content);
             }
+
+            return container.ToArray();
+        }
+
+        private void GetContentCount(string fsPath)
+        {
+            var dirs = GetFsDirectories(fsPath).OrderBy(x => x).ToList();
+            var filePaths = GetFsFiles(fsPath).OrderBy(x => x).ToList();
+            var localContents = new List<FsContent>();
+            FsContent content;
+            foreach (var directoryPath in dirs)
+            {
+                // get metaFile's path if exists or null
+                var metaFilePath = directoryPath + ".Content";
+                if (!IsFileExists(metaFilePath))
+                    metaFilePath = null;
+                else
+                    filePaths.Remove(metaFilePath);
+
+                // create current content and add to container
+                var name = Path.GetFileName(directoryPath);
+                content = CreateFsContent(name, string.Empty, metaFilePath, true);
+                localContents.Add(content);
+            }
+
+            // get metaFile leaves and add to container
+            var metaFilePaths = filePaths
+                .Where(p => p.EndsWith(".content", StringComparison.OrdinalIgnoreCase))
+                .ToArray();
+
+            foreach (var metaFilePath in metaFilePaths)
+            {
+                var name = Path.GetFileNameWithoutExtension(metaFilePath);
+
+                content = CreateFsContent(name, string.Empty, metaFilePath, false);
+                localContents.Add(content);
+            }
+
+            // preprocess attachments if the content has metaFile.
+            var attachmentPaths = filePaths.Except(metaFilePaths).Select(x => x.ToLowerInvariant()).ToList();
+            var attachmentNames = localContents.SelectMany(x => x.GetPreprocessedAttachmentNames());
+            foreach (var attachmentName in attachmentNames)
+                attachmentPaths.Remove(Path.Combine(fsPath, attachmentName).ToLowerInvariant());
+
+            // add contents by files without metaFile.
+            foreach (var attachmentPath in attachmentPaths)
+            {
+                var name = Path.GetFileName(attachmentPath);
+                content = CreateFsContent(name, string.Empty, null, false);
+                localContents.Add(content);
+            }
+
+            EstimatedCount += localContents.Count;
+
+            foreach (var subDir in dirs)
+                GetContentCount(subDir);
         }
 
         /* ========================================================================== TESTABILITY */
 
-        protected virtual FsContent CreateFsContent(string name, string metaFilePath, bool isDirectory,
-            FsContent parent, string defaultAttachmentPath = null)
+        protected virtual FsContent CreateFsContent(string name, string relativePath, string metaFilePath, bool isDirectory,
+            string defaultAttachmentPath = null)
         {
-            return new FsContent(name, metaFilePath, isDirectory, parent, defaultAttachmentPath);
+            return new FsContent(name, relativePath, metaFilePath, isDirectory, defaultAttachmentPath);
         }
 
         protected virtual bool IsDirectoryExists(string fsPath)
@@ -231,5 +401,6 @@ namespace SenseNet.IO.Implementations
         {
             return Directory.GetFiles(fsDirectoryPath);
         }
+
     }
 }

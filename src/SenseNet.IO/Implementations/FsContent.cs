@@ -25,23 +25,7 @@ namespace SenseNet.IO.Implementations
         }
 
         public string Name { get; set; }
-
-        private string _path;
-        public string Path
-        {
-            get
-            {
-                if (_path != null)
-                    return _path;
-                if (Parent == null)
-                    return Name;
-                var parentPath = Parent.Path;
-                if (parentPath == "")
-                    return Name;
-                return Parent.Path + "/" + Name;
-            }
-            set => _path = value;
-        }
+        public string Path { get; set; }
 
         private string _type;
         public string Type
@@ -104,25 +88,19 @@ namespace SenseNet.IO.Implementations
         /// <param name="name">Name of the content.</param>
         /// <param name="metaFilePath">*.Content file or null.</param>
         /// <param name="isDirectory">True if represents a directory.</param>
-        /// <param name="parent">Parent or null if the root content.</param>
+        /// <param name="relativePath">Relative repository path. The reader's root content path need to be String.Empty.</param>
         /// <param name="defaultAttachmentPath">Path if the content is represented as a raw file (e.g. "readme.txt").</param>
-        public FsContent(string name, string metaFilePath, bool isDirectory, FsContent parent, string defaultAttachmentPath = null)
+        public FsContent(string name, string relativePath, string metaFilePath, bool isDirectory, string defaultAttachmentPath = null)
         {
             Name = name;
             IsDirectory = isDirectory;
-            Parent = parent;
-            if (parent != null)
-                parent.Children.Add(this);
-            else
-                _path = ""; // set explicit empty path if root
+            Path = relativePath;
             _metaFilePath = metaFilePath;
             _defaultAttachmentPath = defaultAttachmentPath;
         }
 
         private readonly string _metaFilePath;
         public bool IsDirectory { get; }
-        public FsContent Parent { get; set; }
-        public List<FsContent> Children { get; } = new List<FsContent>();
 
         private static readonly string[] EmptyAttachmentNames = new string[0];
 

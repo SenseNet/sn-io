@@ -97,14 +97,15 @@ namespace SenseNet.IO.CLI
 
         static async Task Main()
         {
-            //var reader = new RepositoryTreeReader("https://localhost:44362", "/Root", 10);
+            var reader = new RepositoryTreeReader("https://localhost:44362", "/Root", 10);
             //var reader = new RepositoryTreeReader("https://localhost:44362", "/Root/(apps)", 10);
             //var reader = new RepositoryTreeReader("https://localhost:44362", "/Root/IMS", 10);
             //var reader = new RepositoryTreeReader("https://localhost:44362", "/Root/IMS/BuiltIn/Portal/Admin", 10);
+            //var reader = new RepositoryTreeReader("https://localhost:44362", "/Root/System", 10);
             //var reader = new RepositoryTreeReader("https://localhost:44362", "/Root/System/Settings", 10);
             //var reader = new RepositoryTreeReader("https://localhost:44362", "/Root/System/Schema", 10);
 
-            var reader = new FsReader(@"D:\dev\_sn-io-test\FsReader", "/Root");
+            //var reader = new FsReader(@"D:\dev\_sn-io-test\FsReader", "/Root");
             //var reader = new FsReader(@"D:\dev\_sn-io-test\FsReader", "/Root/GyebiTesztel");
             //var reader = new FsReader(@"D:\dev\_sn-io-test\FsReader", "/Root/(apps)");
             //var reader = new FsReader(@"D:\dev\_sn-io-test\FsReader", "/Root/IMS");
@@ -121,20 +122,21 @@ namespace SenseNet.IO.CLI
                 }
             */
 
-            var writer = new FsWriter(@"D:\dev\_sn-io-test\FsWriter");
+            //var writer = new FsWriter(@"D:\dev\_sn-io-test\FsWriter");
             //var writer = new FsWriter(@"D:\dev\_sn-io-test\FsWriter", "/Root", "XXX");
+            var writer = new FsWriter(@"D:\dev\_sn-io-test\FsWriter_NEW2");
 
             var flow = new ContentFlow(reader, writer);
-            //var progress = new Progress(state =>
-            //{
-            //    Console.Write("Transferring... {0,5:F1}%\r", state.Percent);
-            //});
             var progress = new Progress(state =>
             {
-                Console.Write("                             \r");
-                Console.WriteLine(state.Path);
                 Console.Write("Transferring... {0,5:F1}%\r", state.Percent);
             });
+            //var progress = new Progress(state =>
+            //{
+            //    Console.Write("                             \r");
+            //    Console.WriteLine(state.Path);
+            //    Console.Write("Transferring... {0,5:F1}%\r", state.Percent);
+            //});
             await flow.TransferAsync(progress);
             Console.WriteLine();
             Console.WriteLine("Done.");

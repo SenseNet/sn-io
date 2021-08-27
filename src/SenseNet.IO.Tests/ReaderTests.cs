@@ -23,7 +23,7 @@ namespace SenseNet.IO.Tests
             // ACTION
             var reader = new TestContentReader("/Root/Folder-1", tree);
             var result = new List<string>();
-            while (await reader.ReadAsync())
+            while (await reader.ReadAllAsync())
                 result.Add(reader.Content.Path);
 
             // ASSERT
