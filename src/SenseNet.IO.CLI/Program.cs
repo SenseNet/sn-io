@@ -97,14 +97,15 @@ namespace SenseNet.IO.CLI
 
         static async Task Main()
         {
-            //var reader = new RepositoryTreeReader("https://localhost:44362", "/Root", 10);
+            var reader = new RepositoryTreeReader("https://localhost:44362", "/Root", 10);
             //var reader = new RepositoryTreeReader("https://localhost:44362", "/Root/(apps)", 10);
             //var reader = new RepositoryTreeReader("https://localhost:44362", "/Root/IMS", 10);
             //var reader = new RepositoryTreeReader("https://localhost:44362", "/Root/IMS/BuiltIn/Portal/Admin", 10);
+            //var reader = new RepositoryTreeReader("https://localhost:44362", "/Root/System", 10);
             //var reader = new RepositoryTreeReader("https://localhost:44362", "/Root/System/Settings", 10);
             //var reader = new RepositoryTreeReader("https://localhost:44362", "/Root/System/Schema", 10);
 
-            var reader = new FsReader(@"D:\dev\_sn-io-test\FsReader", "/Root");
+            //var reader = new FsReader(@"D:\dev\_sn-io-test\FsReader", "/Root");
             //var reader = new FsReader(@"D:\dev\_sn-io-test\FsReader", "/Root/GyebiTesztel");
             //var reader = new FsReader(@"D:\dev\_sn-io-test\FsReader", "/Root/(apps)");
             //var reader = new FsReader(@"D:\dev\_sn-io-test\FsReader", "/Root/IMS");
@@ -121,8 +122,9 @@ namespace SenseNet.IO.CLI
                 }
             */
 
-            var writer = new FsWriter(@"D:\dev\_sn-io-test\FsWriter");
+            //var writer = new FsWriter(@"D:\dev\_sn-io-test\FsWriter");
             //var writer = new FsWriter(@"D:\dev\_sn-io-test\FsWriter", "/Root", "XXX");
+            var writer = new FsWriter(@"D:\dev\_sn-io-test\FsWriter_NEW");
 
             var flow = new ContentFlow(reader, writer);
             var progress = new Progress(state =>

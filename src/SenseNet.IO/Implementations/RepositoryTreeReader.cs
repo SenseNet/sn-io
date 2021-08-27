@@ -29,24 +29,99 @@ namespace SenseNet.IO.Implementations
             _blockSize = blockSize ?? 10;
         }
 
-        public Task<bool> ReadContentTypesAsync(CancellationToken cancel = default)
+        private async Task InitializeAsync()
         {
-            //UNDONE: Implement ReadContentTypesAsync()
-            throw new NotImplementedException();
+            if (Content == null)
+            {
+                ClientContext.Current.AddServer(new ServerContext
+                {
+                    Url = _url,
+                    Username = "builtin\\admin",
+                    Password = "admin"
+                });
+
+                // Get tree size before first read
+                EstimatedCount = await GetCountAsync();
+            }
         }
-        public Task<bool> ReadSettingsAsync(CancellationToken cancel = default)
+
+        private IContent[] _contentTypeContents;
+        private int _contentTypeContentsIndex;
+        public async Task<bool> ReadContentTypesAsync(CancellationToken cancel = default)
         {
-            //UNDONE: Implement ReadSettingsAsync()
-            throw new NotImplementedException();
+            if (_contentTypeContents == null)
+            {
+                await InitializeAsync();
+
+                if (!RootPath.Equals("/Root", StringComparison.OrdinalIgnoreCase) &&
+                    !RootPath.Equals("/Root/System", StringComparison.OrdinalIgnoreCase) &&
+                    !RootPath.Equals("/Root/System/Schema", StringComparison.OrdinalIgnoreCase) &&
+                    !RootPath.Equals("/Root/System/Schema/ContentTypes", StringComparison.OrdinalIgnoreCase)
+                    )
+                    return false;
+
+                _contentTypeContents = await QueryBlockAsync("/Root/System/Schema/ContentTypes", 1, int.MaxValue); // Skip subtree-root
+            }
+
+            if (_contentTypeContentsIndex >= _contentTypeContents.Length)
+                return false;
+            Content = _contentTypeContents[_contentTypeContentsIndex++];
+            RelativePath = ContentPath.GetRelativePath(Content.Path, RootPath);
+            return true;
         }
-        public Task<bool> ReadAspectsAsync(CancellationToken cancel = default)
+
+        private IContent[] _settingsContents;
+        private int _settingsContentsIndex;
+        public async Task<bool> ReadSettingsAsync(CancellationToken cancel = default)
         {
-            //UNDONE: Implement ReadAspectsAsync()
-            throw new NotImplementedException();
+            if (_settingsContents == null)
+            {
+                await InitializeAsync();
+
+                if (!RootPath.Equals("/Root", StringComparison.OrdinalIgnoreCase) &&
+                    !RootPath.Equals("/Root/System", StringComparison.OrdinalIgnoreCase) &&
+                    !RootPath.Equals("/Root/System/Settings", StringComparison.OrdinalIgnoreCase))
+                    return false;
+
+                _settingsContents = await QueryBlockAsync("/Root/System/Settings", 1, int.MaxValue); // Skip subtree-root
+            }
+
+            if (_settingsContentsIndex >= _settingsContents.Length)
+                return false;
+            Content = _settingsContents[_settingsContentsIndex++];
+            RelativePath = ContentPath.GetRelativePath(Content.Path, RootPath);
+            return true;
         }
+
+        private IContent[] _aspectContents;
+        private int _aspectContentsIndex;
+        public async Task<bool> ReadAspectsAsync(CancellationToken cancel = default)
+        {
+            if (_aspectContents == null)
+            {
+                await InitializeAsync();
+
+                if (!RootPath.Equals("/Root", StringComparison.OrdinalIgnoreCase) &&
+                    !RootPath.Equals("/Root/System", StringComparison.OrdinalIgnoreCase) &&
+                    !RootPath.Equals("/Root/System/Schema", StringComparison.OrdinalIgnoreCase) &&
+                    !RootPath.Equals("/Root/System/Schema/Aspects", StringComparison.OrdinalIgnoreCase)
+                )
+                    return false;
+
+                _aspectContents = await QueryBlockAsync("/Root/System/Schema/Aspects", 1, int.MaxValue); // Skip subtree-root
+            }
+
+            if (_aspectContentsIndex >= _aspectContents.Length)
+                return false;
+            Content = _aspectContents[_aspectContentsIndex++];
+            RelativePath = ContentPath.GetRelativePath(Content.Path, RootPath);
+            return true;
+        }
+
         private IContent[] _currentBlock;
         private int _currentBlockIndex;
-        public async Task<bool> ReadAllAsync(CancellationToken cancel = default)
+        //UNDONE: delete this method
+        public async Task<bool> ReadAllAsync_OLD(CancellationToken cancel = default)
         {
             if (Content == null)
             {
@@ -64,7 +139,7 @@ namespace SenseNet.IO.Implementations
             //TODO: Raise performance: read the next block (background)
             if (_currentBlock == null || _currentBlockIndex >= _currentBlock.Length)
             {
-                _currentBlock = await QueryBlockAsync(_blockIndex * _blockSize, _blockSize);
+                _currentBlock = await QueryBlockAsync(RootPath, _blockIndex * _blockSize, _blockSize);
                 _blockIndex++;
                 _currentBlockIndex = 0;
                 if (_currentBlock == null || _currentBlock.Length == 0)
@@ -76,16 +151,44 @@ namespace SenseNet.IO.Implementations
 
             return true;
         }
+        public async Task<bool> ReadAllAsync(CancellationToken cancel = default)
+        {
+            await InitializeAsync();
+
+            var skip = false;
+            do
+            {
+                //TODO: Raise performance: read the next block (background)
+                if (_currentBlock == null || _currentBlockIndex >= _currentBlock.Length)
+                {
+                    _currentBlock = await QueryBlockAsync(RootPath, _blockIndex * _blockSize, _blockSize);
+                    _blockIndex++;
+                    _currentBlockIndex = 0;
+                    if (_currentBlock == null || _currentBlock.Length == 0)
+                        return false;
+                }
+
+                Content = _currentBlock[_currentBlockIndex++];
+                RelativePath = ContentPath.GetRelativePath(Content.Path, RootPath);
+
+                //TODO: Raise performance: do not query these content instead of skip.
+                skip = Content.Path.StartsWith("/Root/System/Schema/ContentTypes/", StringComparison.OrdinalIgnoreCase) ||
+                       Content.Path.StartsWith("/Root/System/Schema/Aspects/", StringComparison.OrdinalIgnoreCase) ||
+                       Content.Path.StartsWith("/Root/System/Settings/", StringComparison.OrdinalIgnoreCase);
+
+            } while (skip);
+
+            return true;
+        }
 
         private async Task<int> GetCountAsync()
         {
             var result = await RESTCaller.GetResponseStringAsync(RootPath, "GetContentCountInTree");
             return int.TryParse(result, out var count) ? count : default;
         }
-        private async Task<IContent[]> QueryBlockAsync(int skip, int top)
+        private async Task<IContent[]> QueryBlockAsync(string rootPath, int skip, int top)
         {
-            var query = $"InTree:'{RootPath}' .SORT:Path .TOP:{top} .SKIP:{skip} .AUTOFILTERS:OFF";
-            //var queryResult = await Client.Content.QueryAsync(query).ConfigureAwait(false);
+            var query = $"InTree:'{rootPath}' .SORT:Path .TOP:{top} .SKIP:{skip} .AUTOFILTERS:OFF";
             var queryResult = await QueryAsync(query).ConfigureAwait(false);
 
             var result = queryResult.Select(x => new RepositoryReaderContent(x)).ToArray();
