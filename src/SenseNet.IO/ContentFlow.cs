@@ -276,7 +276,12 @@ namespace SenseNet.IO
 
         private async Task WriteAsync(IProgress<(string Path, double Percent)> progress, CancellationToken cancel = default)
         {
-            await Writer.WriteAsync(ContentPath.Combine(_rootName, Reader.RelativePath), Reader.Content, cancel);
+            var response = await Writer.WriteAsync(ContentPath.Combine(_rootName, Reader.RelativePath), Reader.Content, cancel);
+            Console.WriteLine($"{response.Action} {response.WriterPath}                               ");
+            if(response.Action == ImporterAction.Error)
+                foreach (var message in response.Messages)
+                    Console.WriteLine($"       {message.Replace("The server returned an error (HttpStatus: InternalServerError): ", "")}                               ");
+            //UNDONE:!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Process ImportResponse
             Progress(Reader.RelativePath, ref _count, progress);
         }
         private void Progress(string path, ref int count, IProgress<(string Path, double Percent)> progress = null)
