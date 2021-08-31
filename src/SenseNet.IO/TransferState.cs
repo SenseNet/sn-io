@@ -10,5 +10,7 @@
         public bool RetryPermissions { get; set; }
         public string[] Messages { get; set; } = new string[0];
         public TransferAction Action { get; set; }
+
+        public bool UpdateRequired => BrokenReferences.Length > 0 || RetryPermissions;
     }
 }

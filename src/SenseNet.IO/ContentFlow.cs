@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace SenseNet.IO
 {
@@ -250,18 +253,23 @@ namespace SenseNet.IO
 
         private async Task WriteAsync(IProgress<(string Path, double Percent)> progress, CancellationToken cancel = default)
         {
-            var state = await Writer.WriteAsync(ContentPath.Combine(_rootName, Reader.RelativePath), Reader.Content, cancel);
-            Progress(Reader.RelativePath, ref _count, state, progress);
+            var readerPath = Reader.RelativePath;
+            var writerPath = ContentPath.Combine(_rootName, readerPath);
+            var state = await Writer.WriteAsync(writerPath, Reader.Content, cancel);
+            state.ReaderPath = readerPath;
+            state.WriterPath = writerPath;
+            Progress(readerPath, ref _count, state, progress);
         }
         private void Progress(string readerPath, ref int count, TransferState state, IProgress<(string Path, double Percent)> progress = null)
         {
-            Console.Write($"{state.Action} {state.WriterPath}");
+            Console.Write($"{ActionToDisplay(state),-8} {state.WriterPath}");
             Console.WriteLine(state.WriterPath.Length<40 ? new string(' ', 40-state.WriterPath.Length) : string.Empty);
 
             if(state.Action == TransferAction.Error)
                 foreach (var message in state.Messages)
                     Console.WriteLine($"       {message.Replace("The server returned an error (HttpStatus: InternalServerError): ", "")}                               ");
-            //UNDONE:!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Process TransferState
+
+            WriteLogAndTask(state);
 
             ++count;
             var totalCount = Reader.EstimatedCount;
@@ -274,6 +282,80 @@ namespace SenseNet.IO
             if (content.FieldNames.Contains("Name"))
                 content["Name"] = newName;
             content.Name = newName;
+        }
+
+        private void WriteLogAndTask(TransferState state)
+        {
+            WriteLogToFile(state, false);
+            if (state.RetryPermissions || state.BrokenReferences.Length > 0)
+                WriteTaskToFile(state);
+        }
+
+        private string _logFilePath;
+        private void WriteLogToFile(TransferState state, bool updateReferences)
+        {
+            if (_logFilePath == null)
+                _logFilePath = CreateLogFile(true, "log");
+
+            using (StreamWriter writer = new StreamWriter(_logFilePath, true))
+            {
+                writer.WriteLine($"{ActionToDisplay(state),-8} {state.WriterPath}");
+                foreach (var message in state.Messages)
+                    writer.WriteLine($"\t{message.Replace("The server returned an error (HttpStatus: InternalServerError): ", "")}                               ");
+            }
+        }
+
+        private string ActionToDisplay(TransferState state)
+        {
+            var action = state.Action;
+            if (state.UpdateRequired)
+            {
+                if (action == TransferAction.Create)
+                    return "Creating";
+                if (action == TransferAction.Update)
+                    return "Updating";
+            }
+            return action.ToString();
+        }
+
+        private string _taskFilePath;
+        private void WriteTaskToFile(TransferState state)
+        {
+            if (_taskFilePath == null)
+                _taskFilePath = CreateLogFile(true, "tasks");
+
+            using (StreamWriter writer = new StreamWriter(_taskFilePath, true))
+            {
+                writer.Write($"{state.ReaderPath};{state.WriterPath};{ string.Join(",", state.BrokenReferences)}");
+                if(state.RetryPermissions)
+                    writer.Write(";SetPermissions");
+                writer.WriteLine();
+            }
+        }
+        public string CreateLogFile(bool createNew, string extension)
+        {
+            var asm = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            var folder = asm == null ? "D:\\" : Path.Combine(asm, "logs");
+            if (!Directory.Exists(folder))
+                Directory.CreateDirectory(folder);
+
+            var path = Path.Combine(folder, $"SenseNet.IO.{DateTime.Now:yyyyMMdd_HHmmss}.{extension}");
+            if (!File.Exists(path) || createNew)
+            {
+                using (FileStream fs = new FileStream(path, FileMode.Create))
+                using (StreamWriter wr = new StreamWriter(fs)) { }
+            }
+
+            return path;
+        }
+
+        private void WriteToLogFile(StreamWriter writer, params object[] values)
+        {
+            foreach (object value in values)
+            {
+                writer.Write(value);
+            }
+            writer.WriteLine();
         }
     }
 }
