@@ -184,27 +184,6 @@ namespace SenseNet.IO
             await TransferAllAsync(progress, cancel);
         }
 
-        private async Task TransferContentTypes(IProgress<(string Path, double Percent)> progress = null, CancellationToken cancel = default)
-        {
-            if (await Reader.ReadContentTypesAsync(cancel))
-            {
-                await EnsureRootAsync("", cancel);
-
-
-                await Writer.WriteAsync("", InitialContents["/Root"], cancel);
-                await Writer.WriteAsync("System", InitialContents["/Root/System"], cancel);
-                await Writer.WriteAsync("System/Schema", InitialContents["/Root/System/Schema"], cancel);
-                await Writer.WriteAsync("System/Schema/ContentTypes", InitialContents["/Root/System/Schema/ContentTypes"], cancel);
-                await Writer.WriteAsync(Reader.RelativePath, Reader.Content, cancel);
-                Progress(Reader.RelativePath, ref _count, progress);
-                while (await Reader.ReadContentTypesAsync(cancel))
-                {
-                    await Writer.WriteAsync(Reader.RelativePath, Reader.Content, cancel);
-                    Progress(Reader.RelativePath, ref _count, progress);
-                }
-            }
-        }
-
         private bool _rootWritten;
         private async Task EnsureRootAsync(string relativePath, CancellationToken cancel)
         {
@@ -256,19 +235,14 @@ namespace SenseNet.IO
 
         private async Task TransferAllAsync(IProgress<(string Path, double Percent)> progress = null, CancellationToken cancel = default)
         {
-            //var rootName = Writer.RootName ?? ContentPath.GetName(Reader.RootPath);
             if (await Reader.ReadAllAsync(cancel))
             {
                 if (Writer.RootName != null)
                     Rename(Reader.Content, _rootName);
 
-                //await Writer.WriteAsync(ContentPath.Combine(rootName, Reader.RelativePath), Reader.Content, cancel);
-                //Progress(Reader.RelativePath, ref _count, progress);
                 await WriteAsync(progress, cancel);
                 while (await Reader.ReadAllAsync(cancel))
                 {
-                    //await Writer.WriteAsync(ContentPath.Combine(rootName, Reader.RelativePath), Reader.Content, cancel);
-                    //Progress(Reader.RelativePath, ref _count, progress);
                     await WriteAsync(progress, cancel);
                 }
             }
@@ -276,20 +250,23 @@ namespace SenseNet.IO
 
         private async Task WriteAsync(IProgress<(string Path, double Percent)> progress, CancellationToken cancel = default)
         {
-            var response = await Writer.WriteAsync(ContentPath.Combine(_rootName, Reader.RelativePath), Reader.Content, cancel);
-            Console.WriteLine($"{response.Action} {response.WriterPath}                               ");
-            if(response.Action == ImporterAction.Error)
-                foreach (var message in response.Messages)
-                    Console.WriteLine($"       {message.Replace("The server returned an error (HttpStatus: InternalServerError): ", "")}                               ");
-            //UNDONE:!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Process ImportResponse
-            Progress(Reader.RelativePath, ref _count, progress);
+            var state = await Writer.WriteAsync(ContentPath.Combine(_rootName, Reader.RelativePath), Reader.Content, cancel);
+            Progress(Reader.RelativePath, ref _count, state, progress);
         }
-        private void Progress(string path, ref int count, IProgress<(string Path, double Percent)> progress = null)
+        private void Progress(string readerPath, ref int count, TransferState state, IProgress<(string Path, double Percent)> progress = null)
         {
+            Console.Write($"{state.Action} {state.WriterPath}");
+            Console.WriteLine(state.WriterPath.Length<40 ? new string(' ', 40-state.WriterPath.Length) : string.Empty);
+
+            if(state.Action == TransferAction.Error)
+                foreach (var message in state.Messages)
+                    Console.WriteLine($"       {message.Replace("The server returned an error (HttpStatus: InternalServerError): ", "")}                               ");
+            //UNDONE:!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Process TransferState
+
             ++count;
             var totalCount = Reader.EstimatedCount;
             if (totalCount > 0)
-                progress?.Report((path, count * 100.0 / totalCount));
+                progress?.Report((readerPath, count * 100.0 / totalCount));
         }
 
         private void Rename(IContent content, string newName)
