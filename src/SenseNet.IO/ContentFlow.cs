@@ -57,6 +57,7 @@ namespace SenseNet.IO
         }
 
         private int _count = 0;
+        private int _secondPartTotalCount = 0;
         private string _rootName;
         public async Task TransferAsync(IProgress<(string Path, double Percent)> progress = null, CancellationToken cancel = default)
         {
@@ -185,6 +186,8 @@ namespace SenseNet.IO
             }
 
             await TransferAllAsync(progress, cancel);
+
+            await TransferSecondPartAsync(progress, cancel);
         }
 
         private bool _rootWritten;
@@ -250,6 +253,32 @@ namespace SenseNet.IO
                 }
             }
         }
+        private void Rename(IContent content, string newName)
+        {
+            if (content.FieldNames.Contains("Name"))
+                content["Name"] = newName;
+            content.Name = newName;
+        }
+
+        private async Task TransferSecondPartAsync(IProgress<(string Path, double Percent)> progress = null,
+            CancellationToken cancel = default)
+        {
+            Console.WriteLine("----------- UPDATE REFERENCES -----------");
+
+            var taskCount = LoadTaskCount();
+            if (taskCount == 0)
+                return;
+
+            var tasks = LoadTasks();
+            Reader.SetSecondPartTasks(tasks, taskCount);
+
+            while (await Reader.ReadRandomAsync(cancel))
+            {
+                var writerPath = ContentPath.Combine(_rootName, Reader.RelativePath);
+                var state = await Writer.WriteAsync(writerPath, Reader.Content, cancel);
+                Progress(Reader.RelativePath, ref _count, state, true, progress);
+            }
+        }
 
         private async Task WriteAsync(IProgress<(string Path, double Percent)> progress, CancellationToken cancel = default)
         {
@@ -258,36 +287,31 @@ namespace SenseNet.IO
             var state = await Writer.WriteAsync(writerPath, Reader.Content, cancel);
             state.ReaderPath = readerPath;
             state.WriterPath = writerPath;
-            Progress(readerPath, ref _count, state, progress);
+            Progress(readerPath, ref _count, state, false, progress);
         }
-        private void Progress(string readerPath, ref int count, TransferState state, IProgress<(string Path, double Percent)> progress = null)
+        private void Progress(string readerPath, ref int count, TransferState state, bool updateReferences, IProgress<(string Path, double Percent)> progress = null)
         {
-            Console.Write($"{ActionToDisplay(state),-8} {state.WriterPath}");
+            Console.Write($"{ActionToDisplay(state, updateReferences),-8} {state.WriterPath}");
             Console.WriteLine(state.WriterPath.Length<40 ? new string(' ', 40-state.WriterPath.Length) : string.Empty);
 
             if(state.Action == TransferAction.Error)
                 foreach (var message in state.Messages)
                     Console.WriteLine($"       {message.Replace("The server returned an error (HttpStatus: InternalServerError): ", "")}                               ");
 
-            WriteLogAndTask(state);
+            WriteLogAndTask(state, updateReferences);
 
             ++count;
-            var totalCount = Reader.EstimatedCount;
+            var totalCount = Reader.EstimatedCount + _secondPartTotalCount;
             if (totalCount > 0)
                 progress?.Report((readerPath, count * 100.0 / totalCount));
         }
 
-        private void Rename(IContent content, string newName)
-        {
-            if (content.FieldNames.Contains("Name"))
-                content["Name"] = newName;
-            content.Name = newName;
-        }
+        /* ============================================================================== LOGGING */
 
-        private void WriteLogAndTask(TransferState state)
+        private void WriteLogAndTask(TransferState state, bool updateReferences)
         {
             WriteLogToFile(state, false);
-            if (state.RetryPermissions || state.BrokenReferences.Length > 0)
+            if (!updateReferences && (state.RetryPermissions || state.BrokenReferences.Length > 0))
                 WriteTaskToFile(state);
         }
 
@@ -299,23 +323,10 @@ namespace SenseNet.IO
 
             using (StreamWriter writer = new StreamWriter(_logFilePath, true))
             {
-                writer.WriteLine($"{ActionToDisplay(state),-8} {state.WriterPath}");
+                writer.WriteLine($"{ActionToDisplay(state, updateReferences),-8} {state.WriterPath}");
                 foreach (var message in state.Messages)
                     writer.WriteLine($"\t{message.Replace("The server returned an error (HttpStatus: InternalServerError): ", "")}                               ");
             }
-        }
-
-        private string ActionToDisplay(TransferState state)
-        {
-            var action = state.Action;
-            if (state.UpdateRequired)
-            {
-                if (action == TransferAction.Create)
-                    return "Creating";
-                if (action == TransferAction.Update)
-                    return "Updating";
-            }
-            return action.ToString();
         }
 
         private string _taskFilePath;
@@ -331,7 +342,73 @@ namespace SenseNet.IO
                     writer.Write(";SetPermissions");
                 writer.WriteLine();
             }
+
+            _secondPartTotalCount++;
         }
+
+        private int LoadTaskCount()
+        {
+            if (_taskFilePath == null)
+                return 0;
+
+            var count = 0;
+            string line;
+            using (var reader = new StreamReader(_taskFilePath))
+            {
+                while ((line = reader.ReadLine()) != null)
+                    count++;
+            }
+            return count;
+        }
+        //private IEnumerable<TransferTask> LoadTasks()
+        //{
+        //    // Preload whole file because reading per line causes IOException:
+        //    //     "The process cannot access the file '****.tasks' because it is being used by another process."
+        //    string fileContent;
+        //    using (var r = new StreamReader(_taskFilePath))
+        //        fileContent = r.ReadToEnd();
+
+        //    using (var reader = new StringReader(fileContent))
+        //    {
+        //        string line;
+        //        while ((line = reader.ReadLine()) != null)
+        //        {
+        //            var fields = line.Split(';');
+        //            if (fields.Length < 3)
+        //                throw new InvalidOperationException("Invalid task file.");
+
+        //            yield return new TransferTask
+        //            {
+        //                ReaderPath = fields[0].Trim(),
+        //                WriterPath = fields[1].Trim(),
+        //                BrokenReferences = fields[2].Split(',').Select(x => x.Trim()).ToArray(),
+        //                RetryPermissions = fields.Length > 3 && fields[3] == "SetPermissions"
+        //            };
+        //        }
+        //    }
+        //}
+        private IEnumerable<TransferTask> LoadTasks()
+        {
+            using (var reader = new StreamReader(_taskFilePath))
+            {
+                string line;
+                while ((line = reader.ReadLine()) != null)
+                {
+                    var fields = line.Split(';');
+                    if (fields.Length < 3)
+                        throw new InvalidOperationException("Invalid task file.");
+
+                    yield return new TransferTask
+                    {
+                        ReaderPath = fields[0].Trim(),
+                        WriterPath = fields[1].Trim(),
+                        BrokenReferences = fields[2].Split(',').Select(x => x.Trim()).ToArray(),
+                        RetryPermissions = fields.Length > 3 && fields[3] == "SetPermissions"
+                    };
+                }
+            }
+        }
+
         public string CreateLogFile(bool createNew, string extension)
         {
             var asm = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
@@ -348,14 +425,22 @@ namespace SenseNet.IO
 
             return path;
         }
-
-        private void WriteToLogFile(StreamWriter writer, params object[] values)
+        private string ActionToDisplay(TransferState state, bool updateReferences)
         {
-            foreach (object value in values)
+            var action = state.Action;
+            if (!updateReferences)
             {
-                writer.Write(value);
-            }
-            writer.WriteLine();
+                if (state.UpdateRequired)
+                {
+                    if (action == TransferAction.Create)
+                        return "Creating";
+                    if (action == TransferAction.Update)
+                        return "Updating";
+                }
+            } 
+            return action.ToString();
         }
+
+
     }
 }

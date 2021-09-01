@@ -131,7 +131,7 @@ namespace SenseNet.IO.Implementations
             return _attachmentNames.Values.ToArray();
         }
 
-        public void InitializeMetadata()
+        public void InitializeMetadata(string[] fieldNames = null, bool? withoutPermissions = false)
         {
             if (_metaFilePath == null)
             {
@@ -144,12 +144,36 @@ namespace SenseNet.IO.Implementations
                 .Deserialize(new JsonTextReader(CreateStreamReader(_metaFilePath)));
 
             var metaFile = (JObject)deserialized;
-            _type = metaFile["ContentType"].Value<string>();
-            _fields = ((JObject)metaFile["Fields"]).ToObject<Dictionary<string, object>>();
-            _fieldNames = _fields.Keys.ToArray();
-            var permsObject = (JObject) metaFile["Permissions"];
-            if(permsObject != null)
-                Permissions = permsObject.ToObject<PermissionInfo>();
+            if (metaFile == null)
+                throw new Exception("Cannot parse the metafile: " + _metaFilePath);
+            _type = metaFile["ContentType"]?.Value<string>();
+            if(_type == null)
+                throw new Exception("Cannot parse the \"ContentType\" property: " + _metaFilePath);
+
+            var jFields = (JObject)metaFile["Fields"];
+            if (jFields != null)
+            {
+                var fields = jFields.ToObject<Dictionary<string, object>>() ?? new Dictionary<string, object>();
+                if (fieldNames != null)
+                    foreach (var fieldName in fields.Keys.Except(fieldNames))
+                        fields.Remove(fieldName);
+
+                _fields = fields;
+                _fieldNames = _fields?.Keys.ToArray();
+            }
+            else
+            {
+                _fields = new Dictionary<string, object>();
+                _fieldNames = Array.Empty<string>();
+            }
+
+
+            if (withoutPermissions != true)
+            {
+                var permsObject = (JObject) metaFile["Permissions"];
+                if(permsObject != null)
+                    Permissions = permsObject.ToObject<PermissionInfo>();
+            }
         }
 
         /* ========================================================================== TESTABILITY */

@@ -87,6 +87,9 @@ namespace SenseNet.IO.Tests.Implementations
             return Task.FromResult(true);
         }
 
+        public void SetSecondPartTasks(IEnumerable<TransferTask> tasks, int taskCount) { }
+        public Task<bool> ReadRandomAsync(CancellationToken cancel) { return Task.FromResult(false); }
+
         private ContentNode[] QueryBlock(string rootPath, int skip, int top)
         {
             var rootPathTrailing = rootPath + "/";

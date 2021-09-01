@@ -44,5 +44,8 @@ namespace SenseNet.IO.Tests.Implementations
             _sortedPathIndex++;
             return Task.FromResult(true);
         }
+
+        public void SetSecondPartTasks(IEnumerable<TransferTask> tasks, int taskCount) { }
+        public Task<bool> ReadRandomAsync(CancellationToken cancel) { return Task.FromResult(false); }
     }
 }

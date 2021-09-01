@@ -160,6 +160,29 @@ namespace SenseNet.IO.Implementations
             return Task.FromResult(goAhead);
         }
 
+        private IEnumerator<TransferTask> _taskEnumerator;
+        public void SetSecondPartTasks(IEnumerable<TransferTask> tasks, int taskCount)
+        {
+            _taskEnumerator = tasks.GetEnumerator();
+        }
+        public Task<bool> ReadRandomAsync(CancellationToken cancel)
+        {
+            if (!_taskEnumerator.MoveNext())
+                return Task.FromResult(false);
+
+            var task = _taskEnumerator.Current;
+
+            var relativePath = task.ReaderPath;
+            var repositoryPath = ContentPath.Combine(RootPath, relativePath);
+            var metaFilePath = Path.GetFullPath(Path.Combine(_fsRootPath, relativePath)) + ".Content";
+            var name = ContentPath.GetName(repositoryPath);
+            var content = new FsContent(name, relativePath, metaFilePath, false);
+            content.InitializeMetadata(task.BrokenReferences, task.RetryPermissions);
+            _content = content;
+
+            return Task.FromResult(true);
+        }
+
         private bool IsContentType(IContent content)
         {
             return ContentPath.Combine(RootPath, content.Path)

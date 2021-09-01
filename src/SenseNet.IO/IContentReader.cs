@@ -74,5 +74,9 @@ namespace SenseNet.IO
         /// <returns>A Task that represents the asynchronous operation and wraps a boolean value that is true
         /// if there are more items or false if there aren't.</returns>
         Task<bool> ReadAllAsync(CancellationToken cancel = default);
+
+        void SetSecondPartTasks(IEnumerable<TransferTask> tasks, int taskCount);
+
+        Task<bool> ReadRandomAsync(CancellationToken cancel);
     }
 }

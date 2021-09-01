@@ -112,6 +112,9 @@ namespace SenseNet.IO.Tests
                 }
                 return Task.FromResult(false);
             }
+
+            public void SetSecondPartTasks(IEnumerable<TransferTask> tasks, int taskCount) { }
+            public Task<bool> ReadRandomAsync(CancellationToken cancel) { return Task.FromResult(false); }
         }
         #endregion
 
