@@ -20,7 +20,7 @@ namespace SenseNet.IO.Implementations
             RootName = rootName;
         }
 
-        public async Task<TransferState> WriteAsync(string path, IContent content, CancellationToken cancel = default)
+        public async Task<WriterState> WriteAsync(string path, IContent content, CancellationToken cancel = default)
         {
             var name = content.Name;
             var src = ToJson(content);
@@ -32,7 +32,7 @@ namespace SenseNet.IO.Implementations
 
             if (!IsDirectoryExists(fileDir))
                 CreateDirectory(fileDir);
-            var action = File.Exists(contentPath) ? TransferAction.Update : TransferAction.Create;
+            var action = File.Exists(contentPath) ? WriterAction.Update : WriterAction.Create;
             using (var writer = CreateTextWriter(contentPath, false))
                 await writer.WriteAsync(src);
 
@@ -46,7 +46,7 @@ namespace SenseNet.IO.Implementations
                         await inStream.CopyToAsync(outStream, cancel);
             }
 
-            return new TransferState
+            return new WriterState
             {
                 WriterPath = contentPath,
                 Action = action,

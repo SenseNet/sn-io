@@ -20,7 +20,7 @@ namespace SenseNet.IO.Tests.Implementations
         public string ContainerPath { get; }
         public string RootName { get; }
 
-        public Task<TransferState> WriteAsync(string path, IContent content, CancellationToken cancel = default)
+        public Task<WriterState> WriteAsync(string path, IContent content, CancellationToken cancel = default)
         {
             var absolutePath = ContentPath.GetAbsolutePath(path, ContainerPath);
             var parentPath = ContentPath.GetParentPath(absolutePath);
@@ -39,7 +39,7 @@ namespace SenseNet.IO.Tests.Implementations
 
             Tree[absolutePath] = contentNode;
 
-            return Task.FromResult(new TransferState{WriterPath = absolutePath, Action = TransferAction.Create});
+            return Task.FromResult(new WriterState{WriterPath = absolutePath, Action = WriterAction.Create});
         }
     }
 }

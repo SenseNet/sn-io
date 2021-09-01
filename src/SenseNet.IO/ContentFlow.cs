@@ -337,12 +337,12 @@ namespace SenseNet.IO
             state.WriterPath = writerPath;
             Progress(readerPath, ref _count, state, updateReferences, progress);
         }
-        private void Progress(string readerPath, ref int count, TransferState state, bool updateReferences, IProgress<(string Path, double Percent)> progress = null)
+        private void Progress(string readerPath, ref int count, WriterState state, bool updateReferences, IProgress<(string Path, double Percent)> progress = null)
         {
             Console.Write($"{ActionToDisplay(state, updateReferences),-8} {state.WriterPath}");
             Console.WriteLine(state.WriterPath.Length < 40 ? new string(' ', 40 - state.WriterPath.Length) : string.Empty);
 
-            if(state.Action == TransferAction.Error)
+            if(state.Action == WriterAction.Error)
                 foreach (var message in state.Messages)
                     Console.WriteLine($"         {message.Replace("The server returned an error (HttpStatus: InternalServerError): ", "")}                               ");
 
@@ -356,15 +356,15 @@ namespace SenseNet.IO
 
         /* ============================================================================== LOGGING */
 
-        private void WriteLogAndTask(TransferState state, bool updateReferences)
+        private void WriteLogAndTask(WriterState state, bool updateReferences)
         {
             WriteLogToFile(state, updateReferences);
-            if (!updateReferences && (state.RetryPermissions || state.BrokenReferences.Length > 0))
+            if (!updateReferences && state.UpdateRequired)
                 WriteTaskToFile(state);
         }
 
         private string _logFilePath;
-        private void WriteLogToFile(TransferState state, bool updateReferences)
+        private void WriteLogToFile(WriterState state, bool updateReferences)
         {
             using (var writer = new StringWriter())
             {
@@ -384,7 +384,7 @@ namespace SenseNet.IO
         }
 
         private string _taskFilePath;
-        private void WriteTaskToFile(TransferState state)
+        private void WriteTaskToFile(WriterState state)
         {
             if (_taskFilePath == null)
                 _taskFilePath = CreateLogFile(true, "tasks");
@@ -479,16 +479,16 @@ namespace SenseNet.IO
 
             return path;
         }
-        private string ActionToDisplay(TransferState state, bool updateReferences)
+        private string ActionToDisplay(WriterState state, bool updateReferences)
         {
             var action = state.Action;
             if (!updateReferences)
             {
                 if (state.UpdateRequired)
                 {
-                    if (action == TransferAction.Create)
+                    if (action == WriterAction.Create)
                         return "Creating";
-                    if (action == TransferAction.Update)
+                    if (action == WriterAction.Update)
                         return "Updating";
                 }
             } 

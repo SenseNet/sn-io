@@ -35,7 +35,7 @@ namespace SenseNet.IO.Implementations
 
         }
 
-        public async Task<TransferState> WriteAsync(string path, IContent content, CancellationToken cancel = default)
+        public async Task<WriterState> WriteAsync(string path, IContent content, CancellationToken cancel = default)
         {
             var repositoryPath = ContentPath.Combine(ContainerPath ?? "/", path);
             if (content.Type == "ContentType")
@@ -43,7 +43,7 @@ namespace SenseNet.IO.Implementations
             return await WriteContentAsync(repositoryPath, content, cancel);
         }
 
-        private async Task<TransferState> WriteContentTypeAsync(string repositoryPath, IContent content, CancellationToken cancel)
+        private async Task<WriterState> WriteContentTypeAsync(string repositoryPath, IContent content, CancellationToken cancel)
         {
             Content uploaded;
             var attachments = await content.GetAttachmentsAsync();
@@ -98,25 +98,25 @@ namespace SenseNet.IO.Implementations
             }
             catch (Exception e)
             {
-                return new TransferState
+                return new WriterState
                 {
                     WriterPath = repositoryPath,
-                    Action = TransferAction.Error,
+                    Action = WriterAction.Error,
                     Messages = new[] { e.Message }
                 };
             }
 
             var result = JsonConvert.DeserializeObject(resultString) as JObject;
             if (result == null)
-                return new TransferState{Action = TransferAction.Unknown, WriterPath = repositoryPath};
+                return new WriterState{Action = WriterAction.Unknown, WriterPath = repositoryPath};
 
-            Enum.TryParse(typeof(TransferAction), result["action"]?.Value<string>(), true, out var rawAction);
-            var action = rawAction == null ? TransferAction.Unknown : (TransferAction)rawAction;
+            Enum.TryParse(typeof(WriterAction), result["action"]?.Value<string>(), true, out var rawAction);
+            var action = rawAction == null ? WriterAction.Unknown : (WriterAction)rawAction;
             var writerPath = result["path"]?.Value<string>();
             var retryPermissions = result["retryPermissions"]?.Value<bool>() ?? false;
             var brokenReferences = result["brokenReferences"]?.Values<string>().ToArray();
             var messages = result["messages"]?.Values<string>().ToArray();
-            return new TransferState
+            return new WriterState
             {
                 WriterPath = writerPath,
                 RetryPermissions = retryPermissions,
@@ -125,7 +125,7 @@ namespace SenseNet.IO.Implementations
                 Action = action
             };
         }
-        private async Task<TransferState> WriteContentAsync(string repositoryPath, IContent content, CancellationToken cancel)
+        private async Task<WriterState> WriteContentAsync(string repositoryPath, IContent content, CancellationToken cancel)
         {
             Content uploaded;
             var attachments = await content.GetAttachmentsAsync();
@@ -162,10 +162,10 @@ namespace SenseNet.IO.Implementations
             }
             catch (Exception e)
             {
-                return new TransferState
+                return new WriterState
                 {
                     WriterPath = repositoryPath,
-                    Action = TransferAction.Error,
+                    Action = WriterAction.Error,
                     Messages = new[] {e.Message}
                 };
             }
@@ -181,15 +181,15 @@ namespace SenseNet.IO.Implementations
             // Process result
             var result = JsonConvert.DeserializeObject(resultString) as JObject;
             if (result == null)
-                return new TransferState { Action = TransferAction.Unknown, WriterPath = repositoryPath };
+                return new WriterState { Action = WriterAction.Unknown, WriterPath = repositoryPath };
 
-            Enum.TryParse(typeof(TransferAction), result["action"]?.Value<string>(), true, out var rawAction);
-            var action = rawAction == null ? TransferAction.Unknown : (TransferAction) rawAction;
+            Enum.TryParse(typeof(WriterAction), result["action"]?.Value<string>(), true, out var rawAction);
+            var action = rawAction == null ? WriterAction.Unknown : (WriterAction) rawAction;
             var writerPath = result["path"]?.Value<string>();
             var retryPermissions = result["retryPermissions"]?.Value<bool>() ?? false;
             var brokenReferences = result["brokenReferences"]?.Values<string>().ToArray();
             var messages = result["messages"]?.Values<string>().ToArray();
-            return new TransferState
+            return new WriterState
             {
                 WriterPath = writerPath,
                 RetryPermissions = retryPermissions,
