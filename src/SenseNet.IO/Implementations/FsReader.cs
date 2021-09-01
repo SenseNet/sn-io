@@ -160,17 +160,17 @@ namespace SenseNet.IO.Implementations
             return Task.FromResult(goAhead);
         }
 
-        private IEnumerator<TransferTask> _taskEnumerator;
-        public void SetSecondPartTasks(IEnumerable<TransferTask> tasks, int taskCount)
+        private IEnumerator<TransferTask> _referenceUpdateTasksEnumerator;
+        public void SetReferenceUpdateTasks(IEnumerable<TransferTask> tasks, int taskCount)
         {
-            _taskEnumerator = tasks.GetEnumerator();
+            _referenceUpdateTasksEnumerator = tasks.GetEnumerator();
         }
         public Task<bool> ReadRandomAsync(CancellationToken cancel)
         {
-            if (!_taskEnumerator.MoveNext())
+            if (!_referenceUpdateTasksEnumerator.MoveNext())
                 return Task.FromResult(false);
 
-            var task = _taskEnumerator.Current;
+            var task = _referenceUpdateTasksEnumerator.Current;
 
             var relativePath = task.ReaderPath;
             var repositoryPath = ContentPath.Combine(RootPath, relativePath);

@@ -139,9 +139,9 @@ namespace SenseNet.IO.Implementations
             return true;
         }
 
-        public void SetSecondPartTasks(IEnumerable<TransferTask> tasks, int taskCount)
+        public void SetReferenceUpdateTasks(IEnumerable<TransferTask> tasks, int taskCount)
         {
-            //UNDONE: implement SetSecondPartTasks()
+            //UNDONE: implement SetReferenceUpdateTasks()
             throw new NotImplementedException();
         }
         public Task<bool> ReadRandomAsync(CancellationToken cancel)

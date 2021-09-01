@@ -75,7 +75,7 @@ namespace SenseNet.IO
         /// if there are more items or false if there aren't.</returns>
         Task<bool> ReadAllAsync(CancellationToken cancel = default);
 
-        void SetSecondPartTasks(IEnumerable<TransferTask> tasks, int taskCount);
+        void SetReferenceUpdateTasks(IEnumerable<TransferTask> tasks, int taskCount);
 
         Task<bool> ReadRandomAsync(CancellationToken cancel);
     }

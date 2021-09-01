@@ -57,7 +57,7 @@ namespace SenseNet.IO
         }
 
         private int _count = 0;
-        private int _secondPartTotalCount = 0;
+        private int _referenceUpdateTasksTotalCount = 0;
         private string _rootName;
         public async Task TransferAsync(IProgress<(string Path, double Percent)> progress = null, CancellationToken cancel = default)
         {
@@ -187,7 +187,7 @@ namespace SenseNet.IO
 
             await TransferAllAsync(progress, cancel);
 
-            await TransferSecondPartAsync(progress, cancel);
+            await UpdateReferencesAsync(progress, cancel);
         }
 
         private bool _rootWritten;
@@ -260,7 +260,7 @@ namespace SenseNet.IO
             content.Name = newName;
         }
 
-        private async Task TransferSecondPartAsync(IProgress<(string Path, double Percent)> progress = null,
+        private async Task UpdateReferencesAsync(IProgress<(string Path, double Percent)> progress = null,
             CancellationToken cancel = default)
         {
             Console.WriteLine("----------- UPDATE REFERENCES -----------");
@@ -270,7 +270,7 @@ namespace SenseNet.IO
                 return;
 
             var tasks = LoadTasks();
-            Reader.SetSecondPartTasks(tasks, taskCount);
+            Reader.SetReferenceUpdateTasks(tasks, taskCount);
 
             while (await Reader.ReadRandomAsync(cancel))
             {
@@ -301,7 +301,7 @@ namespace SenseNet.IO
             WriteLogAndTask(state, updateReferences);
 
             ++count;
-            var totalCount = Reader.EstimatedCount + _secondPartTotalCount;
+            var totalCount = Reader.EstimatedCount + _referenceUpdateTasksTotalCount;
             if (totalCount > 0)
                 progress?.Report((readerPath, count * 100.0 / totalCount));
         }
@@ -343,7 +343,7 @@ namespace SenseNet.IO
                 writer.WriteLine();
             }
 
-            _secondPartTotalCount++;
+            _referenceUpdateTasksTotalCount++;
         }
 
         private int LoadTaskCount()
