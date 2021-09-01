@@ -72,9 +72,9 @@ namespace SenseNet.IO
                     await EnsureSchemaAsync("System/Schema", cancel);
                     await EnsureContentTypesAsync("System/Schema/ContentTypes", cancel);
 
-                    await WriteAsync(progress, cancel);
+                    await WriteAsync(progress, false, cancel);
                     while (await Reader.ReadContentTypesAsync(cancel))
-                        await WriteAsync(progress, cancel);
+                        await WriteAsync(progress, false, cancel);
                 }
                 if (await Reader.ReadSettingsAsync(cancel))
                 {
@@ -82,9 +82,9 @@ namespace SenseNet.IO
                     await EnsureSystemAsync("System", cancel);
                     await EnsureSettingsAsync("System/Settings", cancel);
 
-                    await WriteAsync(progress, cancel);
+                    await WriteAsync(progress, false, cancel);
                     while (await Reader.ReadSettingsAsync(cancel))
-                        await WriteAsync(progress, cancel);
+                        await WriteAsync(progress, false, cancel);
                 }
                 if (await Reader.ReadAspectsAsync(cancel))
                 {
@@ -93,9 +93,9 @@ namespace SenseNet.IO
                     await EnsureSchemaAsync("System/Schema", cancel);
                     await EnsureAspectsAsync("System/Schema/Aspects", cancel);
 
-                    await WriteAsync(progress, cancel);
+                    await WriteAsync(progress, false, cancel);
                     while (await Reader.ReadAspectsAsync(cancel))
-                        await WriteAsync(progress, cancel);
+                        await WriteAsync(progress, false, cancel);
                 }
             }
             else if (Reader.RootPath.Equals("/Root/System", StringComparison.OrdinalIgnoreCase))
@@ -106,18 +106,18 @@ namespace SenseNet.IO
                     await EnsureSchemaAsync("Schema", cancel);
                     await EnsureContentTypesAsync("Schema/ContentTypes", cancel);
 
-                    await WriteAsync(progress, cancel);
+                    await WriteAsync(progress, false, cancel);
                     while (await Reader.ReadContentTypesAsync(cancel))
-                        await WriteAsync(progress, cancel);
+                        await WriteAsync(progress, false, cancel);
                 }
                 if (await Reader.ReadSettingsAsync(cancel))
                 {
                     await EnsureSystemAsync("", cancel);
                     await EnsureSettingsAsync("Settings", cancel);
 
-                    await WriteAsync(progress, cancel);
+                    await WriteAsync(progress, false, cancel);
                     while (await Reader.ReadSettingsAsync(cancel))
-                        await WriteAsync(progress, cancel);
+                        await WriteAsync(progress, false, cancel);
                 }
                 if (await Reader.ReadAspectsAsync(cancel))
                 {
@@ -125,9 +125,9 @@ namespace SenseNet.IO
                     await EnsureSchemaAsync("Schema", cancel);
                     await EnsureAspectsAsync("Schema/Aspects", cancel);
 
-                    await WriteAsync(progress, cancel);
+                    await WriteAsync(progress, false, cancel);
                     while (await Reader.ReadAspectsAsync(cancel))
-                        await WriteAsync(progress, cancel);
+                        await WriteAsync(progress, false, cancel);
                 }
             }
             else if (Reader.RootPath.Equals("/Root/System/Settings", StringComparison.OrdinalIgnoreCase))
@@ -136,9 +136,9 @@ namespace SenseNet.IO
                 {
                     await EnsureSettingsAsync("", cancel);
 
-                    await WriteAsync(progress, cancel);
+                    await WriteAsync(progress, false, cancel);
                     while (await Reader.ReadSettingsAsync(cancel))
-                        await WriteAsync(progress, cancel);
+                        await WriteAsync(progress, false, cancel);
                 }
             }
             else if (Reader.RootPath.Equals("/Root/System/Schema", StringComparison.OrdinalIgnoreCase))
@@ -148,18 +148,18 @@ namespace SenseNet.IO
                     await EnsureSchemaAsync("", cancel);
                     await EnsureContentTypesAsync("ContentTypes", cancel);
 
-                    await WriteAsync(progress, cancel);
+                    await WriteAsync(progress, false, cancel);
                     while (await Reader.ReadContentTypesAsync(cancel))
-                        await WriteAsync(progress, cancel);
+                        await WriteAsync(progress, false, cancel);
                 }
                 if (await Reader.ReadAspectsAsync(cancel))
                 {
                     await EnsureSchemaAsync("", cancel);
                     await EnsureAspectsAsync("Aspects", cancel);
 
-                    await WriteAsync(progress, cancel);
+                    await WriteAsync(progress, false, cancel);
                     while (await Reader.ReadAspectsAsync(cancel))
-                        await WriteAsync(progress, cancel);
+                        await WriteAsync(progress, false, cancel);
                 }
             }
             else if (Reader.RootPath.Equals("/Root/System/Schema/ContentTypes", StringComparison.OrdinalIgnoreCase))
@@ -168,9 +168,9 @@ namespace SenseNet.IO
                 {
                     await EnsureContentTypesAsync("", cancel);
 
-                    await WriteAsync(progress, cancel);
+                    await WriteAsync(progress, false, cancel);
                     while (await Reader.ReadContentTypesAsync(cancel))
-                        await WriteAsync(progress, cancel);
+                        await WriteAsync(progress, false, cancel);
                 }
             }
             else if (Reader.RootPath.Equals("/Root/System/Schema/Aspects", StringComparison.OrdinalIgnoreCase))
@@ -179,9 +179,9 @@ namespace SenseNet.IO
                 {
                     await EnsureAspectsAsync("", cancel);
 
-                    await WriteAsync(progress, cancel);
+                    await WriteAsync(progress, false, cancel);
                     while (await Reader.ReadAspectsAsync(cancel))
-                        await WriteAsync(progress, cancel);
+                        await WriteAsync(progress, false, cancel);
                 }
             }
 
@@ -246,10 +246,10 @@ namespace SenseNet.IO
                 if (Writer.RootName != null)
                     Rename(Reader.Content, _rootName);
 
-                await WriteAsync(progress, cancel);
+                await WriteAsync(progress, false, cancel);
                 while (await Reader.ReadAllAsync(cancel))
                 {
-                    await WriteAsync(progress, cancel);
+                    await WriteAsync(progress, false, cancel);
                 }
             }
         }
@@ -273,26 +273,22 @@ namespace SenseNet.IO
             Reader.SetReferenceUpdateTasks(tasks, taskCount);
 
             while (await Reader.ReadByReferenceUpdateTasksAsync(cancel))
-            {
-                var writerPath = ContentPath.Combine(_rootName, Reader.RelativePath);
-                var state = await Writer.WriteAsync(writerPath, Reader.Content, cancel);
-                Progress(Reader.RelativePath, ref _count, state, true, progress);
-            }
+                await WriteAsync(progress, true, cancel);
         }
 
-        private async Task WriteAsync(IProgress<(string Path, double Percent)> progress, CancellationToken cancel = default)
+        private async Task WriteAsync(IProgress<(string Path, double Percent)> progress, bool updateReferences, CancellationToken cancel = default)
         {
             var readerPath = Reader.RelativePath;
             var writerPath = ContentPath.Combine(_rootName, readerPath);
             var state = await Writer.WriteAsync(writerPath, Reader.Content, cancel);
             state.ReaderPath = readerPath;
             state.WriterPath = writerPath;
-            Progress(readerPath, ref _count, state, false, progress);
+            Progress(readerPath, ref _count, state, updateReferences, progress);
         }
         private void Progress(string readerPath, ref int count, TransferState state, bool updateReferences, IProgress<(string Path, double Percent)> progress = null)
         {
             Console.Write($"{ActionToDisplay(state, updateReferences),-8} {state.WriterPath}");
-            Console.WriteLine(state.WriterPath.Length<40 ? new string(' ', 40-state.WriterPath.Length) : string.Empty);
+            Console.WriteLine(state.WriterPath.Length < 40 ? new string(' ', 40 - state.WriterPath.Length) : string.Empty);
 
             if(state.Action == TransferAction.Error)
                 foreach (var message in state.Messages)
@@ -310,7 +306,7 @@ namespace SenseNet.IO
 
         private void WriteLogAndTask(TransferState state, bool updateReferences)
         {
-            WriteLogToFile(state, false);
+            WriteLogToFile(state, updateReferences);
             if (!updateReferences && (state.RetryPermissions || state.BrokenReferences.Length > 0))
                 WriteTaskToFile(state);
         }
