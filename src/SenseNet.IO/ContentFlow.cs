@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -61,12 +62,17 @@ namespace SenseNet.IO
         private string _rootName;
         public async Task TransferAsync(IProgress<(string Path, double Percent)> progress = null, CancellationToken cancel = default)
         {
+            string section;
             _rootName = Writer.RootName ?? ContentPath.GetName(Reader.RootPath);
 
             if (Reader.RootPath.Equals("/Root", StringComparison.OrdinalIgnoreCase))
             {
                 if (await Reader.ReadContentTypesAsync(cancel))
                 {
+                    section = "----------- TRANSFER CONTENT TYPES -----------";
+                    Console.WriteLine(section);
+                    WriteLogToFile(section);
+
                     await EnsureRootAsync("", cancel);
                     await EnsureSystemAsync("System", cancel);
                     await EnsureSchemaAsync("System/Schema", cancel);
@@ -78,6 +84,10 @@ namespace SenseNet.IO
                 }
                 if (await Reader.ReadSettingsAsync(cancel))
                 {
+                    section = "----------- TRANSFER SETTINGS -----------";
+                    Console.WriteLine(section);
+                    WriteLogToFile(section);
+
                     await EnsureRootAsync("", cancel);
                     await EnsureSystemAsync("System", cancel);
                     await EnsureSettingsAsync("System/Settings", cancel);
@@ -88,6 +98,10 @@ namespace SenseNet.IO
                 }
                 if (await Reader.ReadAspectsAsync(cancel))
                 {
+                    section = "----------- TRANSFER ASPECT DEFINITIONS -----------";
+                    Console.WriteLine(section);
+                    WriteLogToFile(section);
+
                     await EnsureRootAsync("", cancel);
                     await EnsureSystemAsync("System", cancel);
                     await EnsureSchemaAsync("System/Schema", cancel);
@@ -102,6 +116,10 @@ namespace SenseNet.IO
             {
                 if (await Reader.ReadContentTypesAsync(cancel))
                 {
+                    section = "----------- TRANSFER CONTENT TYPES -----------";
+                    Console.WriteLine(section);
+                    WriteLogToFile(section);
+
                     await EnsureSystemAsync("", cancel);
                     await EnsureSchemaAsync("Schema", cancel);
                     await EnsureContentTypesAsync("Schema/ContentTypes", cancel);
@@ -112,6 +130,10 @@ namespace SenseNet.IO
                 }
                 if (await Reader.ReadSettingsAsync(cancel))
                 {
+                    section = "----------- TRANSFER SETTINGS -----------";
+                    Console.WriteLine(section);
+                    WriteLogToFile(section);
+
                     await EnsureSystemAsync("", cancel);
                     await EnsureSettingsAsync("Settings", cancel);
 
@@ -121,6 +143,10 @@ namespace SenseNet.IO
                 }
                 if (await Reader.ReadAspectsAsync(cancel))
                 {
+                    section = "----------- TRANSFER ASPECT DEFINITIONS -----------";
+                    Console.WriteLine(section);
+                    WriteLogToFile(section);
+
                     await EnsureSystemAsync("", cancel);
                     await EnsureSchemaAsync("Schema", cancel);
                     await EnsureAspectsAsync("Schema/Aspects", cancel);
@@ -134,6 +160,10 @@ namespace SenseNet.IO
             {
                 if (await Reader.ReadSettingsAsync(cancel))
                 {
+                    section = "----------- TRANSFER SETTINGS -----------";
+                    Console.WriteLine(section);
+                    WriteLogToFile(section);
+
                     await EnsureSettingsAsync("", cancel);
 
                     await WriteAsync(progress, false, cancel);
@@ -145,6 +175,10 @@ namespace SenseNet.IO
             {
                 if (await Reader.ReadContentTypesAsync(cancel))
                 {
+                    section = "----------- TRANSFER CONTENT TYPES -----------";
+                    Console.WriteLine(section);
+                    WriteLogToFile(section);
+
                     await EnsureSchemaAsync("", cancel);
                     await EnsureContentTypesAsync("ContentTypes", cancel);
 
@@ -154,6 +188,10 @@ namespace SenseNet.IO
                 }
                 if (await Reader.ReadAspectsAsync(cancel))
                 {
+                    section = "----------- TRANSFER ASPECT DEFINITIONS -----------";
+                    Console.WriteLine(section);
+                    WriteLogToFile(section);
+
                     await EnsureSchemaAsync("", cancel);
                     await EnsureAspectsAsync("Aspects", cancel);
 
@@ -166,6 +204,10 @@ namespace SenseNet.IO
             {
                 if (await Reader.ReadContentTypesAsync(cancel))
                 {
+                    section = "----------- TRANSFER CONTENT TYPES -----------";
+                    Console.WriteLine(section);
+                    WriteLogToFile(section);
+
                     await EnsureContentTypesAsync("", cancel);
 
                     await WriteAsync(progress, false, cancel);
@@ -177,6 +219,10 @@ namespace SenseNet.IO
             {
                 if (await Reader.ReadAspectsAsync(cancel))
                 {
+                    section = "----------- TRANSFER ASPECT DEFINITIONS -----------";
+                    Console.WriteLine(section);
+                    WriteLogToFile(section);
+
                     await EnsureAspectsAsync("", cancel);
 
                     await WriteAsync(progress, false, cancel);
@@ -246,6 +292,10 @@ namespace SenseNet.IO
                 if (Writer.RootName != null)
                     Rename(Reader.Content, _rootName);
 
+                var section = "----------- TRANSFER CONTENTS -----------";
+                Console.WriteLine(section);
+                WriteLogToFile(section);
+
                 await WriteAsync(progress, false, cancel);
                 while (await Reader.ReadAllAsync(cancel))
                 {
@@ -263,12 +313,13 @@ namespace SenseNet.IO
         private async Task UpdateReferencesAsync(IProgress<(string Path, double Percent)> progress = null,
             CancellationToken cancel = default)
         {
-            Console.WriteLine("----------- UPDATE REFERENCES -----------");
-            WriteLogToFile("----------- UPDATE REFERENCES -----------");
-
             var taskCount = LoadTaskCount();
             if (taskCount == 0)
                 return;
+
+            var section = "----------- UPDATE REFERENCES -----------";
+            Console.WriteLine(section);
+            WriteLogToFile(section);
 
             var tasks = LoadTasks();
             Reader.SetReferenceUpdateTasks(tasks, taskCount);
@@ -293,7 +344,7 @@ namespace SenseNet.IO
 
             if(state.Action == TransferAction.Error)
                 foreach (var message in state.Messages)
-                    Console.WriteLine($"       {message.Replace("The server returned an error (HttpStatus: InternalServerError): ", "")}                               ");
+                    Console.WriteLine($"         {message.Replace("The server returned an error (HttpStatus: InternalServerError): ", "")}                               ");
 
             WriteLogAndTask(state, updateReferences);
 
@@ -319,7 +370,7 @@ namespace SenseNet.IO
             {
                 writer.WriteLine($"{ActionToDisplay(state, updateReferences),-8} {state.WriterPath}");
                 foreach (var message in state.Messages)
-                    writer.WriteLine($"\t{message.Replace("The server returned an error (HttpStatus: InternalServerError): ", "")}");
+                    writer.WriteLine($"         {message.Replace("The server returned an error (HttpStatus: InternalServerError): ", "")}");
                 WriteLogToFile(writer.GetStringBuilder().ToString().Trim());
             }
         }
