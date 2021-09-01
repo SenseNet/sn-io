@@ -418,11 +418,11 @@ namespace SenseNet.IO.Implementations
         }
         protected virtual string[] GetFsDirectories(string fsDirectoryPath)
         {
-            return Directory.GetDirectories(fsDirectoryPath);
+            return IsDirectoryExists(fsDirectoryPath) ? Directory.GetDirectories(fsDirectoryPath) : Array.Empty<string>();
         }
         protected virtual string[] GetFsFiles(string fsDirectoryPath)
         {
-            return Directory.GetFiles(fsDirectoryPath);
+            return IsDirectoryExists(fsDirectoryPath) ? Directory.GetFiles(fsDirectoryPath) : Array.Empty<string>();
         }
 
     }
