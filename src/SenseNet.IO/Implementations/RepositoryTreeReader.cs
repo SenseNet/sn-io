@@ -144,7 +144,7 @@ namespace SenseNet.IO.Implementations
             //UNDONE: implement SetReferenceUpdateTasks()
             throw new NotImplementedException();
         }
-        public Task<bool> ReadRandomAsync(CancellationToken cancel)
+        public Task<bool> ReadByReferenceUpdateTasksAsync(CancellationToken cancel)
         {
             //UNDONE: implement ReadRandomAsync()
             throw new NotImplementedException();

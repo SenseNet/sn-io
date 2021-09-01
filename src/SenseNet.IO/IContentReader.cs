@@ -77,6 +77,6 @@ namespace SenseNet.IO
 
         void SetReferenceUpdateTasks(IEnumerable<TransferTask> tasks, int taskCount);
 
-        Task<bool> ReadRandomAsync(CancellationToken cancel);
+        Task<bool> ReadByReferenceUpdateTasksAsync(CancellationToken cancel);
     }
 }

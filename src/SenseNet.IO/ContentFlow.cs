@@ -272,7 +272,7 @@ namespace SenseNet.IO
             var tasks = LoadTasks();
             Reader.SetReferenceUpdateTasks(tasks, taskCount);
 
-            while (await Reader.ReadRandomAsync(cancel))
+            while (await Reader.ReadByReferenceUpdateTasksAsync(cancel))
             {
                 var writerPath = ContentPath.Combine(_rootName, Reader.RelativePath);
                 var state = await Writer.WriteAsync(writerPath, Reader.Content, cancel);

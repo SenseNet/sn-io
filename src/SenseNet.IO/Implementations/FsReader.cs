@@ -165,7 +165,7 @@ namespace SenseNet.IO.Implementations
         {
             _referenceUpdateTasksEnumerator = tasks.GetEnumerator();
         }
-        public Task<bool> ReadRandomAsync(CancellationToken cancel)
+        public Task<bool> ReadByReferenceUpdateTasksAsync(CancellationToken cancel)
         {
             if (!_referenceUpdateTasksEnumerator.MoveNext())
                 return Task.FromResult(false);
