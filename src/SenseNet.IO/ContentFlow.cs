@@ -264,6 +264,7 @@ namespace SenseNet.IO
             CancellationToken cancel = default)
         {
             Console.WriteLine("----------- UPDATE REFERENCES -----------");
+            WriteLogToFile("----------- UPDATE REFERENCES -----------");
 
             var taskCount = LoadTaskCount();
             if (taskCount == 0)
@@ -314,15 +315,21 @@ namespace SenseNet.IO
         private string _logFilePath;
         private void WriteLogToFile(TransferState state, bool updateReferences)
         {
+            using (var writer = new StringWriter())
+            {
+                writer.WriteLine($"{ActionToDisplay(state, updateReferences),-8} {state.WriterPath}");
+                foreach (var message in state.Messages)
+                    writer.WriteLine($"\t{message.Replace("The server returned an error (HttpStatus: InternalServerError): ", "")}");
+                WriteLogToFile(writer.GetStringBuilder().ToString().Trim());
+            }
+        }
+        private void WriteLogToFile(string entry)
+        {
             if (_logFilePath == null)
                 _logFilePath = CreateLogFile(true, "log");
 
             using (StreamWriter writer = new StreamWriter(_logFilePath, true))
-            {
-                writer.WriteLine($"{ActionToDisplay(state, updateReferences),-8} {state.WriterPath}");
-                foreach (var message in state.Messages)
-                    writer.WriteLine($"\t{message.Replace("The server returned an error (HttpStatus: InternalServerError): ", "")}                               ");
-            }
+                writer.WriteLine(entry);
         }
 
         private string _taskFilePath;
