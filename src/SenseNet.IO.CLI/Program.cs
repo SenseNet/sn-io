@@ -1,11 +1,5 @@
 ﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
-using System.Threading.Tasks.Dataflow;
 using SenseNet.IO.Implementations;
 
 namespace SenseNet.IO.CLI
@@ -125,21 +119,24 @@ namespace SenseNet.IO.CLI
             //var reader = new FsReader(@"D:\dev\_sn-io-test\FsReader", "/Root");
             //var writer = new RepositoryWriter("https://localhost:44362");
 
-            var reader = new FsReader(@"D:\dev\_sn-io-test\FsReader", "/Root/(apps)");
-            var writer = new RepositoryWriter("https://localhost:44362", "/Root");
+            //var reader = new FsReader(@"D:\dev\_sn-io-test\FsReader", "/Root/(apps)");
+            //var writer = new RepositoryWriter("https://localhost:44362", "/Root");
 
             //var reader = new FsReader(@"D:\dev\_sn-io-test\FsReader", "/Root/IMS");
             //var writer = new RepositoryWriter("https://localhost:44362", "/Root");
 
-            //var reader = new FsReader(@"D:\dev\_sn-io-test\FsReader", "/Root/System/Settings");
-            //var writer = new RepositoryWriter("https://localhost:44362", "/Root/System");
+            var reader = new FsReader(@"D:\dev\_sn-io-test\FsReader", "/Root/System/Settings");
+            var writer = new RepositoryWriter("https://localhost:44362", "/Root/System");
+
+
+
 
             _displayLevel = DisplayLevel.Verbose;
             var flow = new ContentFlow(reader, writer);
             var progress = new Progress<TransferState>(ShowProgress);
             await flow.TransferAsync(progress);
 
-            await Task.Delay(2000);
+            await Task.Delay(1000);
 
             Console.WriteLine();
             Console.WriteLine("Done.");
@@ -147,41 +144,45 @@ namespace SenseNet.IO.CLI
 
         /* ========================================================================== Display progress */
 
-        private enum DisplayLevel { Progress, Errors, Verbose, None }
+        private enum DisplayLevel { None, Progress, Errors, Verbose }
 
-        private static DisplayLevel _displayLevel;
+        private static DisplayLevel _displayLevel = DisplayLevel.Errors;
         private static readonly string ClearLine = new string(' ', 70) + '\r';
         private static string _lastBatchAction;
+
         private static void ShowProgress(TransferState state)
         {
             if (_displayLevel == DisplayLevel.None)
                 return;
 
-            if(_displayLevel != DisplayLevel.Progress)
+            // Section
+            if (_displayLevel != DisplayLevel.Progress)
+            {
+                if (_lastBatchAction != state.CurrentBatchAction)
+                {
+                    _lastBatchAction = state.CurrentBatchAction;
+                    Console.Write(ClearLine);
+                    Console.WriteLine($"------------ {state.CurrentBatchAction.ToUpper()} ------------");
+                }
+            }
+
+            // Content
+            if (_displayLevel == DisplayLevel.Verbose ||
+                (_displayLevel == DisplayLevel.Errors && state.State.Action == WriterAction.Failed))
+            {
                 Console.Write(ClearLine);
-
-            if (_lastBatchAction != state.CurrentBatchAction)
-            {
-                _lastBatchAction = state.CurrentBatchAction;
-                Console.WriteLine($"------------ {state.CurrentBatchAction.ToUpper()} ------------");
+                Console.WriteLine($"{state.State.Action,-8} {state.State.WriterPath}");
             }
 
-            if (_displayLevel == DisplayLevel.Verbose)
+            // Error
+            if (_displayLevel != DisplayLevel.Progress && state.State.Action == WriterAction.Failed)
             {
-                Console.WriteLine($"{state.State.Action,-8} {state.State.WriterPath}");
-                if (state.State.Action == WriterAction.Failed)
-                    foreach (var message in state.State.Messages)
-                        Console.WriteLine(
-                            $"         {message.Replace("The server returned an error (HttpStatus: InternalServerError): ", "")}                               ");
-            }
-            else if (_displayLevel == DisplayLevel.Errors && state.State.Action == WriterAction.Failed)
-            {
-                Console.WriteLine($"{state.State.Action,-8} {state.State.WriterPath}");
                 foreach (var message in state.State.Messages)
                     Console.WriteLine(
-                        $"         {message.Replace("The server returned an error (HttpStatus: InternalServerError): ", "")}                               ");
+                        $"         {message.Replace("The server returned an error (HttpStatus: InternalServerError): ", "")}");
             }
 
+            // Progress
             Console.Write($"{state.CurrentBatchAction} {state.Percent,5:F1}%  " +
                           $"({state.CurrentCount}/{state.TotalCount} errors:{state.ErrorCount})                     \r");
         }
