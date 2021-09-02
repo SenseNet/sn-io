@@ -383,7 +383,7 @@ ContentTypes
             });
         }
 
-        private class TestProgress : IProgress<(string Path, double Percent)>
+        private class TestProgress : IProgress<TransferState>
         {
             public List<double> Log { get; } = new List<double>();
             public List<string> Paths { get; } = new List<string>();
@@ -392,6 +392,12 @@ ContentTypes
             {
                 Log.Add(value.Percent);
                 Paths.Add(value.Path);
+            }
+
+            public void Report(TransferState value)
+            {
+                Log.Add(value.Percent);
+                Paths.Add(value.State.ReaderPath);
             }
         }
     }

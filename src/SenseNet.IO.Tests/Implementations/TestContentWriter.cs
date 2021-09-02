@@ -39,7 +39,7 @@ namespace SenseNet.IO.Tests.Implementations
 
             Tree[absolutePath] = contentNode;
 
-            return Task.FromResult(new WriterState{WriterPath = absolutePath, Action = WriterAction.Create});
+            return Task.FromResult(new WriterState{WriterPath = absolutePath, Action = WriterAction.Created});
         }
     }
 }
