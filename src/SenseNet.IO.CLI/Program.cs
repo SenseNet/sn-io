@@ -133,26 +133,54 @@ namespace SenseNet.IO.CLI
 
 
             var flow = new ContentFlow(reader, writer);
-            var progress = new Progress(state =>
-            {
-                Console.Write("Transferring... {0,5:F1}%\r", state.Percent);
-            });
-            //var progress = new Progress(state =>
-            //{
-            //    Console.Write("                             \r");
-            //    Console.WriteLine(state.Path);
-            //    Console.Write("Transferring... {0,5:F1}%\r", state.Percent);
-            //});
+            var progress = new Progress<TransferState>(TransferProgress);
             await flow.TransferAsync(progress);
             Console.WriteLine();
             Console.WriteLine("Done.");
         }
-    }
 
-    class Progress : IProgress<(string Path, double Percent)>
-    {
-        private readonly Action<(string Path, double Percent)> _callback;
-        public Progress(Action<(string Path, double Percent)> callback) { _callback = callback; }
-        public void Report((string Path, double Percent) value) { _callback(value); }
+        /* ========================================================================== Display progress */
+
+        private static readonly string ClearLine = new string(' ', 70) + '\r';
+        private static bool _verboseDisplay = false;
+        private static string _lastBatchAction;
+        private static void TransferProgress(TransferState state)
+        {
+            if (_verboseDisplay)
+            {
+                Console.Write(ClearLine);
+
+                if (_lastBatchAction != state.CurrentBatchAction)
+                {
+                    Console.WriteLine($"------------ {state.CurrentBatchAction.ToUpper()} ------------");
+                    _lastBatchAction = state.CurrentBatchAction;
+                }
+
+                Console.WriteLine($"{ActionToDisplay(state.State, state.UpdatingReferences),-8} {state.State.WriterPath}");
+                if (state.State.Action == WriterAction.Error)
+                    foreach (var message in state.State.Messages)
+                        Console.WriteLine(
+                            $"         {message.Replace("The server returned an error (HttpStatus: InternalServerError): ", "")}                               ");
+            }
+
+            Console.Write($"{state.CurrentBatchAction} {state.Percent,5:F1}%  " +
+                          $"({state.CurrentCount}/{state.TotalCount} errors:{state.ErrorCount})                     \r");
+        }
+        private static string ActionToDisplay(WriterState state, bool updatingReferences)
+        {
+            var action = state.Action;
+            if (!updatingReferences)
+            {
+                if (state.UpdateRequired)
+                {
+                    if (action == WriterAction.Create)
+                        return "Creating";
+                    if (action == WriterAction.Update)
+                        return "Updating";
+                }
+            }
+            return action.ToString();
+        }
+
     }
 }
