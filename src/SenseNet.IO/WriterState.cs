@@ -2,7 +2,7 @@
 
 namespace SenseNet.IO
 {
-    public enum WriterAction { Unknown, Create, Update, Error }
+    public enum WriterAction { Unknown, Created, Creating, Updated, Updating, Failed }
 
     public class WriterState
     {

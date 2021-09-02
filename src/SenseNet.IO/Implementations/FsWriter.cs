@@ -32,7 +32,7 @@ namespace SenseNet.IO.Implementations
 
             if (!IsDirectoryExists(fileDir))
                 CreateDirectory(fileDir);
-            var action = File.Exists(contentPath) ? WriterAction.Update : WriterAction.Create;
+            var action = File.Exists(contentPath) ? WriterAction.Updated : WriterAction.Created;
             using (var writer = CreateTextWriter(contentPath, false))
                 await writer.WriteAsync(src);
 

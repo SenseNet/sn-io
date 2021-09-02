@@ -122,11 +122,11 @@ namespace SenseNet.IO.CLI
             //var reader = new FsReader(@"D:\dev\_sn-io-test\FsReader", "/Root/GyebiTesztel");
             //var writer = new FsWriter(@"D:\dev\_sn-io-test\FsWriter", "/Root", "XXX");
 
-            var reader = new FsReader(@"D:\dev\_sn-io-test\FsReader", "/Root");
-            var writer = new RepositoryWriter("https://localhost:44362");
+            //var reader = new FsReader(@"D:\dev\_sn-io-test\FsReader", "/Root");
+            //var writer = new RepositoryWriter("https://localhost:44362");
 
-            //var reader = new FsReader(@"D:\dev\_sn-io-test\FsReader", "/Root/IMS");
-            //var writer = new RepositoryWriter("https://localhost:44362", "/Root");
+            var reader = new FsReader(@"D:\dev\_sn-io-test\FsReader", "/Root/IMS");
+            var writer = new RepositoryWriter("https://localhost:44362", "/Root");
 
             //var reader = new FsReader(@"D:\dev\_sn-io-test\FsReader", "/Root/System/Settings");
             //var writer = new RepositoryWriter("https://localhost:44362", "/Root/System");
@@ -135,6 +135,9 @@ namespace SenseNet.IO.CLI
             var flow = new ContentFlow(reader, writer);
             var progress = new Progress<TransferState>(TransferProgress);
             await flow.TransferAsync(progress);
+
+            await Task.Delay(2000);
+
             Console.WriteLine();
             Console.WriteLine("Done.");
         }
@@ -142,7 +145,7 @@ namespace SenseNet.IO.CLI
         /* ========================================================================== Display progress */
 
         private static readonly string ClearLine = new string(' ', 70) + '\r';
-        private static bool _verboseDisplay = false;
+        private static bool _verboseDisplay = true;
         private static string _lastBatchAction;
         private static void TransferProgress(TransferState state)
         {
@@ -156,8 +159,8 @@ namespace SenseNet.IO.CLI
                     _lastBatchAction = state.CurrentBatchAction;
                 }
 
-                Console.WriteLine($"{ActionToDisplay(state.State, state.UpdatingReferences),-8} {state.State.WriterPath}");
-                if (state.State.Action == WriterAction.Error)
+                Console.WriteLine($"{state.State.Action,-8} {state.State.WriterPath}");
+                if (state.State.Action == WriterAction.Failed)
                     foreach (var message in state.State.Messages)
                         Console.WriteLine(
                             $"         {message.Replace("The server returned an error (HttpStatus: InternalServerError): ", "")}                               ");
@@ -166,21 +169,5 @@ namespace SenseNet.IO.CLI
             Console.Write($"{state.CurrentBatchAction} {state.Percent,5:F1}%  " +
                           $"({state.CurrentCount}/{state.TotalCount} errors:{state.ErrorCount})                     \r");
         }
-        private static string ActionToDisplay(WriterState state, bool updatingReferences)
-        {
-            var action = state.Action;
-            if (!updatingReferences)
-            {
-                if (state.UpdateRequired)
-                {
-                    if (action == WriterAction.Create)
-                        return "Creating";
-                    if (action == WriterAction.Update)
-                        return "Updating";
-                }
-            }
-            return action.ToString();
-        }
-
     }
 }

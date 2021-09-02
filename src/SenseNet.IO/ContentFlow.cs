@@ -71,7 +71,7 @@ namespace SenseNet.IO
                 if (await Reader.ReadContentTypesAsync(cancel))
                 {
                     _currentBatchAction = "Transfer content types";
-                    WriteLogToFile($"_------------ {_currentBatchAction.ToUpper()} ------------");
+                    WriteLogToFile($"------------ {_currentBatchAction.ToUpper()} ------------");
 
                     await EnsureRootAsync("", cancel);
                     await EnsureSystemAsync("System", cancel);
@@ -85,7 +85,7 @@ namespace SenseNet.IO
                 if (await Reader.ReadSettingsAsync(cancel))
                 {
                     _currentBatchAction = "Transfer settings";
-                    WriteLogToFile($"_------------ {_currentBatchAction.ToUpper()} ------------");
+                    WriteLogToFile($"------------ {_currentBatchAction.ToUpper()} ------------");
 
                     await EnsureRootAsync("", cancel);
                     await EnsureSystemAsync("System", cancel);
@@ -98,7 +98,7 @@ namespace SenseNet.IO
                 if (await Reader.ReadAspectsAsync(cancel))
                 {
                     _currentBatchAction = "Transfer aspect definitions";
-                    WriteLogToFile($"_------------ {_currentBatchAction.ToUpper()} ------------");
+                    WriteLogToFile($"------------ {_currentBatchAction.ToUpper()} ------------");
 
                     await EnsureRootAsync("", cancel);
                     await EnsureSystemAsync("System", cancel);
@@ -115,7 +115,7 @@ namespace SenseNet.IO
                 if (await Reader.ReadContentTypesAsync(cancel))
                 {
                     _currentBatchAction = "Transfer content types";
-                    WriteLogToFile($"_------------ {_currentBatchAction.ToUpper()} ------------");
+                    WriteLogToFile($"------------ {_currentBatchAction.ToUpper()} ------------");
 
                     await EnsureSystemAsync("", cancel);
                     await EnsureSchemaAsync("Schema", cancel);
@@ -128,7 +128,7 @@ namespace SenseNet.IO
                 if (await Reader.ReadSettingsAsync(cancel))
                 {
                     _currentBatchAction = "Transfer settings";
-                    WriteLogToFile($"_------------ {_currentBatchAction.ToUpper()} ------------");
+                    WriteLogToFile($"------------ {_currentBatchAction.ToUpper()} ------------");
 
                     await EnsureSystemAsync("", cancel);
                     await EnsureSettingsAsync("Settings", cancel);
@@ -140,7 +140,7 @@ namespace SenseNet.IO
                 if (await Reader.ReadAspectsAsync(cancel))
                 {
                     _currentBatchAction = "Transfer aspect definitions";
-                    WriteLogToFile($"_------------ {_currentBatchAction.ToUpper()} ------------");
+                    WriteLogToFile($"------------ {_currentBatchAction.ToUpper()} ------------");
 
                     await EnsureSystemAsync("", cancel);
                     await EnsureSchemaAsync("Schema", cancel);
@@ -156,7 +156,7 @@ namespace SenseNet.IO
                 if (await Reader.ReadSettingsAsync(cancel))
                 {
                     _currentBatchAction = "Transfer settings";
-                    WriteLogToFile($"_------------ {_currentBatchAction.ToUpper()} ------------");
+                    WriteLogToFile($"------------ {_currentBatchAction.ToUpper()} ------------");
 
                     await EnsureSettingsAsync("", cancel);
 
@@ -170,7 +170,7 @@ namespace SenseNet.IO
                 if (await Reader.ReadContentTypesAsync(cancel))
                 {
                     _currentBatchAction = "Transfer content types";
-                    WriteLogToFile($"_------------ {_currentBatchAction.ToUpper()} ------------");
+                    WriteLogToFile($"------------ {_currentBatchAction.ToUpper()} ------------");
 
                     await EnsureSchemaAsync("", cancel);
                     await EnsureContentTypesAsync("ContentTypes", cancel);
@@ -182,7 +182,7 @@ namespace SenseNet.IO
                 if (await Reader.ReadAspectsAsync(cancel))
                 {
                     _currentBatchAction = "Transfer aspect definitions";
-                    WriteLogToFile($"_------------ {_currentBatchAction.ToUpper()} ------------");
+                    WriteLogToFile($"------------ {_currentBatchAction.ToUpper()} ------------");
 
                     await EnsureSchemaAsync("", cancel);
                     await EnsureAspectsAsync("Aspects", cancel);
@@ -197,7 +197,7 @@ namespace SenseNet.IO
                 if (await Reader.ReadContentTypesAsync(cancel))
                 {
                     _currentBatchAction = "Transfer content types";
-                    WriteLogToFile($"_------------ {_currentBatchAction.ToUpper()} ------------");
+                    WriteLogToFile($"------------ {_currentBatchAction.ToUpper()} ------------");
 
                     await EnsureContentTypesAsync("", cancel);
 
@@ -211,7 +211,7 @@ namespace SenseNet.IO
                 if (await Reader.ReadAspectsAsync(cancel))
                 {
                     _currentBatchAction = "Transfer aspect definitions";
-                    WriteLogToFile($"_------------ {_currentBatchAction.ToUpper()} ------------");
+                    WriteLogToFile($"------------ {_currentBatchAction.ToUpper()} ------------");
 
                     await EnsureAspectsAsync("", cancel);
 
@@ -283,7 +283,7 @@ namespace SenseNet.IO
                     Rename(Reader.Content, _rootName);
 
                 _currentBatchAction = "Transfer contents";
-                WriteLogToFile($"_------------ {_currentBatchAction.ToUpper()} ------------");
+                WriteLogToFile($"------------ {_currentBatchAction.ToUpper()} ------------");
 
                 await WriteAsync(progress, false, cancel);
                 while (await Reader.ReadAllAsync(cancel))
@@ -307,7 +307,7 @@ namespace SenseNet.IO
                 return;
 
             _currentBatchAction = "Update references";
-            WriteLogToFile($"_------------ {_currentBatchAction.ToUpper()} ------------");
+            WriteLogToFile($"------------ {_currentBatchAction.ToUpper()} ------------");
 
             var tasks = LoadTasks();
             Reader.SetReferenceUpdateTasks(tasks, taskCount);
@@ -327,7 +327,7 @@ namespace SenseNet.IO
         }
         private void Progress(string readerPath, ref int count, WriterState state, bool updateReferences, IProgress<TransferState> progress = null)
         {
-            if(state.Action == WriterAction.Error)
+            if(state.Action == WriterAction.Failed)
                 _errorCount++;
 
             WriteLogAndTask(state, updateReferences);
@@ -357,7 +357,7 @@ namespace SenseNet.IO
         {
             using (var writer = new StringWriter())
             {
-                writer.WriteLine($"{ActionToDisplay(state, updateReferences),-8} {state.WriterPath}");
+                writer.WriteLine($"{state.Action,-8} {state.WriterPath}");
                 foreach (var message in state.Messages)
                     writer.WriteLine($"         {message.Replace("The server returned an error (HttpStatus: InternalServerError): ", "")}");
                 WriteLogToFile(writer.GetStringBuilder().ToString().Trim());
@@ -467,21 +467,6 @@ namespace SenseNet.IO
             }
 
             return path;
-        }
-        private string ActionToDisplay(WriterState state, bool updateReferences)
-        {
-            var action = state.Action;
-            if (!updateReferences)
-            {
-                if (state.UpdateRequired)
-                {
-                    if (action == WriterAction.Create)
-                        return "Creating";
-                    if (action == WriterAction.Update)
-                        return "Updating";
-                }
-            } 
-            return action.ToString();
         }
     }
 }
