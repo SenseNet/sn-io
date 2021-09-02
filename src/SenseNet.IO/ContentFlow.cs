@@ -369,7 +369,7 @@ namespace SenseNet.IO
                 _logFilePath = CreateLogFile(true, "log");
 
             using (StreamWriter writer = new StreamWriter(_logFilePath, true))
-                writer.WriteLine(entry);
+                writer.WriteLine($"{DateTime.Now:yyyy-MM-dd HH:mm:ss.fffff}  {entry}");
         }
 
         private string _taskFilePath;
