@@ -160,6 +160,29 @@ namespace SenseNet.IO.Implementations
             return Task.FromResult(goAhead);
         }
 
+        private IEnumerator<TransferTask> _referenceUpdateTasksEnumerator;
+        public void SetReferenceUpdateTasks(IEnumerable<TransferTask> tasks, int taskCount)
+        {
+            _referenceUpdateTasksEnumerator = tasks.GetEnumerator();
+        }
+        public Task<bool> ReadByReferenceUpdateTasksAsync(CancellationToken cancel)
+        {
+            if (!_referenceUpdateTasksEnumerator.MoveNext())
+                return Task.FromResult(false);
+
+            var task = _referenceUpdateTasksEnumerator.Current;
+
+            var relativePath = task.ReaderPath;
+            var repositoryPath = ContentPath.Combine(RootPath, relativePath);
+            var metaFilePath = Path.GetFullPath(Path.Combine(_fsRootPath, relativePath)) + ".Content";
+            var name = ContentPath.GetName(repositoryPath);
+            var content = new FsContent(name, relativePath, metaFilePath, false);
+            content.InitializeMetadata(task.BrokenReferences, task.RetryPermissions);
+            _content = content;
+
+            return Task.FromResult(true);
+        }
+
         private bool IsContentType(IContent content)
         {
             return ContentPath.Combine(RootPath, content.Path)
@@ -395,11 +418,11 @@ namespace SenseNet.IO.Implementations
         }
         protected virtual string[] GetFsDirectories(string fsDirectoryPath)
         {
-            return Directory.GetDirectories(fsDirectoryPath);
+            return IsDirectoryExists(fsDirectoryPath) ? Directory.GetDirectories(fsDirectoryPath) : Array.Empty<string>();
         }
         protected virtual string[] GetFsFiles(string fsDirectoryPath)
         {
-            return Directory.GetFiles(fsDirectoryPath);
+            return IsDirectoryExists(fsDirectoryPath) ? Directory.GetFiles(fsDirectoryPath) : Array.Empty<string>();
         }
 
     }

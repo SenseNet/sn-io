@@ -35,7 +35,7 @@ namespace SenseNet.IO.Implementations
 
         }
 
-        public async Task<ImportResponse> WriteAsync(string path, IContent content, CancellationToken cancel = default)
+        public async Task<WriterState> WriteAsync(string path, IContent content, CancellationToken cancel = default)
         {
             var repositoryPath = ContentPath.Combine(ContainerPath ?? "/", path);
             if (content.Type == "ContentType")
@@ -43,7 +43,7 @@ namespace SenseNet.IO.Implementations
             return await WriteContentAsync(repositoryPath, content, cancel);
         }
 
-        private async Task<ImportResponse> WriteContentTypeAsync(string repositoryPath, IContent content, CancellationToken cancel)
+        private async Task<WriterState> WriteContentTypeAsync(string repositoryPath, IContent content, CancellationToken cancel)
         {
             Content uploaded;
             var attachments = await content.GetAttachmentsAsync();
@@ -98,25 +98,25 @@ namespace SenseNet.IO.Implementations
             }
             catch (Exception e)
             {
-                return new ImportResponse
+                return new WriterState
                 {
                     WriterPath = repositoryPath,
-                    Action = ImporterAction.Error,
+                    Action = WriterAction.Failed,
                     Messages = new[] { e.Message }
                 };
             }
 
             var result = JsonConvert.DeserializeObject(resultString) as JObject;
             if (result == null)
-                return new ImportResponse{Action = ImporterAction.Unknown, WriterPath = repositoryPath};
+                return new WriterState{Action = WriterAction.Unknown, WriterPath = repositoryPath};
 
-            Enum.TryParse(typeof(ImporterAction), result["action"]?.Value<string>(), true, out var rawAction);
-            var action = rawAction == null ? ImporterAction.Unknown : (ImporterAction)rawAction;
+            Enum.TryParse(typeof(WriterAction), result["action"]?.Value<string>(), true, out var rawAction);
+            var action = rawAction == null ? WriterAction.Unknown : (WriterAction)rawAction;
             var writerPath = result["path"]?.Value<string>();
             var retryPermissions = result["retryPermissions"]?.Value<bool>() ?? false;
             var brokenReferences = result["brokenReferences"]?.Values<string>().ToArray();
             var messages = result["messages"]?.Values<string>().ToArray();
-            return new ImportResponse
+            return new WriterState
             {
                 WriterPath = writerPath,
                 RetryPermissions = retryPermissions,
@@ -125,7 +125,7 @@ namespace SenseNet.IO.Implementations
                 Action = action
             };
         }
-        private async Task<ImportResponse> WriteContentAsync(string repositoryPath, IContent content, CancellationToken cancel)
+        private async Task<WriterState> WriteContentAsync(string repositoryPath, IContent content, CancellationToken cancel)
         {
             Content uploaded;
             var attachments = await content.GetAttachmentsAsync();
@@ -162,10 +162,10 @@ namespace SenseNet.IO.Implementations
             }
             catch (Exception e)
             {
-                return new ImportResponse
+                return new WriterState
                 {
                     WriterPath = repositoryPath,
-                    Action = ImporterAction.Error,
+                    Action = WriterAction.Failed,
                     Messages = new[] {e.Message}
                 };
             }
@@ -181,15 +181,14 @@ namespace SenseNet.IO.Implementations
             // Process result
             var result = JsonConvert.DeserializeObject(resultString) as JObject;
             if (result == null)
-                return new ImportResponse { Action = ImporterAction.Unknown, WriterPath = repositoryPath };
+                return new WriterState { Action = WriterAction.Unknown, WriterPath = repositoryPath };
 
-            Enum.TryParse(typeof(ImporterAction), result["action"]?.Value<string>(), true, out var rawAction);
-            var action = rawAction == null ? ImporterAction.Unknown : (ImporterAction) rawAction;
             var writerPath = result["path"]?.Value<string>();
             var retryPermissions = result["retryPermissions"]?.Value<bool>() ?? false;
-            var brokenReferences = result["brokenReferences"]?.Values<string>().ToArray();
+            var brokenReferences = result["brokenReferences"]?.Values<string>().ToArray() ?? Array.Empty<string>();
             var messages = result["messages"]?.Values<string>().ToArray();
-            return new ImportResponse
+            var action = ParseWriterAction(result["action"]?.Value<string>(), retryPermissions || brokenReferences.Length > 0);
+            return new WriterState
             {
                 WriterPath = writerPath,
                 RetryPermissions = retryPermissions,
@@ -199,39 +198,17 @@ namespace SenseNet.IO.Implementations
             };
         }
 
-
-        private async Task ___x()
+        private WriterAction ParseWriterAction(string src, bool needToUpdateReferences)
         {
-            var uploadRootPath = "/Root/UploadTests";
-            var uploadFolder = await Content.LoadAsync(uploadRootPath).ConfigureAwait(false);
-            if (uploadFolder == null)
-            {
-                uploadFolder = Content.CreateNew("/Root", "SystemFolder", "UploadTests");
-                await uploadFolder.SaveAsync().ConfigureAwait(false);
-            }
-
-            Content uploaded;
-            string fileText;
-
-            // Upload a file
-            using (var fileStream = new FileStream(@"D:\dev\Examples\MyFile.txt", FileMode.Open))
-                uploaded = await Content.UploadAsync("/Root/UploadTests", "MyFile.txt", fileStream, "File", "Binary");
-
-
-            // Update a CTD
-            using (var reader = new StreamReader(@"D:\dev\Examples\DomainsCtd.xml"))
-                fileText = reader.ReadToEnd();
-            uploaded = await Content.UploadTextAsync("/Root/System/Schema/ContentTypes", "Domains",
-                fileText, CancellationToken.None, "ContentType");
-
-            using (var stream = new FileStream(@"D:\dev\Examples\DomainsCtd.xml", FileMode.Open))
-                uploaded = await Content.UploadAsync("/Root/System/Schema/ContentTypes", "Domains", stream, "ContentType");
-
-            // Update a Settings file
-            uploaded = await Content.UploadTextAsync("/Root/System/Settings", "MyCustom.settings",
-                "{Key:'Value'}", CancellationToken.None, "Settings");
-
-
+            if(src==null)
+                return WriterAction.Unknown;
+            if (src.Equals("created", StringComparison.OrdinalIgnoreCase))
+                return needToUpdateReferences ? WriterAction.Creating : WriterAction.Created;
+            if (src.Equals("updated", StringComparison.OrdinalIgnoreCase))
+                return needToUpdateReferences ? WriterAction.Updating : WriterAction.Updated;
+            if (src.Equals("failed", StringComparison.OrdinalIgnoreCase))
+                return WriterAction.Failed;
+            return WriterAction.Unknown;
         }
     }
 }

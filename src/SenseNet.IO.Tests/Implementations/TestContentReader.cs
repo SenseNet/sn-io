@@ -44,5 +44,8 @@ namespace SenseNet.IO.Tests.Implementations
             _sortedPathIndex++;
             return Task.FromResult(true);
         }
+
+        public void SetReferenceUpdateTasks(IEnumerable<TransferTask> tasks, int taskCount) { }
+        public Task<bool> ReadByReferenceUpdateTasksAsync(CancellationToken cancel) { return Task.FromResult(false); }
     }
 }

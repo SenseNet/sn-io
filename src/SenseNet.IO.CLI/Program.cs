@@ -1,11 +1,5 @@
 ﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
-using System.Threading.Tasks.Dataflow;
 using SenseNet.IO.Implementations;
 
 namespace SenseNet.IO.CLI
@@ -113,40 +107,84 @@ namespace SenseNet.IO.CLI
 
             /* =================================================================================== TEST CASES */
 
+            //var reader = new RepositoryTreeReader("https://localhost:44362", "/Root", 10);
+            //var writer = new FsWriter(@"D:\dev\_sn-io-test\localhost_44362_(export)");
+
             //var reader = new FsReader(@"D:\dev\_sn-io-test\FsReader", "/Root");
             //var writer = new FsWriter(@"D:\dev\_sn-io-test\FsWriter");
 
             //var reader = new FsReader(@"D:\dev\_sn-io-test\FsReader", "/Root/GyebiTesztel");
             //var writer = new FsWriter(@"D:\dev\_sn-io-test\FsWriter", "/Root", "XXX");
 
-            var reader = new FsReader(@"D:\dev\_sn-io-test\FsReader", "/Root");
-            var writer = new RepositoryWriter("https://localhost:44362");
+            //var reader = new FsReader(@"D:\dev\_sn-io-test\FsReader", "/Root");
+            //var writer = new RepositoryWriter("https://localhost:44362");
 
-            //var reader = new FsReader(@"D:\dev\_sn-io-test\FsReader", "/Root/System/Settings");
-            //var writer = new RepositoryWriter("https://localhost:44362", "/Root/System");
+            //var reader = new FsReader(@"D:\dev\_sn-io-test\FsReader", "/Root/(apps)");
+            //var writer = new RepositoryWriter("https://localhost:44362", "/Root");
+
+            //var reader = new FsReader(@"D:\dev\_sn-io-test\FsReader", "/Root/IMS");
+            //var writer = new RepositoryWriter("https://localhost:44362", "/Root");
+
+            var reader = new FsReader(@"D:\dev\_sn-io-test\FsReader", "/Root/System/Settings");
+            var writer = new RepositoryWriter("https://localhost:44362", "/Root/System");
 
 
+
+
+            _displayLevel = DisplayLevel.Verbose;
             var flow = new ContentFlow(reader, writer);
-            var progress = new Progress(state =>
-            {
-                Console.Write("Transferring... {0,5:F1}%\r", state.Percent);
-            });
-            //var progress = new Progress(state =>
-            //{
-            //    Console.Write("                             \r");
-            //    Console.WriteLine(state.Path);
-            //    Console.Write("Transferring... {0,5:F1}%\r", state.Percent);
-            //});
+            var progress = new Progress<TransferState>(ShowProgress);
             await flow.TransferAsync(progress);
+
+            await Task.Delay(1000);
+
             Console.WriteLine();
             Console.WriteLine("Done.");
         }
-    }
 
-    class Progress : IProgress<(string Path, double Percent)>
-    {
-        private readonly Action<(string Path, double Percent)> _callback;
-        public Progress(Action<(string Path, double Percent)> callback) { _callback = callback; }
-        public void Report((string Path, double Percent) value) { _callback(value); }
+        /* ========================================================================== Display progress */
+
+        private enum DisplayLevel { None, Progress, Errors, Verbose }
+
+        private static DisplayLevel _displayLevel = DisplayLevel.Errors;
+        private static readonly string ClearLine = new string(' ', 70) + '\r';
+        private static string _lastBatchAction;
+
+        private static void ShowProgress(TransferState state)
+        {
+            if (_displayLevel == DisplayLevel.None)
+                return;
+
+            // Section
+            if (_displayLevel != DisplayLevel.Progress)
+            {
+                if (_lastBatchAction != state.CurrentBatchAction)
+                {
+                    _lastBatchAction = state.CurrentBatchAction;
+                    Console.Write(ClearLine);
+                    Console.WriteLine($"------------ {state.CurrentBatchAction.ToUpper()} ------------");
+                }
+            }
+
+            // Content
+            if (_displayLevel == DisplayLevel.Verbose ||
+                (_displayLevel == DisplayLevel.Errors && state.State.Action == WriterAction.Failed))
+            {
+                Console.Write(ClearLine);
+                Console.WriteLine($"{state.State.Action,-8} {state.State.WriterPath}");
+            }
+
+            // Error
+            if (_displayLevel != DisplayLevel.Progress && state.State.Action == WriterAction.Failed)
+            {
+                foreach (var message in state.State.Messages)
+                    Console.WriteLine(
+                        $"         {message.Replace("The server returned an error (HttpStatus: InternalServerError): ", "")}");
+            }
+
+            // Progress
+            Console.Write($"{state.CurrentBatchAction} {state.Percent,5:F1}%  " +
+                          $"({state.CurrentCount}/{state.TotalCount} errors:{state.ErrorCount})                     \r");
+        }
     }
 }

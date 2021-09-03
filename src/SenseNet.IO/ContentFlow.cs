@@ -1,8 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
+using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace SenseNet.IO
 {
@@ -54,8 +58,11 @@ namespace SenseNet.IO
         }
 
         private int _count = 0;
+        private int _referenceUpdateTasksTotalCount = 0;
+        private string _currentBatchAction;
+        private int _errorCount;
         private string _rootName;
-        public async Task TransferAsync(IProgress<(string Path, double Percent)> progress = null, CancellationToken cancel = default)
+        public async Task TransferAsync(IProgress<TransferState> progress = null, CancellationToken cancel = default)
         {
             _rootName = Writer.RootName ?? ContentPath.GetName(Reader.RootPath);
 
@@ -63,146 +70,160 @@ namespace SenseNet.IO
             {
                 if (await Reader.ReadContentTypesAsync(cancel))
                 {
+                    _currentBatchAction = "Transfer content types";
+                    WriteLogToFile($"------------ {_currentBatchAction.ToUpper()} ------------");
+
                     await EnsureRootAsync("", cancel);
                     await EnsureSystemAsync("System", cancel);
                     await EnsureSchemaAsync("System/Schema", cancel);
                     await EnsureContentTypesAsync("System/Schema/ContentTypes", cancel);
 
-                    await WriteAsync(progress, cancel);
+                    await WriteAsync(progress, false, cancel);
                     while (await Reader.ReadContentTypesAsync(cancel))
-                        await WriteAsync(progress, cancel);
+                        await WriteAsync(progress, false, cancel);
                 }
                 if (await Reader.ReadSettingsAsync(cancel))
                 {
+                    _currentBatchAction = "Transfer settings";
+                    WriteLogToFile($"------------ {_currentBatchAction.ToUpper()} ------------");
+
                     await EnsureRootAsync("", cancel);
                     await EnsureSystemAsync("System", cancel);
                     await EnsureSettingsAsync("System/Settings", cancel);
 
-                    await WriteAsync(progress, cancel);
+                    await WriteAsync(progress, false, cancel);
                     while (await Reader.ReadSettingsAsync(cancel))
-                        await WriteAsync(progress, cancel);
+                        await WriteAsync(progress, false, cancel);
                 }
                 if (await Reader.ReadAspectsAsync(cancel))
                 {
+                    _currentBatchAction = "Transfer aspect definitions";
+                    WriteLogToFile($"------------ {_currentBatchAction.ToUpper()} ------------");
+
                     await EnsureRootAsync("", cancel);
                     await EnsureSystemAsync("System", cancel);
                     await EnsureSchemaAsync("System/Schema", cancel);
                     await EnsureAspectsAsync("System/Schema/Aspects", cancel);
 
-                    await WriteAsync(progress, cancel);
+                    await WriteAsync(progress, false, cancel);
                     while (await Reader.ReadAspectsAsync(cancel))
-                        await WriteAsync(progress, cancel);
+                        await WriteAsync(progress, false, cancel);
                 }
             }
             else if (Reader.RootPath.Equals("/Root/System", StringComparison.OrdinalIgnoreCase))
             {
                 if (await Reader.ReadContentTypesAsync(cancel))
                 {
+                    _currentBatchAction = "Transfer content types";
+                    WriteLogToFile($"------------ {_currentBatchAction.ToUpper()} ------------");
+
                     await EnsureSystemAsync("", cancel);
                     await EnsureSchemaAsync("Schema", cancel);
                     await EnsureContentTypesAsync("Schema/ContentTypes", cancel);
 
-                    await WriteAsync(progress, cancel);
+                    await WriteAsync(progress, false, cancel);
                     while (await Reader.ReadContentTypesAsync(cancel))
-                        await WriteAsync(progress, cancel);
+                        await WriteAsync(progress, false, cancel);
                 }
                 if (await Reader.ReadSettingsAsync(cancel))
                 {
+                    _currentBatchAction = "Transfer settings";
+                    WriteLogToFile($"------------ {_currentBatchAction.ToUpper()} ------------");
+
                     await EnsureSystemAsync("", cancel);
                     await EnsureSettingsAsync("Settings", cancel);
 
-                    await WriteAsync(progress, cancel);
+                    await WriteAsync(progress, false, cancel);
                     while (await Reader.ReadSettingsAsync(cancel))
-                        await WriteAsync(progress, cancel);
+                        await WriteAsync(progress, false, cancel);
                 }
                 if (await Reader.ReadAspectsAsync(cancel))
                 {
+                    _currentBatchAction = "Transfer aspect definitions";
+                    WriteLogToFile($"------------ {_currentBatchAction.ToUpper()} ------------");
+
                     await EnsureSystemAsync("", cancel);
                     await EnsureSchemaAsync("Schema", cancel);
                     await EnsureAspectsAsync("Schema/Aspects", cancel);
 
-                    await WriteAsync(progress, cancel);
+                    await WriteAsync(progress, false, cancel);
                     while (await Reader.ReadAspectsAsync(cancel))
-                        await WriteAsync(progress, cancel);
+                        await WriteAsync(progress, false, cancel);
                 }
             }
             else if (Reader.RootPath.Equals("/Root/System/Settings", StringComparison.OrdinalIgnoreCase))
             {
                 if (await Reader.ReadSettingsAsync(cancel))
                 {
+                    _currentBatchAction = "Transfer settings";
+                    WriteLogToFile($"------------ {_currentBatchAction.ToUpper()} ------------");
+
                     await EnsureSettingsAsync("", cancel);
 
-                    await WriteAsync(progress, cancel);
+                    await WriteAsync(progress, false, cancel);
                     while (await Reader.ReadSettingsAsync(cancel))
-                        await WriteAsync(progress, cancel);
+                        await WriteAsync(progress, false, cancel);
                 }
             }
             else if (Reader.RootPath.Equals("/Root/System/Schema", StringComparison.OrdinalIgnoreCase))
             {
                 if (await Reader.ReadContentTypesAsync(cancel))
                 {
+                    _currentBatchAction = "Transfer content types";
+                    WriteLogToFile($"------------ {_currentBatchAction.ToUpper()} ------------");
+
                     await EnsureSchemaAsync("", cancel);
                     await EnsureContentTypesAsync("ContentTypes", cancel);
 
-                    await WriteAsync(progress, cancel);
+                    await WriteAsync(progress, false, cancel);
                     while (await Reader.ReadContentTypesAsync(cancel))
-                        await WriteAsync(progress, cancel);
+                        await WriteAsync(progress, false, cancel);
                 }
                 if (await Reader.ReadAspectsAsync(cancel))
                 {
+                    _currentBatchAction = "Transfer aspect definitions";
+                    WriteLogToFile($"------------ {_currentBatchAction.ToUpper()} ------------");
+
                     await EnsureSchemaAsync("", cancel);
                     await EnsureAspectsAsync("Aspects", cancel);
 
-                    await WriteAsync(progress, cancel);
+                    await WriteAsync(progress, false, cancel);
                     while (await Reader.ReadAspectsAsync(cancel))
-                        await WriteAsync(progress, cancel);
+                        await WriteAsync(progress, false, cancel);
                 }
             }
             else if (Reader.RootPath.Equals("/Root/System/Schema/ContentTypes", StringComparison.OrdinalIgnoreCase))
             {
                 if (await Reader.ReadContentTypesAsync(cancel))
                 {
+                    _currentBatchAction = "Transfer content types";
+                    WriteLogToFile($"------------ {_currentBatchAction.ToUpper()} ------------");
+
                     await EnsureContentTypesAsync("", cancel);
 
-                    await WriteAsync(progress, cancel);
+                    await WriteAsync(progress, false, cancel);
                     while (await Reader.ReadContentTypesAsync(cancel))
-                        await WriteAsync(progress, cancel);
+                        await WriteAsync(progress, false, cancel);
                 }
             }
             else if (Reader.RootPath.Equals("/Root/System/Schema/Aspects", StringComparison.OrdinalIgnoreCase))
             {
                 if (await Reader.ReadAspectsAsync(cancel))
                 {
+                    _currentBatchAction = "Transfer aspect definitions";
+                    WriteLogToFile($"------------ {_currentBatchAction.ToUpper()} ------------");
+
                     await EnsureAspectsAsync("", cancel);
 
-                    await WriteAsync(progress, cancel);
+                    await WriteAsync(progress, false, cancel);
                     while (await Reader.ReadAspectsAsync(cancel))
-                        await WriteAsync(progress, cancel);
+                        await WriteAsync(progress, false, cancel);
                 }
             }
 
             await TransferAllAsync(progress, cancel);
-        }
 
-        private async Task TransferContentTypes(IProgress<(string Path, double Percent)> progress = null, CancellationToken cancel = default)
-        {
-            if (await Reader.ReadContentTypesAsync(cancel))
-            {
-                await EnsureRootAsync("", cancel);
-
-
-                await Writer.WriteAsync("", InitialContents["/Root"], cancel);
-                await Writer.WriteAsync("System", InitialContents["/Root/System"], cancel);
-                await Writer.WriteAsync("System/Schema", InitialContents["/Root/System/Schema"], cancel);
-                await Writer.WriteAsync("System/Schema/ContentTypes", InitialContents["/Root/System/Schema/ContentTypes"], cancel);
-                await Writer.WriteAsync(Reader.RelativePath, Reader.Content, cancel);
-                Progress(Reader.RelativePath, ref _count, progress);
-                while (await Reader.ReadContentTypesAsync(cancel))
-                {
-                    await Writer.WriteAsync(Reader.RelativePath, Reader.Content, cancel);
-                    Progress(Reader.RelativePath, ref _count, progress);
-                }
-            }
+            await UpdateReferencesAsync(progress, cancel);
         }
 
         private bool _rootWritten;
@@ -254,49 +275,198 @@ namespace SenseNet.IO
             _contentTypesWritten = true;
         }
 
-        private async Task TransferAllAsync(IProgress<(string Path, double Percent)> progress = null, CancellationToken cancel = default)
+        private async Task TransferAllAsync(IProgress<TransferState> progress = null, CancellationToken cancel = default)
         {
-            //var rootName = Writer.RootName ?? ContentPath.GetName(Reader.RootPath);
             if (await Reader.ReadAllAsync(cancel))
             {
                 if (Writer.RootName != null)
                     Rename(Reader.Content, _rootName);
 
-                //await Writer.WriteAsync(ContentPath.Combine(rootName, Reader.RelativePath), Reader.Content, cancel);
-                //Progress(Reader.RelativePath, ref _count, progress);
-                await WriteAsync(progress, cancel);
+                _currentBatchAction = "Transfer contents";
+                WriteLogToFile($"------------ {_currentBatchAction.ToUpper()} ------------");
+
+                await WriteAsync(progress, false, cancel);
                 while (await Reader.ReadAllAsync(cancel))
                 {
-                    //await Writer.WriteAsync(ContentPath.Combine(rootName, Reader.RelativePath), Reader.Content, cancel);
-                    //Progress(Reader.RelativePath, ref _count, progress);
-                    await WriteAsync(progress, cancel);
+                    await WriteAsync(progress, false, cancel);
                 }
             }
         }
-
-        private async Task WriteAsync(IProgress<(string Path, double Percent)> progress, CancellationToken cancel = default)
-        {
-            var response = await Writer.WriteAsync(ContentPath.Combine(_rootName, Reader.RelativePath), Reader.Content, cancel);
-            Console.WriteLine($"{response.Action} {response.WriterPath}                               ");
-            if(response.Action == ImporterAction.Error)
-                foreach (var message in response.Messages)
-                    Console.WriteLine($"       {message.Replace("The server returned an error (HttpStatus: InternalServerError): ", "")}                               ");
-            //UNDONE:!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Process ImportResponse
-            Progress(Reader.RelativePath, ref _count, progress);
-        }
-        private void Progress(string path, ref int count, IProgress<(string Path, double Percent)> progress = null)
-        {
-            ++count;
-            var totalCount = Reader.EstimatedCount;
-            if (totalCount > 0)
-                progress?.Report((path, count * 100.0 / totalCount));
-        }
-
         private void Rename(IContent content, string newName)
         {
             if (content.FieldNames.Contains("Name"))
                 content["Name"] = newName;
             content.Name = newName;
+        }
+
+        private async Task UpdateReferencesAsync(IProgress<TransferState> progress = null,
+            CancellationToken cancel = default)
+        {
+            var taskCount = LoadTaskCount();
+            if (taskCount == 0)
+                return;
+
+            _currentBatchAction = "Update references";
+            WriteLogToFile($"------------ {_currentBatchAction.ToUpper()} ------------");
+
+            var tasks = LoadTasks();
+            Reader.SetReferenceUpdateTasks(tasks, taskCount);
+
+            while (await Reader.ReadByReferenceUpdateTasksAsync(cancel))
+                await WriteAsync(progress, true, cancel);
+        }
+
+        private async Task WriteAsync(IProgress<TransferState> progress, bool updateReferences, CancellationToken cancel = default)
+        {
+            var readerPath = Reader.RelativePath;
+            var writerPath = ContentPath.Combine(_rootName, readerPath);
+            var state = await Writer.WriteAsync(writerPath, Reader.Content, cancel);
+            state.ReaderPath = readerPath;
+            state.WriterPath = writerPath;
+            Progress(readerPath, ref _count, state, updateReferences, progress);
+        }
+        private void Progress(string readerPath, ref int count, WriterState state, bool updateReferences, IProgress<TransferState> progress = null)
+        {
+            if(state.Action == WriterAction.Failed)
+                _errorCount++;
+
+            WriteLogAndTask(state, updateReferences);
+
+            progress?.Report(new TransferState
+            {
+                CurrentBatchAction = _currentBatchAction,
+                CurrentCount = ++count,
+                TotalCount = Reader.EstimatedCount + _referenceUpdateTasksTotalCount,
+                ErrorCount = _errorCount,
+                UpdatingReferences = updateReferences,
+                State = state,
+            });
+        }
+
+        /* ============================================================================== LOGGING */
+
+        private void WriteLogAndTask(WriterState state, bool updateReferences)
+        {
+            WriteLogToFile(state, updateReferences);
+            if (!updateReferences && state.UpdateRequired)
+                WriteTaskToFile(state);
+        }
+
+        private string _logFilePath;
+        private void WriteLogToFile(WriterState state, bool updateReferences)
+        {
+            using (var writer = new StringWriter())
+            {
+                writer.WriteLine($"{state.Action,-8} {state.WriterPath}");
+                foreach (var message in state.Messages)
+                    writer.WriteLine($"         {message.Replace("The server returned an error (HttpStatus: InternalServerError): ", "")}");
+                WriteLogToFile(writer.GetStringBuilder().ToString().Trim());
+            }
+        }
+        private void WriteLogToFile(string entry)
+        {
+            if (_logFilePath == null)
+                _logFilePath = CreateLogFile(true, "log");
+
+            using (StreamWriter writer = new StreamWriter(_logFilePath, true))
+                writer.WriteLine($"{DateTime.Now:yyyy-MM-dd HH:mm:ss.fffff}  {entry}");
+        }
+
+        private string _taskFilePath;
+        private void WriteTaskToFile(WriterState state)
+        {
+            if (_taskFilePath == null)
+                _taskFilePath = CreateLogFile(true, "tasks");
+
+            using (StreamWriter writer = new StreamWriter(_taskFilePath, true))
+            {
+                writer.Write($"{state.ReaderPath};{state.WriterPath};{ string.Join(",", state.BrokenReferences)}");
+                if(state.RetryPermissions)
+                    writer.Write(";SetPermissions");
+                writer.WriteLine();
+            }
+
+            _referenceUpdateTasksTotalCount++;
+        }
+
+        private int LoadTaskCount()
+        {
+            if (_taskFilePath == null)
+                return 0;
+
+            var count = 0;
+            string line;
+            using (var reader = new StreamReader(_taskFilePath))
+            {
+                while ((line = reader.ReadLine()) != null)
+                    count++;
+            }
+            return count;
+        }
+        //private IEnumerable<TransferTask> LoadTasks()
+        //{
+        //    // Preload whole file because reading per line causes IOException:
+        //    //     "The process cannot access the file '****.tasks' because it is being used by another process."
+        //    string fileContent;
+        //    using (var r = new StreamReader(_taskFilePath))
+        //        fileContent = r.ReadToEnd();
+
+        //    using (var reader = new StringReader(fileContent))
+        //    {
+        //        string line;
+        //        while ((line = reader.ReadLine()) != null)
+        //        {
+        //            var fields = line.Split(';');
+        //            if (fields.Length < 3)
+        //                throw new InvalidOperationException("Invalid task file.");
+
+        //            yield return new TransferTask
+        //            {
+        //                ReaderPath = fields[0].Trim(),
+        //                WriterPath = fields[1].Trim(),
+        //                BrokenReferences = fields[2].Split(',').Select(x => x.Trim()).ToArray(),
+        //                RetryPermissions = fields.Length > 3 && fields[3] == "SetPermissions"
+        //            };
+        //        }
+        //    }
+        //}
+        private IEnumerable<TransferTask> LoadTasks()
+        {
+            using (var reader = new StreamReader(_taskFilePath))
+            {
+                string line;
+                while ((line = reader.ReadLine()) != null)
+                {
+                    var fields = line.Split(';');
+                    if (fields.Length < 3)
+                        throw new InvalidOperationException("Invalid task file.");
+
+                    yield return new TransferTask
+                    {
+                        ReaderPath = fields[0].Trim(),
+                        WriterPath = fields[1].Trim(),
+                        BrokenReferences = fields[2].Split(',').Select(x => x.Trim()).ToArray(),
+                        RetryPermissions = fields.Length > 3 && fields[3] == "SetPermissions"
+                    };
+                }
+            }
+        }
+
+        public string CreateLogFile(bool createNew, string extension)
+        {
+            var asm = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            var folder = asm == null ? "D:\\" : Path.Combine(asm, "logs");
+            if (!Directory.Exists(folder))
+                Directory.CreateDirectory(folder);
+
+            var path = Path.Combine(folder, $"SenseNet.IO.{DateTime.Now:yyyyMMdd_HHmmss}.{extension}");
+            if (!File.Exists(path) || createNew)
+            {
+                using (FileStream fs = new FileStream(path, FileMode.Create))
+                using (StreamWriter wr = new StreamWriter(fs)) { }
+            }
+
+            return path;
         }
     }
 }

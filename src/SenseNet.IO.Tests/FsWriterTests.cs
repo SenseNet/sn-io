@@ -112,6 +112,9 @@ namespace SenseNet.IO.Tests
                 }
                 return Task.FromResult(false);
             }
+
+            public void SetReferenceUpdateTasks(IEnumerable<TransferTask> tasks, int taskCount) { }
+            public Task<bool> ReadByReferenceUpdateTasksAsync(CancellationToken cancel) { return Task.FromResult(false); }
         }
         #endregion
 

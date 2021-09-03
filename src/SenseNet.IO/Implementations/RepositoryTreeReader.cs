@@ -139,6 +139,17 @@ namespace SenseNet.IO.Implementations
             return true;
         }
 
+        public void SetReferenceUpdateTasks(IEnumerable<TransferTask> tasks, int taskCount)
+        {
+            //UNDONE: implement SetReferenceUpdateTasks()
+            throw new NotImplementedException();
+        }
+        public Task<bool> ReadByReferenceUpdateTasksAsync(CancellationToken cancel)
+        {
+            //UNDONE: implement ReadRandomAsync()
+            throw new NotImplementedException();
+        }
+
         private async Task<int> GetCountAsync()
         {
             var result = await RESTCaller.GetResponseStringAsync(RootPath, "GetContentCountInTree");

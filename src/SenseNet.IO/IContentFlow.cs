@@ -9,6 +9,6 @@ namespace SenseNet.IO
         IContentReader Reader { get; }
         IContentWriter Writer { get; }
 
-        Task TransferAsync(IProgress<(string Path, double Percent)> progress, CancellationToken cancel = default);
+        Task TransferAsync(IProgress<TransferState> progress, CancellationToken cancel = default);
     }
 }
