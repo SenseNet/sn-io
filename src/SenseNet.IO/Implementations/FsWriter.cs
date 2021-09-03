@@ -12,6 +12,7 @@ namespace SenseNet.IO.Implementations
         private readonly string _outputDirectory;
         public string ContainerPath { get; }
         public string RootName { get; }
+        public bool SystemElementsFirst => false;
 
         public FsWriter(string outputDirectory, string containerPath = null, string rootName = null)
         {

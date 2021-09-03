@@ -15,6 +15,7 @@ namespace SenseNet.IO.Implementations
         private readonly string _url;
         public string ContainerPath { get; }
         public string RootName { get; }
+        public bool SystemElementsFirst => true;
 
         public RepositoryWriter(string url, string containerPath = null, string rootName = null)
         {

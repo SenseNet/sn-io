@@ -19,6 +19,8 @@ namespace SenseNet.IO.Tests.Implementations
 
         public string ContainerPath { get; }
         public string RootName { get; }
+        public bool SystemElementsFirst => true;
+
 
         public Task<WriterState> WriteAsync(string path, IContent content, CancellationToken cancel = default)
         {
