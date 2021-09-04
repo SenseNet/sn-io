@@ -21,8 +21,6 @@ namespace SenseNet.IO
         /// </summary>
         string RootName { get; }
 
-        bool SystemElementsFirst { get; }
-
         /// <summary>
         /// Writes a content to the given path. The path is always a repository path.
         /// The path can be absolute (/Root...) or relative to the <see cref="ContainerPath"/>.
