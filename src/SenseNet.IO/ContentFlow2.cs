@@ -40,28 +40,31 @@ namespace SenseNet.IO
             }
             else if (firstTargetPath.Equals("/Root/System", StringComparison.OrdinalIgnoreCase))
             {
-                //UNDONE ???
-                throw new NotImplementedException();
+                subTreePaths = new[] { "Schema/ContentTypes", "Settings", "Schema/Aspects", };
+                await CopyContentTypesAsync(subTreePaths[0], progress, cancel);
+                await CopySettingsAsync(subTreePaths[1], progress, cancel);
+                await CopyAspectsAsync(subTreePaths[2], progress, cancel);
             }
             else if (firstTargetPath.Equals("/Root/System/Settings", StringComparison.OrdinalIgnoreCase))
             {
-                //UNDONE ???
-                throw new NotImplementedException();
+                subTreePaths = new[] { "" };
+                await CopySettingsAsync(subTreePaths[0], progress, cancel);
             }
             else if (firstTargetPath.Equals("/Root/System/Schema", StringComparison.OrdinalIgnoreCase))
             {
-                //UNDONE ???
-                throw new NotImplementedException();
+                subTreePaths = new[] { "ContentTypes", "Aspects", };
+                await CopyContentTypesAsync(subTreePaths[0], progress, cancel);
+                await CopyAspectsAsync(subTreePaths[1], progress, cancel);
             }
             else if (firstTargetPath.Equals("/Root/System/Schema/ContentTypes", StringComparison.OrdinalIgnoreCase))
             {
-                //UNDONE ???
-                throw new NotImplementedException();
+                subTreePaths = new[] { "", };
+                await CopyContentTypesAsync(subTreePaths[0], progress, cancel);
             }
             else if (firstTargetPath.Equals("/Root/System/Schema/Aspects", StringComparison.OrdinalIgnoreCase))
             {
-                //UNDONE ???
-                throw new NotImplementedException();
+                subTreePaths = new[] { "", };
+                await CopyAspectsAsync(subTreePaths[0], progress, cancel);
             }
 
             await CopyAllAsync(subTreePaths, progress, cancel);

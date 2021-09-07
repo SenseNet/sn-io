@@ -146,7 +146,7 @@ namespace SenseNet.IO.Tests
         public async Task ContentFlow2_RootSystem()
         {
             var sourceTree = CreateSourceTree(@"\");
-            var targetTree = CreateTree(new[] {"/Root", "/System"});
+            var targetTree = CreateTree(new[] {"/Root", "/Root/System"});
             var targetStates = new Dictionary<string, WriterState>();
 
             // ACTION
@@ -263,7 +263,7 @@ namespace SenseNet.IO.Tests
                             x == @"q:\io\Root\System" ||
                             x == @"q:\io\Root\System\Schema" ||
                             x == @"q:\io\Root\System\Schema\ContentTypes" ||
-                            x.StartsWith(@"q:\io\Root\System\ContentTypes\"))
+                            x.StartsWith(@"q:\io\Root\System\Schema\ContentTypes\"))
                 .Select(x => x.Substring("q:\\io".Length).Replace('\\', '/'))
                 .OrderBy(x => x)
                 .ToArray();
@@ -307,7 +307,7 @@ namespace SenseNet.IO.Tests
                             x == @"q:\io\Root\System" ||
                             x == @"q:\io\Root\System\Schema" ||
                             x == @"q:\io\Root\System\Schema\Aspects" ||
-                            x.StartsWith(@"q:\io\Root\System\Aspects\"))
+                            x.StartsWith(@"q:\io\Root\System\Schema\Aspects\"))
                 .Select(x => x.Substring("q:\\io".Length).Replace('\\', '/'))
                 .OrderBy(x => x)
                 .ToArray();
@@ -331,7 +331,7 @@ namespace SenseNet.IO.Tests
         public async Task ContentFlow2_RootSystemSettings()
         {
             var sourceTree = CreateSourceTree(@"\");
-            var targetTree = CreateTree(new[] { "/Root" });
+            var targetTree = CreateTree(new[] { "/Root", "/Root/System" });
             var targetStates = new Dictionary<string, WriterState>();
 
             // ACTION
@@ -346,7 +346,7 @@ namespace SenseNet.IO.Tests
                 .Where(x => x == @"q:\io\Root" ||
                             x == @"q:\io\Root\System" ||
                             x == @"q:\io\Root\System\Settings" ||
-                            x.StartsWith(@"q:\io\Root\Setting\"))
+                            x.StartsWith(@"q:\io\Root\System\Settings\"))
                 .Select(x => x.Substring("q:\\io".Length).Replace('\\', '/'))
                 .OrderBy(x => x)
                 .ToArray();
