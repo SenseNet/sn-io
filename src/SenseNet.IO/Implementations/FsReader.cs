@@ -131,6 +131,12 @@ namespace SenseNet.IO.Implementations
             return Task.FromResult(true);
         }
 
+        public Task<bool> ReadSubTreeAsync(string relativePath, CancellationToken cancel = default)
+        {
+            //UNDONE:!!!!!!!!!!!!!! ReadSubTreeAsync is not implemented
+            throw new NotImplementedException();
+        }
+
         private void ReadSubTree(FsContent parentContent, List<FsContent> container)
         {
             var children = ReadChildren(parentContent);
@@ -145,8 +151,9 @@ namespace SenseNet.IO.Implementations
             public int Index { get; set; }
             public FsContent[] Contents { get; set; }
         }
-        public Task<bool> ReadAllAsync(CancellationToken cancel = default)
+        public Task<bool> ReadAllAsync(string[] contentsWithoutChildren, CancellationToken cancel = default)
         {
+            //UNDONE:!!!!!!!!! Process "contentsWithoutChildren" parameter
             Initialize();
 
             bool goAhead;

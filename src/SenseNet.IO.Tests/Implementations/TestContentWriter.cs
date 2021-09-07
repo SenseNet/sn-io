@@ -10,9 +10,9 @@ namespace SenseNet.IO.Tests.Implementations
     {
         public Dictionary<string, ContentNode> Tree { get; }
 
-        public TestContentWriter(Dictionary<string, ContentNode> tree, string containerPath = null, string rootName = null)
+        public TestContentWriter(Dictionary<string, ContentNode> initialTree, string containerPath = null, string rootName = null)
         {
-            Tree = tree;
+            Tree = initialTree;
             ContainerPath = containerPath ?? "/";
             RootName = rootName;
         }
@@ -26,17 +26,23 @@ namespace SenseNet.IO.Tests.Implementations
             var absolutePath = ContentPath.GetAbsolutePath(path, ContainerPath);
             var parentPath = ContentPath.GetParentPath(absolutePath);
             var contentNode = new ContentNode {Name = content.Name, Type = content.Type};
-            var parent = parentPath == "/" || string.IsNullOrEmpty(parentPath) ? null : Tree[parentPath];
+            //var parent = parentPath == "/" || string.IsNullOrEmpty(parentPath) ? null : Tree[parentPath];
+            Tree.TryGetValue(parentPath, out var parent);
 
             contentNode.Parent = parent;
             if(parent != null)
             {
                 var existing = parent.Children.FirstOrDefault(x => x.Name == content.Name);
                 if (existing != null)
+                {
                     parent.Children.Remove(existing);
+                    contentNode.Children.AddRange(existing.Children);
+                    existing.Children.Clear();
+                    foreach (var child in contentNode.Children)
+                        child.Parent = contentNode;
+                }
                 parent.Children.Add(contentNode);
             }
-
 
             Tree[absolutePath] = contentNode;
 

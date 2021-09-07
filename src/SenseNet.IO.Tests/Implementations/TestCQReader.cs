@@ -65,10 +65,17 @@ namespace SenseNet.IO.Tests.Implementations
             return Task.FromResult(true);
         }
 
+        public Task<bool> ReadSubTreeAsync(string relativePath, CancellationToken cancel = default)
+        {
+            //UNDONE:!!!!!!!!!!!!!! ReadSubTreeAsync is not implemented
+            throw new System.NotImplementedException();
+        }
+
         private ContentNode[] _currentBlock;
         private int _currentBlockIndex;
-        public Task<bool> ReadAllAsync(CancellationToken cancel = default)
+        public Task<bool> ReadAllAsync(string[] contentsWithoutChildren, CancellationToken cancel = default)
         {
+            //UNDONE:!!!!!!!!! Process "contentsWithoutChildren" parameter
             //UNDONE: Implement ReadAllAsync methods well.
 
             //TODO: Raise performance: read the next block (background)

@@ -277,7 +277,7 @@ namespace SenseNet.IO
 
         private async Task TransferAllAsync(IProgress<TransferState> progress = null, CancellationToken cancel = default)
         {
-            if (await Reader.ReadAllAsync(cancel))
+            if (await Reader.ReadAllAsync(new string[0], cancel))
             {
                 if (Writer.RootName != null)
                     Rename(Reader.Content, _rootName);
@@ -286,7 +286,7 @@ namespace SenseNet.IO
                 WriteLog($"------------ {_currentBatchAction.ToUpper()} ------------");
 
                 await WriteAsync(progress, false, cancel);
-                while (await Reader.ReadAllAsync(cancel))
+                while (await Reader.ReadAllAsync(new string[0], cancel))
                 {
                     await WriteAsync(progress, false, cancel);
                 }

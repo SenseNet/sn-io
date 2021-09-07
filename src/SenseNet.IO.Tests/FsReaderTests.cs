@@ -127,7 +127,7 @@ namespace SenseNet.IO.Tests
             var readings = new Dictionary<string, IContent>();
 
             // ACTION
-            while (await reader.ReadAllAsync())
+            while (await reader.ReadAllAsync(Array.Empty<string>()))
                 readings.Add(reader.RelativePath, reader.Content);
 
             // ASSERT
@@ -169,7 +169,7 @@ namespace SenseNet.IO.Tests
             var readings = new Dictionary<string, IContent>();
 
             // ACTION
-            while (await reader.ReadAllAsync())
+            while (await reader.ReadAllAsync(Array.Empty<string>()))
                 readings.Add(reader.RelativePath, reader.Content);
 
             // ASSERT
@@ -215,7 +215,7 @@ namespace SenseNet.IO.Tests
             var readings = new Dictionary<string, IContent>();
 
             // ACTION
-            while (await reader.ReadAllAsync())
+            while (await reader.ReadAllAsync(Array.Empty<string>()))
                 readings.Add(reader.RelativePath, reader.Content);
 
             // ASSERT
@@ -260,7 +260,7 @@ namespace SenseNet.IO.Tests
             var readings = new Dictionary<string, IContent>();
 
             // ACTION
-            while (await reader.ReadAllAsync())
+            while (await reader.ReadAllAsync(Array.Empty<string>()))
                 readings.Add(reader.RelativePath, reader.Content);
 
             // ASSERT
@@ -324,7 +324,7 @@ namespace SenseNet.IO.Tests
             var readings = new Dictionary<string, IContent>();
 
             // ACTION
-            while (await reader.ReadAllAsync())
+            while (await reader.ReadAllAsync(Array.Empty<string>()))
                 readings.Add(reader.RelativePath, reader.Content);
 
             // ASSERT
@@ -385,7 +385,7 @@ namespace SenseNet.IO.Tests
             var readings = new Dictionary<string, IContent>();
 
             // ACTION
-            while (await reader.ReadAllAsync())
+            while (await reader.ReadAllAsync(Array.Empty<string>()))
                 readings.Add(reader.RelativePath, reader.Content);
 
             // ASSERT
@@ -480,7 +480,7 @@ namespace SenseNet.IO.Tests
                 actualRelativePaths.Add(reader.RelativePath);
                 readings.Add(reader.RelativePath, reader.Content);
             }
-            while (await reader.ReadAllAsync())
+            while (await reader.ReadAllAsync(Array.Empty<string>()))
             {
                 actualRelativePaths.Add(reader.RelativePath);
                 readings.Add(reader.RelativePath, reader.Content);
@@ -577,7 +577,7 @@ namespace SenseNet.IO.Tests
                 actualRelativePaths.Add(reader.RelativePath);
                 readings.Add(reader.RelativePath, reader.Content);
             }
-            while (await reader.ReadAllAsync())
+            while (await reader.ReadAllAsync(Array.Empty<string>()))
             {
                 actualRelativePaths.Add(reader.RelativePath);
                 readings.Add(reader.RelativePath, reader.Content);
@@ -727,8 +727,5 @@ namespace SenseNet.IO.Tests
                 .ToArray();
             return f;
         }
-
-
-        //    Assert.Fail("##########################################################################################");
     }
 }

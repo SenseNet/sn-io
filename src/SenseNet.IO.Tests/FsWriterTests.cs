@@ -102,8 +102,15 @@ namespace SenseNet.IO.Tests
             public Task<bool> ReadContentTypesAsync(CancellationToken cancel = default) { return Task.FromResult(false); }
             public Task<bool> ReadSettingsAsync(CancellationToken cancel = default) { return Task.FromResult(false); }
             public Task<bool> ReadAspectsAsync(CancellationToken cancel = default) { return Task.FromResult(false); }
-            public Task<bool> ReadAllAsync(CancellationToken cancel = default)
+            public Task<bool> ReadSubTreeAsync(string relativePath, CancellationToken cancel = default)
             {
+                //UNDONE:!!!!!!!!!!!!!! ReadSubTreeAsync is not implemented
+                throw new NotImplementedException();
+            }
+
+            public Task<bool> ReadAllAsync(string[] contentsWithoutChildren, CancellationToken cancel = default)
+            {
+                //UNDONE:!!!!!!!!! Process "contentsWithoutChildren" parameter
                 if (_contentIndex < _contentsToRead.Length)
                 {
                     Content = _contentsToRead[_contentIndex++];
