@@ -12,7 +12,7 @@ namespace SenseNet.IO.Tests.Implementations
         private readonly string _separator;
 
         private readonly string[] _sortedPaths;
-        private int _sortedPathIndex;
+        private int _filteredPathIndex;
 
         public string RootPath { get; }
         public int EstimatedCount => _tree?.Count ?? 0;
@@ -30,7 +30,7 @@ namespace SenseNet.IO.Tests.Implementations
                 .Where(x =>x.StartsWith(rootPathTrailing) || x == rootPath)
                 .OrderBy(x => x)
                 .ToArray();
-            _sortedPathIndex = 0;
+            _filteredPathIndex = 0;
         }
 
         public Task<bool> ReadContentTypesAsync(CancellationToken cancel = default) { return Task.FromResult(false); }
@@ -57,16 +57,32 @@ namespace SenseNet.IO.Tests.Implementations
             return Task.FromResult(true);
         }
 
+        private string[] _filteredPaths;
         public Task<bool> ReadAllAsync(string[] contentsWithoutChildren, CancellationToken cancel = default)
         {
-            //UNDONE:!!!!!!!!! Process "contentsWithoutChildren" parameter
-            if (_sortedPathIndex >= _sortedPaths.Length)
+            if (_filteredPaths == null)
+            {
+                var filters = contentsWithoutChildren
+                    .Select(x => NormalizePath(ContentPath.GetAbsolutePath(x, RootPath)) + "\\")
+                    .ToArray();
+                _filteredPaths = _sortedPaths
+                    .Where(x =>
+                    {
+                        foreach (var filter in filters)
+                            if (x.StartsWith(filter))
+                                return false;
+                        return true;
+                    })
+                    .ToArray();
+            }
+
+            if (_filteredPathIndex >= _filteredPaths.Length)
                 return Task.FromResult(false);
-            var sourceContent = _tree[_sortedPaths[_sortedPathIndex]];
+            var sourceContent = _tree[_filteredPaths[_filteredPathIndex]];
             RelativePath = ContentPath.GetRelativePath(sourceContent.Path, RootPath);
             Content = sourceContent.Clone();
 
-            _sortedPathIndex++;
+            _filteredPathIndex++;
             return Task.FromResult(true);
         }
 
