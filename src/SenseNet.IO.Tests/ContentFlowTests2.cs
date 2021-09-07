@@ -783,10 +783,177 @@ namespace SenseNet.IO.Tests
         }
 
         /* ----------------------------------------------------------------------- q:\io\ContentTypes */
+
+        [TestMethod]
+        public async Task ContentFlow2_ContentTypes()
+        {
+            var sourceTree = CreateSourceTree(@"\Root\System\Schema\ContentTypes");
+            var targetTree = CreateTree(new[] { "/Root", "/Root/System", "/Root/System/Schema" });
+            var targetStates = new Dictionary<string, WriterState>();
+
+            // ACTION
+            var reader = new TestContentReader(@"q:\io\ContentTypes", sourceTree);
+            var writer = new TestRepositoryWriter(targetTree, targetStates, "/Root/System/Schema");
+            var flow = new ContentFlow2Mock(reader, writer);
+            var progress = new TestProgress();
+            await flow.TransferAsync(progress);
+
+            // ASSERT
+            var initial = new[] { "/Root", "/Root/System", "/Root/System/Schema" };
+            var expected = sourceTree.Keys
+                .Select(x => x.Substring("q:\\io".Length).Replace('\\', '/'))
+                .Select(x => "/Root/System/Schema" + x)
+                .Union(initial)
+                .OrderBy(x => x)
+                .ToArray();
+            var actual = targetTree.Keys
+                .OrderBy(x => x)
+                .ToArray();
+            AssertSequencesAreEqual(expected, actual);
+
+            expected = new[]
+            {
+                "------------ TRANSFER CONTENT TYPES ------------",
+                "Created  /Root/System/Schema/ContentTypes/ContentType-1",
+                "Created  /Root/System/Schema/ContentTypes/ContentType-1/ContentType-3",
+                "Created  /Root/System/Schema/ContentTypes/ContentType-1/ContentType-4",
+                "Created  /Root/System/Schema/ContentTypes/ContentType-1/ContentType-5",
+                "Created  /Root/System/Schema/ContentTypes/ContentType-1/ContentType-5/ContentType-6",
+                "Created  /Root/System/Schema/ContentTypes/ContentType-2",
+                "------------ TRANSFER CONTENTS ------------",
+                "Updated  /Root/System/Schema/ContentTypes",
+            };
+            actual = flow.Log.ToArray();
+            AssertSequencesAreEqual(expected, actual);
+        }
+
         /* ----------------------------------------------------------------------- q:\io\Aspects */
+
+        [TestMethod]
+        public async Task ContentFlow2_Aspects()
+        {
+            var sourceTree = CreateSourceTree(@"\Root\System\Schema\Aspects");
+            var targetTree = CreateTree(new[] { "/Root", "/Root/System", "/Root/System/Schema" });
+            var targetStates = new Dictionary<string, WriterState>();
+
+            // ACTION
+            var reader = new TestContentReader(@"q:\io\Aspects", sourceTree);
+            var writer = new TestRepositoryWriter(targetTree, targetStates, "/Root/System/Schema");
+            var flow = new ContentFlow2Mock(reader, writer);
+            var progress = new TestProgress();
+            await flow.TransferAsync(progress);
+
+            // ASSERT
+            var initial = new[] { "/Root", "/Root/System", "/Root/System/Schema" };
+            var expected = sourceTree.Keys
+                .Select(x => x.Substring("q:\\io".Length).Replace('\\', '/'))
+                .Select(x => "/Root/System/Schema" + x)
+                .Union(initial)
+                .OrderBy(x => x)
+                .ToArray();
+            var actual = targetTree.Keys
+                .OrderBy(x => x)
+                .ToArray();
+            AssertSequencesAreEqual(expected, actual);
+
+            expected = new[]
+            {
+                "------------ TRANSFER ASPECT DEFINITIONS ------------",
+                "Created  /Root/System/Schema/Aspects/Aspect-1",
+                "Created  /Root/System/Schema/Aspects/Aspect-2",
+                "------------ TRANSFER CONTENTS ------------",
+                "Updated  /Root/System/Schema/Aspects",
+            };
+            actual = flow.Log.ToArray();
+            AssertSequencesAreEqual(expected, actual);
+        }
+
         /* ----------------------------------------------------------------------- q:\io\Settings */
 
-        // Assert.Fail("######################## not implemented #########################");
+        [TestMethod]
+        public async Task ContentFlow2_Settings()
+        {
+            var sourceTree = CreateSourceTree(@"\Root\System\Settings");
+            var targetTree = CreateTree(new[] { "/Root", "/Root/System" });
+            var targetStates = new Dictionary<string, WriterState>();
+
+            // ACTION
+            var reader = new TestContentReader(@"q:\io\Settings", sourceTree);
+            var writer = new TestRepositoryWriter(targetTree, targetStates, "/Root/System");
+            var flow = new ContentFlow2Mock(reader, writer);
+            var progress = new TestProgress();
+            await flow.TransferAsync(progress);
+
+            // ASSERT
+            var initial = new[] { "/Root", "/Root/System" };
+            var expected = sourceTree.Keys
+                .Select(x => x.Substring("q:\\io".Length).Replace('\\', '/'))
+                .Select(x => "/Root/System" + x)
+                .Union(initial)
+                .OrderBy(x => x)
+                .ToArray();
+            var actual = targetTree.Keys
+                .OrderBy(x => x)
+                .ToArray();
+            AssertSequencesAreEqual(expected, actual);
+
+            expected = new[]
+            {
+                "------------ TRANSFER SETTINGS ------------",
+                "Created  /Root/System/Settings/Settings-1.settings",
+                "Created  /Root/System/Settings/Settings-2.settings",
+                "Created  /Root/System/Settings/Settings-3.settings",
+                "------------ TRANSFER CONTENTS ------------",
+                "Updated  /Root/System/Settings",
+            };
+            actual = flow.Log.ToArray();
+            AssertSequencesAreEqual(expected, actual);
+        }
+
+        /* ----------------------------------------------------------------------- q:\io\OldSettings */
+
+        [TestMethod]
+        public async Task ContentFlow2_Settings_RENAMED()
+        {
+            var sourceTree = CreateSourceTree(@"\Root\System\Settings");
+            sourceTree = ReplacePaths(sourceTree, @"io\Settings", @"io\OldSettings");
+            var targetTree = CreateTree(new[] { "/Root", "/Root/System" });
+            var targetStates = new Dictionary<string, WriterState>();
+
+            // ACTION
+            var reader = new TestContentReader(@"q:\io\OldSettings", sourceTree);
+            var writer = new TestRepositoryWriter(targetTree, targetStates, "/Root/System", "Settings");
+            var flow = new ContentFlow2Mock(reader, writer);
+            var progress = new TestProgress();
+            await flow.TransferAsync(progress);
+
+            // ASSERT
+            var expected = new[]
+            {
+                "/Root",
+                "/Root/System",
+                "/Root/System/Settings",
+                "/Root/System/Settings/Settings-1.settings",
+                "/Root/System/Settings/Settings-2.settings",
+                "/Root/System/Settings/Settings-3.settings",
+            };
+            var actual = targetTree.Keys
+                .OrderBy(x => x)
+                .ToArray();
+            AssertSequencesAreEqual(expected, actual);
+
+            expected = new[]
+            {
+                "------------ TRANSFER SETTINGS ------------",
+                "Created  /Root/System/Settings/Settings-1.settings",
+                "Created  /Root/System/Settings/Settings-2.settings",
+                "Created  /Root/System/Settings/Settings-3.settings",
+                "------------ TRANSFER CONTENTS ------------",
+                "Updated  /Root/System/Settings",
+            };
+            actual = flow.Log.ToArray();
+            AssertSequencesAreEqual(expected, actual);
+        }
 
         /* =========================================================================================== TOOLS */
 
@@ -862,6 +1029,20 @@ namespace SenseNet.IO.Tests
                 Log.Add(value.Percent);
                 Paths.Add(value.State.WriterPath);
             }
+        }
+
+        private Dictionary<string, ContentNode> ReplacePaths(Dictionary<string, ContentNode> source, string from, string to)
+        {
+            var target = new Dictionary<string, ContentNode>();
+            foreach (var item in source)
+            {
+                var path = item.Key.Replace(from, to);
+                var content = item.Value;
+                content.Path = path;
+                target.Add(path, content);
+            }
+
+            return target;
         }
 
     }
