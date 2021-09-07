@@ -34,44 +34,6 @@ namespace SenseNet.IO.Tests
             protected override IEnumerable<TransferTask> LoadTasks() { return TransferTasks.ToArray(); }
         }
 
-        private class ContentFlowMock : ContentFlow
-        {
-            public List<string> Log { get; } = new List<string>();
-            private List<TransferTask> Tasks { get; } = new List<TransferTask>();
-            public ContentFlowMock(IContentReader reader, IContentWriter writer) : base(reader, writer) { }
-            protected override void WriteLog(string entry)
-            {
-                Log.Add(entry);
-            }
-            protected override void WriteTask(WriterState state)
-            {
-                Tasks.Add(new TransferTask
-                {
-                    ReaderPath = state.ReaderPath,
-                    WriterPath = state.WriterPath,
-                    BrokenReferences = state.BrokenReferences.ToArray(),
-                    RetryPermissions = state.RetryPermissions
-                });
-            }
-            protected override int LoadTaskCount()
-            {
-                return Tasks.Count;
-            }
-            protected override IEnumerable<TransferTask> LoadTasks()
-            {
-                foreach (var task in Tasks)
-                {
-                    yield return new TransferTask
-                    {
-                        ReaderPath = task.ReaderPath,
-                        WriterPath = task.WriterPath,
-                        BrokenReferences = task.BrokenReferences.ToArray(),
-                        RetryPermissions = task.RetryPermissions
-                    };
-                }
-            }
-        }
-
         /* ----------------------------------------------------------------------- q:\io\Root */
 
         [TestMethod]
@@ -950,6 +912,104 @@ namespace SenseNet.IO.Tests
                 "Created  /Root/System/Settings/Settings-3.settings",
                 "------------ TRANSFER CONTENTS ------------",
                 "Updated  /Root/System/Settings",
+            };
+            actual = flow.Log.ToArray();
+            AssertSequencesAreEqual(expected, actual);
+        }
+
+        /* =========================================================================================== UPDATE REFERENCES TESTS */
+
+        [TestMethod]
+        public async Task ContentFlow2_UpdateReferences()
+        {
+            var sourceTree = CreateSourceTree(@"\");
+            var targetTree = CreateTree(new[] { "/Root", "/Root/IMS" });
+            var targetStates = new Dictionary<string, WriterState>
+            {
+                {
+                    "/Root/System/Schema/ContentTypes/ContentType-1/ContentType-4",
+                    new WriterState
+                        {Action = WriterAction.Creating, BrokenReferences = new string[0], RetryPermissions = true}
+                },
+                {
+                    "/Root/System/Settings/Settings-2.settings",
+                    new WriterState
+                        {Action = WriterAction.Creating, BrokenReferences = new[] {"F2", "F3"}, RetryPermissions = false}
+                },
+                {
+                    "/Root/Content/Workspace-1/DocLib-1",
+                    new WriterState
+                        {Action = WriterAction.Creating, BrokenReferences = new[] {"F1"}, RetryPermissions = false}
+                },
+                {
+                    "/Root/IMS/BuiltIn/Portal/Group-3",
+                    new WriterState
+                        {Action = WriterAction.Creating, BrokenReferences = new[] {"F1", "F3"}, RetryPermissions = true}
+                }
+            };
+
+            // ACTION
+            var reader = new TestContentReader(@"q:\io\Root", sourceTree);
+            var writer = new TestRepositoryWriter(targetTree, targetStates);
+            var flow = new ContentFlow2Mock(reader, writer);
+            var progress = new TestProgress();
+            await flow.TransferAsync(progress);
+
+            // ASSERT
+            var expected = sourceTree.Keys
+                .Select(x => x.Substring("q:\\io".Length).Replace('\\', '/'))
+                .OrderBy(x => x)
+                .ToArray();
+            var actual = targetTree.Keys
+                .OrderBy(x => x)
+                .ToArray();
+            AssertSequencesAreEqual(expected, actual);
+
+            expected = new[]
+            {
+                "------------ TRANSFER CONTENT TYPES ------------",
+                "Created  /Root/System/Schema/ContentTypes/ContentType-1",
+                "Created  /Root/System/Schema/ContentTypes/ContentType-1/ContentType-3",
+                "Creating /Root/System/Schema/ContentTypes/ContentType-1/ContentType-4",
+                "Created  /Root/System/Schema/ContentTypes/ContentType-1/ContentType-5",
+                "Created  /Root/System/Schema/ContentTypes/ContentType-1/ContentType-5/ContentType-6",
+                "Created  /Root/System/Schema/ContentTypes/ContentType-2",
+                "------------ TRANSFER SETTINGS ------------",
+                "Created  /Root/System/Settings/Settings-1.settings",
+                "Creating /Root/System/Settings/Settings-2.settings",
+                "Created  /Root/System/Settings/Settings-3.settings",
+                "------------ TRANSFER ASPECT DEFINITIONS ------------",
+                "Created  /Root/System/Schema/Aspects/Aspect-1",
+                "Created  /Root/System/Schema/Aspects/Aspect-2",
+                "------------ TRANSFER CONTENTS ------------",
+                "Updated  /Root",
+                "Created  /Root/(apps)",
+                "Created  /Root/Content",
+                "Created  /Root/Content/Workspace-1",
+                "Creating /Root/Content/Workspace-1/DocLib-1",
+                "Created  /Root/Content/Workspace-1/DocLib-1/Folder-1",
+                "Created  /Root/Content/Workspace-1/DocLib-1/Folder-1/File-1.xlsx",
+                "Created  /Root/Content/Workspace-1/DocLib-1/Folder-1/File-2.docx",
+                "Created  /Root/Content/Workspace-1/DocLib-1/Folder-2",
+                "Created  /Root/Content/Workspace-2",
+                "Updated  /Root/IMS",
+                "Created  /Root/IMS/BuiltIn",
+                "Created  /Root/IMS/BuiltIn/Portal",
+                "Creating /Root/IMS/BuiltIn/Portal/Group-3",
+                "Created  /Root/IMS/BuiltIn/Portal/User-3",
+                "Created  /Root/IMS/Public",
+                "Created  /Root/IMS/Public/Group-4",
+                "Created  /Root/IMS/Public/User-4",
+                "Updated  /Root/System",
+                "Updated  /Root/System/Schema",
+                "Updated  /Root/System/Schema/Aspects",
+                "Updated  /Root/System/Schema/ContentTypes",
+                "Updated  /Root/System/Settings",
+                "------------ UPDATE REFERENCES ------------",
+                "Updated  /Root/System/Schema/ContentTypes/ContentType-1/ContentType-4",
+                "Updated  /Root/System/Settings/Settings-2.settings",
+                "Updated  /Root/Content/Workspace-1/DocLib-1",
+                "Updated  /Root/IMS/BuiltIn/Portal/Group-3",
             };
             actual = flow.Log.ToArray();
             AssertSequencesAreEqual(expected, actual);

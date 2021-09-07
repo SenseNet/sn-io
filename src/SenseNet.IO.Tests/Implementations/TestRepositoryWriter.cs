@@ -45,11 +45,13 @@ namespace SenseNet.IO.Tests.Implementations
 
             Tree[absolutePath] = contentNode;
 
-            // return mock value if exists
-            var state = _states.TryGetValue(absolutePath, out var mockState)
-                ? mockState
-                : new WriterState {WriterPath = absolutePath, Action = action};
-
+            // return mock value once if exists
+            if (_states.TryGetValue(absolutePath, out var mockState))
+            {
+                _states.Remove(absolutePath);
+                return Task.FromResult(mockState);
+            }
+            var state = new WriterState {WriterPath = absolutePath, Action = action};
             return Task.FromResult(state);
         }
 

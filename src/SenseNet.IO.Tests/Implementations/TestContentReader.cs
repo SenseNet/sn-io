@@ -86,8 +86,25 @@ namespace SenseNet.IO.Tests.Implementations
             return Task.FromResult(true);
         }
 
-        public void SetReferenceUpdateTasks(IEnumerable<TransferTask> tasks, int taskCount) { }
-        public Task<bool> ReadByReferenceUpdateTasksAsync(CancellationToken cancel) { return Task.FromResult(false); }
+        public void SetReferenceUpdateTasks(IEnumerable<TransferTask> tasks, int taskCount)
+        {
+            _referenceUpdateTasks = tasks.ToArray();
+        }
+
+        private int _referenceUpdateTaskIndex;
+        private TransferTask[] _referenceUpdateTasks;
+        public Task<bool> ReadByReferenceUpdateTasksAsync(CancellationToken cancel)
+        {
+            if(_referenceUpdateTaskIndex >= _referenceUpdateTasks.Length)
+                return Task.FromResult(false);
+
+            var task = _referenceUpdateTasks[_referenceUpdateTaskIndex++];
+            var path = NormalizePath(ContentPath.GetAbsolutePath(task.ReaderPath, RootPath));
+            Content = _tree[path];
+            RelativePath = task.ReaderPath;
+
+            return Task.FromResult(true);
+        }
 
 
         private string NormalizePath(string path)
