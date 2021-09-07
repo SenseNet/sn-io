@@ -427,8 +427,11 @@ namespace SenseNet.IO.Tests
             await flow.TransferAsync(progress);
 
             // ASSERT
+            var initial = new[] {"/Root"};
             var expected = sourceTree.Keys
                 .Select(x => x.Substring("q:\\io".Length).Replace('\\', '/'))
+                .Select(x => "/Root" + x)
+                .Union(initial)
                 .OrderBy(x => x)
                 .ToArray();
             var actual = targetTree.Keys
@@ -465,7 +468,7 @@ namespace SenseNet.IO.Tests
         [TestMethod]
         public async Task ContentFlow2_SystemSchema()
         {
-            var sourceTree = CreateSourceTree(@"\");
+            var sourceTree = CreateSourceTree(@"\Root\System");
             var targetTree = CreateTree(new[] { "/Root" });
             var targetStates = new Dictionary<string, WriterState>();
 
@@ -477,11 +480,14 @@ namespace SenseNet.IO.Tests
             await flow.TransferAsync(progress);
 
             // ASSERT
+            var initial = new[] { "/Root" };
             var expected = sourceTree.Keys
                 .Where(x => x == @"q:\io\System" ||
                             x == @"q:\io\System\Schema" ||
                             x.StartsWith(@"q:\io\System\Schema\"))
-                .Select(x => x.Substring(@"q:\io".Length).Replace('\\', '/'))
+                .Select(x => x.Substring("q:\\io".Length).Replace('\\', '/'))
+                .Select(x => "/Root" + x)
+                .Union(initial)
                 .OrderBy(x => x)
                 .ToArray();
             var actual = targetTree.Keys
@@ -512,7 +518,7 @@ namespace SenseNet.IO.Tests
         [TestMethod]
         public async Task ContentFlow2_SystemSchemaContentTypes()
         {
-            var sourceTree = CreateSourceTree(@"\");
+            var sourceTree = CreateSourceTree(@"\Root\System");
             var targetTree = CreateTree(new[] { "/Root" });
             var targetStates = new Dictionary<string, WriterState>();
 
@@ -524,12 +530,15 @@ namespace SenseNet.IO.Tests
             await flow.TransferAsync(progress);
 
             // ASSERT
+            var initial = new[] { "/Root" };
             var expected = sourceTree.Keys
                 .Where(x => x == @"q:\io\System" ||
                             x == @"q:\io\System\Schema" ||
                             x == @"q:\io\System\Schema\ContentTypes" ||
-                            x.StartsWith(@"q:\io\System\ContentTypes\"))
+                            x.StartsWith(@"q:\io\System\Schema\ContentTypes\"))
                 .Select(x => x.Substring("q:\\io".Length).Replace('\\', '/'))
+                .Select(x => "/Root" + x)
+                .Union(initial)
                 .OrderBy(x => x)
                 .ToArray();
             var actual = targetTree.Keys
@@ -555,7 +564,7 @@ namespace SenseNet.IO.Tests
         [TestMethod]
         public async Task ContentFlow2_SystemSchemaAspects()
         {
-            var sourceTree = CreateSourceTree(@"\");
+            var sourceTree = CreateSourceTree(@"\Root\System");
             var targetTree = CreateTree(new[] { "/Root" });
             var targetStates = new Dictionary<string, WriterState>();
 
@@ -567,12 +576,15 @@ namespace SenseNet.IO.Tests
             await flow.TransferAsync(progress);
 
             // ASSERT
+            var initial = new[] { "/Root" };
             var expected = sourceTree.Keys
                 .Where(x => x == @"q:\io\System" ||
                             x == @"q:\io\System\Schema" ||
                             x == @"q:\io\System\Schema\Aspects" ||
-                            x.StartsWith(@"q:\io\Root\System\Aspects\"))
+                            x.StartsWith(@"q:\io\System\Schema\Aspects\"))
                 .Select(x => x.Substring("q:\\io".Length).Replace('\\', '/'))
+                .Select(x => "/Root" + x)
+                .Union(initial)
                 .OrderBy(x => x)
                 .ToArray();
             var actual = targetTree.Keys
@@ -594,7 +606,7 @@ namespace SenseNet.IO.Tests
         [TestMethod]
         public async Task ContentFlow2_SystemSettings()
         {
-            var sourceTree = CreateSourceTree(@"\");
+            var sourceTree = CreateSourceTree(@"\Root\System");
             var targetTree = CreateTree(new[] { "/Root" });
             var targetStates = new Dictionary<string, WriterState>();
 
@@ -606,11 +618,14 @@ namespace SenseNet.IO.Tests
             await flow.TransferAsync(progress);
 
             // ASSERT
+            var initial = new[] { "/Root" };
             var expected = sourceTree.Keys
                 .Where(x => x == @"q:\io\System" ||
                             x == @"q:\io\System\Settings" ||
-                            x.StartsWith(@"q:\io\Setting\"))
+                            x.StartsWith(@"q:\io\System\Settings\"))
                 .Select(x => x.Substring("q:\\io".Length).Replace('\\', '/'))
+                .Select(x => "/Root" + x)
+                .Union(initial)
                 .OrderBy(x => x)
                 .ToArray();
             var actual = targetTree.Keys
@@ -643,6 +658,7 @@ namespace SenseNet.IO.Tests
 
         private Dictionary<string, ContentNode> CreateSourceTree(string subtree)
         {
+            var name = subtree.Substring(subtree.LastIndexOf("\\", StringComparison.OrdinalIgnoreCase) + 1);
             var paths = new[]
                 {
                     @"\Root",
@@ -679,11 +695,11 @@ namespace SenseNet.IO.Tests
                     @"\Root\System\Schema\ContentTypes\ContentType-1\ContentType-5",
                     @"\Root\System\Schema\ContentTypes\ContentType-1\ContentType-5\ContentType-6",
                     @"\Root\System\Schema\ContentTypes\ContentType-2",
-                }.Where(x => x.StartsWith(subtree))
-                .Select(x => @"q:\io" + x)
-                .ToArray();
+                }.Where(x => x.StartsWith(subtree)).ToArray();
+                var paths1 = paths.Select(x => x.Substring(subtree.Length)).ToArray();
+                var paths2=paths1.Select(x => @"q:\io\" + name + x).ToArray();
 
-            return CreateTree(paths);
+            return CreateTree(paths2);
         }
         private Dictionary<string, ContentNode> CreateInitialTargetTree()
         {
