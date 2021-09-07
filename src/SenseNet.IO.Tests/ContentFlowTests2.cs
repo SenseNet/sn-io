@@ -5,6 +5,7 @@ using System.Linq;
 using System.Runtime.InteropServices.ComTypes;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using SenseNet.IO.Implementations;
 using SenseNet.IO.Tests.Implementations;
 
 namespace SenseNet.IO.Tests
@@ -12,7 +13,7 @@ namespace SenseNet.IO.Tests
     [TestClass]
     public class ContentFlowTests2 : TestBase
     {
-        private class ContentFlow2Mock : ContentFlow2
+        private class ContentFlow2Mock : Level5ContentFlow
         {
             public List<string> Log { get; } = new List<string>();
             public List<TransferTask> TransferTasks { get; } = new List<TransferTask>();

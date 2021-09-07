@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using SenseNet.IO.Implementations;
 using SenseNet.IO.Tests.Implementations;
 
 namespace SenseNet.IO.Tests
@@ -10,7 +11,7 @@ namespace SenseNet.IO.Tests
     [TestClass]
     public class ContentFlowTests : TestBase
     {
-        private class ContentFlowMock : ContentFlow
+        private class ContentFlowMock : Level1ContentFlow
         {
             public ContentFlowMock(IContentReader reader, IContentWriter writer) : base(reader, writer) { }
             protected override void WriteLog(string entry) { }

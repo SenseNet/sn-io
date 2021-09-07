@@ -156,7 +156,7 @@ namespace SenseNet.IO.Tests
                 createBinaryStream: (fsPath, fileMode) => throw new NotImplementedException());
 
             // ACTION
-            var contentFlow = new ContentFlow(reader, writer);
+            var contentFlow = new Level1ContentFlow(reader, writer);
             await contentFlow.TransferAsync();
             
             // ASSERT
@@ -203,7 +203,7 @@ namespace SenseNet.IO.Tests
                 createBinaryStream: (fsPath, fileMode) => throw new NotImplementedException());
 
             // ACTION
-            var contentFlow = new ContentFlow(reader, writer);
+            var contentFlow = new Level1ContentFlow(reader, writer);
             await contentFlow.TransferAsync();
 
             // ASSERT
@@ -253,7 +253,7 @@ namespace SenseNet.IO.Tests
                 createBinaryStream: (fsPath, fileMode) => throw new NotImplementedException());
 
             // ACTION
-            var contentFlow = new ContentFlow(reader, writer);
+            var contentFlow = new Level1ContentFlow(reader, writer);
             await contentFlow.TransferAsync();
 
             // ASSERT
@@ -308,7 +308,7 @@ namespace SenseNet.IO.Tests
                 createBinaryStream: (fsPath, fileMode) => throw new NotImplementedException());
 
             // ACTION
-            var contentFlow = new ContentFlow(reader, writer);
+            var contentFlow = new Level1ContentFlow(reader, writer);
             await contentFlow.TransferAsync();
 
             // ASSERT
@@ -361,7 +361,7 @@ namespace SenseNet.IO.Tests
                 createBinaryStream: (fsPath, fileMode) => throw new NotImplementedException());
 
             // ACTION
-            var contentFlow = new ContentFlow(reader, writer);
+            var contentFlow = new Level1ContentFlow(reader, writer);
             await contentFlow.TransferAsync();
 
             // ASSERT
@@ -422,7 +422,7 @@ namespace SenseNet.IO.Tests
                 });
 
             // ACTION
-            var contentFlow = new ContentFlow(reader, writer);
+            var contentFlow = new Level1ContentFlow(reader, writer);
             await contentFlow.TransferAsync();
 
             // ASSERT
@@ -496,7 +496,7 @@ namespace SenseNet.IO.Tests
                 });
 
             // ACTION
-            var contentFlow = new ContentFlow(reader, writer);
+            var contentFlow = new Level1ContentFlow(reader, writer);
             await contentFlow.TransferAsync();
 
             // ASSERT

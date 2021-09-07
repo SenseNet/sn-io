@@ -6,15 +6,15 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace SenseNet.IO
+namespace SenseNet.IO.Implementations
 {
-    public class ContentFlow2 : IContentFlow
+    internal class Level5ContentFlow : IContentFlow
     {
         public IContentReader Reader { get; }
         IContentWriter IContentFlow.Writer => Writer;
         public ISnRepositoryWriter Writer { get; }
 
-        public ContentFlow2(IContentReader reader, ISnRepositoryWriter writer)
+        public Level5ContentFlow(IContentReader reader, ISnRepositoryWriter writer)
         {
             Reader = reader;
             Writer = writer;
@@ -221,12 +221,13 @@ namespace SenseNet.IO
             }
 
             public string Name { get; set; }
-            public string Path { get; }
+            public string Path { get; set; }
             public string Type { get; }
             public PermissionInfo Permissions { get; set; }
 
-            public InitialContent(string name, string type)
+            public InitialContent(string path, string name, string type)
             {
+                Path = path;
                 Name = name;
                 Type = type;
             }
@@ -249,7 +250,7 @@ namespace SenseNet.IO
             var parentPath = ContentPath.GetParentPath(path);
             await EnsureContainerAsync(parentPath, cancel);
 
-            var content = new InitialContent(ContentPath.GetName(path), path == "/Root" ? "PortalRoot" : "SystemFolder");
+            var content = new InitialContent(path, ContentPath.GetName(path), path == "/Root" ? "PortalRoot" : "SystemFolder");
             await Writer.WriteAsync(path, content, cancel);
             _writtenContainers.Add(path);
         }

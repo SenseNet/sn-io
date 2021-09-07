@@ -132,7 +132,7 @@ namespace SenseNet.IO.CLI
 
 
             _displayLevel = DisplayLevel.Verbose;
-            var flow = new ContentFlow(reader, writer);
+            var flow = ContentFlow.Create(reader, writer);
             var progress = new Progress<TransferState>(ShowProgress);
             await flow.TransferAsync(progress);
 
