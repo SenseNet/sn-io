@@ -48,7 +48,7 @@ namespace SenseNet.IO.Implementations
 
         private List<FsContent> _contentTypeContents;
         private int _contentTypeContentsIndex;
-        public Task<bool> ReadContentTypesAsync(CancellationToken cancel = default)
+        public Task<bool> ReadContentTypesAsync_DELETE(CancellationToken cancel = default)
         {
             if (_contentTypeContents == null)
             {
@@ -77,7 +77,7 @@ namespace SenseNet.IO.Implementations
 
         private List<FsContent> _settingsContents;
         private int _settingsContentsIndex;
-        public Task<bool> ReadSettingsAsync(CancellationToken cancel = default)
+        public Task<bool> ReadSettingsAsync_DELETE(CancellationToken cancel = default)
         {
             if (_settingsContents == null)
             {
@@ -104,7 +104,7 @@ namespace SenseNet.IO.Implementations
 
         private List<FsContent> _aspectContents;
         private int _aspectContentsIndex;
-        public Task<bool> ReadAspectsAsync(CancellationToken cancel = default)
+        public Task<bool> ReadAspectsAsync_DELETE(CancellationToken cancel = default)
         {
             if (_aspectContents == null)
             {

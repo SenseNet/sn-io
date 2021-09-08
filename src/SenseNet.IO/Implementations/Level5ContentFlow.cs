@@ -8,11 +8,11 @@ using System.Threading.Tasks;
 
 namespace SenseNet.IO.Implementations
 {
-    internal class Level5ContentFlow : IContentFlow
+    internal class Level5ContentFlow : ContentFlow, IContentFlow
     {
-        public IContentReader Reader { get; }
+        public override IContentReader Reader { get; }
         IContentWriter IContentFlow.Writer => Writer;
-        public ISnRepositoryWriter Writer { get; }
+        public override ISnRepositoryWriter Writer { get; }
 
         public Level5ContentFlow(IContentReader reader, ISnRepositoryWriter writer)
         {
@@ -20,12 +20,11 @@ namespace SenseNet.IO.Implementations
             Writer = writer;
         }
 
-        private int _count = 0;
-        private int _referenceUpdateTasksTotalCount = 0;
+        private int _contentCount = 0;
         private string _currentBatchAction;
         private int _errorCount;
         private string _rootName;
-        public async Task TransferAsync(IProgress<TransferState> progress, CancellationToken cancel = default)
+        public override async Task TransferAsync(IProgress<TransferState> progress, CancellationToken cancel = default)
         {
             _rootName = Writer.RootName ?? ContentPath.GetName(Reader.RootPath);
             var firstTargetPath = ContentPath.Combine(Writer.ContainerPath, _rootName);
@@ -71,47 +70,6 @@ namespace SenseNet.IO.Implementations
 
             await UpdateReferencesAsync(progress, cancel);
         }
-        private async Task CopyAllAsync(string[] skippedSubTreePaths, IProgress<TransferState> progress = null, CancellationToken cancel = default)
-        {
-            if (await Reader.ReadAllAsync(skippedSubTreePaths, cancel))
-            {
-                if (Writer.RootName != null)
-                    Rename(Reader.Content, _rootName);
-
-                _currentBatchAction = "Transfer contents";
-                WriteLog($"------------ {_currentBatchAction.ToUpper()} ------------");
-
-                await WriteAsync(progress, false, cancel);
-                while (await Reader.ReadAllAsync(skippedSubTreePaths, cancel))
-                {
-                    await WriteAsync(progress, false, cancel);
-                }
-            }
-        }
-        private void Rename(IContent content, string newName)
-        {
-            if (content.FieldNames.Contains("Name"))
-                content["Name"] = newName;
-            content.Name = newName;
-        }
-
-        private async Task UpdateReferencesAsync(IProgress<TransferState> progress = null,
-            CancellationToken cancel = default)
-        {
-            var taskCount = LoadTaskCount();
-            if (taskCount == 0)
-                return;
-
-            _currentBatchAction = "Update references";
-            WriteLog($"------------ {_currentBatchAction.ToUpper()} ------------");
-
-            var tasks = LoadTasks();
-            Reader.SetReferenceUpdateTasks(tasks, taskCount);
-
-            while (await Reader.ReadByReferenceUpdateTasksAsync(cancel))
-                await WriteAsync(progress, true, cancel);
-        }
-
         private async Task CopyContentTypesAsync(string relativePath, IProgress<TransferState> progress, CancellationToken cancel)
         {
             var firstRead = true;
@@ -179,6 +137,40 @@ namespace SenseNet.IO.Implementations
                 await WriteAsync(progress, false, cancel);
             }
         }
+        private async Task CopyAllAsync(string[] skippedSubTreePaths, IProgress<TransferState> progress = null, CancellationToken cancel = default)
+        {
+            if (await Reader.ReadAllAsync(skippedSubTreePaths, cancel))
+            {
+                if (Writer.RootName != null)
+                    Rename(Reader.Content, _rootName);
+
+                _currentBatchAction = "Transfer contents";
+                WriteLog($"------------ {_currentBatchAction.ToUpper()} ------------");
+
+                await WriteAsync(progress, false, cancel);
+                while (await Reader.ReadAllAsync(skippedSubTreePaths, cancel))
+                {
+                    await WriteAsync(progress, false, cancel);
+                }
+            }
+        }
+
+        private async Task UpdateReferencesAsync(IProgress<TransferState> progress = null,
+            CancellationToken cancel = default)
+        {
+            var taskCount = LoadTaskCount();
+            if (taskCount == 0)
+                return;
+
+            _currentBatchAction = "Update references";
+            WriteLog($"------------ {_currentBatchAction.ToUpper()} ------------");
+
+            var tasks = LoadTasks();
+            Reader.SetReferenceUpdateTasks(tasks, taskCount);
+
+            while (await Reader.ReadByReferenceUpdateTasksAsync(cancel))
+                await WriteAsync(progress, true, cancel);
+        }
 
         private async Task WriteAsync(IProgress<TransferState> progress, bool updateReferences, CancellationToken cancel = default)
         {
@@ -187,7 +179,7 @@ namespace SenseNet.IO.Implementations
             var state = await Writer.WriteAsync(writerPath, Reader.Content, cancel);
             state.ReaderPath = readerPath;
             state.WriterPath = writerPath;
-            Progress(readerPath, ref _count, state, updateReferences, progress);
+            Progress(readerPath, ref _contentCount, state, updateReferences, progress);
         }
         private void Progress(string readerPath, ref int count, WriterState state, bool updateReferences, IProgress<TransferState> progress = null)
         {
@@ -254,154 +246,5 @@ namespace SenseNet.IO.Implementations
             await Writer.WriteAsync(path, content, cancel);
             _writtenContainers.Add(path);
         }
-
-        /*
-        private bool _rootWritten;
-        private async Task EnsureRootAsync(CancellationToken cancel)
-        {
-            if (_rootWritten)
-                return;
-            await Writer.WriteAsync("/Root", InitialContents["/Root"], cancel);
-            _rootWritten = true;
-        }
-        private bool _systemWritten;
-        private async Task EnsureSystemAsync(CancellationToken cancel)
-        {
-            if (_systemWritten)
-                return;
-            await Writer.WriteAsync("/Root/System", InitialContents["/Root/System"], cancel);
-            _systemWritten = true;
-        }
-        private bool _settingsWritten;
-        private async Task EnsureSettingsAsync(CancellationToken cancel)
-        {
-            if (_settingsWritten)
-                return;
-            await Writer.WriteAsync("/Root/System/Settings", InitialContents["/Root/System/Settings"], cancel);
-            _settingsWritten = true;
-        }
-        private bool _schemaWritten;
-        private async Task EnsureSchemaAsync(CancellationToken cancel)
-        {
-            if (_schemaWritten)
-                return;
-            await Writer.WriteAsync("/Root/System/Schema", InitialContents["/Root/System/Schema"], cancel);
-            _schemaWritten = true;
-        }
-        private bool _aspectsWritten;
-        private async Task EnsureAspectsAsync(CancellationToken cancel)
-        {
-            if (_aspectsWritten)
-                return;
-            await Writer.WriteAsync("/Root/System/Schema/Aspects", InitialContents["/Root/System/Schema/Aspects"], cancel);
-            _aspectsWritten = true;
-        }
-        private bool _contentTypesWritten;
-        private async Task EnsureContentTypesAsync(CancellationToken cancel)
-        {
-            if (_contentTypesWritten)
-                return;
-            await Writer.WriteAsync("/Root/System/Schema/ContentTypes", InitialContents["/Root/System/Schema/ContentTypes"], cancel);
-            _contentTypesWritten = true;
-        }
-        */
-        /* ========================================================================== LOGGING */
-
-        private string _logFilePath;
-        private string _taskFilePath;
-        private void WriteLogAndTask(WriterState state, bool updateReferences)
-        {
-            WriteLog(state, updateReferences);
-            if (!updateReferences && state.UpdateRequired)
-                WriteTask(state);
-        }
-        private void WriteLog(WriterState state, bool updateReferences)
-        {
-            using (var writer = new StringWriter())
-            {
-                writer.WriteLine($"{state.Action,-8} {state.WriterPath}");
-                foreach (var message in state.Messages)
-                    writer.WriteLine($"         {message.Replace("The server returned an error (HttpStatus: InternalServerError): ", "")}");
-                WriteLog(writer.GetStringBuilder().ToString().Trim());
-            }
-        }
-        private string CreateLogFile(bool createNew, string extension)
-        {
-            var asm = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-            var folder = asm == null ? "D:\\" : Path.Combine(asm, "logs");
-            if (!Directory.Exists(folder))
-                Directory.CreateDirectory(folder);
-
-            var path = Path.Combine(folder, $"SenseNet.IO.{DateTime.Now:yyyyMMdd_HHmmss}.{extension}");
-            if (!File.Exists(path) || createNew)
-            {
-                using (FileStream fs = new FileStream(path, FileMode.Create))
-                using (StreamWriter wr = new StreamWriter(fs)) { }
-            }
-
-            return path;
-        }
-
-        /* -------------------------------------------------------------------------- TESTABILITY */
-
-        protected virtual void WriteLog(string entry)
-        {
-            if (_logFilePath == null)
-                _logFilePath = CreateLogFile(true, "log");
-
-            using (StreamWriter writer = new StreamWriter(_logFilePath, true))
-                writer.WriteLine($"{DateTime.Now:yyyy-MM-dd HH:mm:ss.fffff}  {entry}");
-        }
-        protected virtual void WriteTask(WriterState state)
-        {
-            if (_taskFilePath == null)
-                _taskFilePath = CreateLogFile(true, "tasks");
-
-            using (StreamWriter writer = new StreamWriter(_taskFilePath, true))
-            {
-                writer.Write($"{state.ReaderPath};{state.WriterPath};{ string.Join(",", state.BrokenReferences)}");
-                if (state.RetryPermissions)
-                    writer.Write(";SetPermissions");
-                writer.WriteLine();
-            }
-
-            _referenceUpdateTasksTotalCount++;
-        }
-        protected virtual int LoadTaskCount()
-        {
-            if (_taskFilePath == null)
-                return 0;
-
-            var count = 0;
-            string line;
-            using (var reader = new StreamReader(_taskFilePath))
-            {
-                while ((line = reader.ReadLine()) != null)
-                    count++;
-            }
-            return count;
-        }
-        protected virtual IEnumerable<TransferTask> LoadTasks()
-        {
-            using (var reader = new StreamReader(_taskFilePath))
-            {
-                string line;
-                while ((line = reader.ReadLine()) != null)
-                {
-                    var fields = line.Split(';');
-                    if (fields.Length < 3)
-                        throw new InvalidOperationException("Invalid task file.");
-
-                    yield return new TransferTask
-                    {
-                        ReaderPath = fields[0].Trim(),
-                        WriterPath = fields[1].Trim(),
-                        BrokenReferences = fields[2].Split(',').Select(x => x.Trim()).ToArray(),
-                        RetryPermissions = fields.Length > 3 && fields[3] == "SetPermissions"
-                    };
-                }
-            }
-        }
-
     }
 }

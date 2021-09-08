@@ -9,7 +9,7 @@ using SenseNet.IO.Tests.Implementations;
 namespace SenseNet.IO.Tests
 {
     [TestClass]
-    public class ContentFlowTests : TestBase
+    public class Level1ContentFlowTests : TestBase
     {
         private class ContentFlowMock : Level1ContentFlow
         {
@@ -397,12 +397,6 @@ ContentTypes
         {
             public List<double> Log { get; } = new List<double>();
             public List<string> Paths { get; } = new List<string>();
-
-            public void Report((string Path, double Percent) value)
-            {
-                Log.Add(value.Percent);
-                Paths.Add(value.Path);
-            }
 
             public void Report(TransferState value)
             {

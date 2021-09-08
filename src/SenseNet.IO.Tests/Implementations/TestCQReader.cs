@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 namespace SenseNet.IO.Tests.Implementations
 {
     /// <summary>
-    /// Simulates ContentQuery-based block reader
+    /// Simulates ContentQuery-based block reader for Level1ContentFlowTests
     /// </summary>
     // ReSharper disable once InconsistentNaming
     internal class TestCQReader : IContentReader
@@ -31,7 +31,7 @@ namespace SenseNet.IO.Tests.Implementations
 
         private int _contentTypeIndex;
         private ContentNode[] _contentTypes;
-        public Task<bool> ReadContentTypesAsync(CancellationToken cancel = default)
+        public Task<bool> ReadContentTypesAsync_DELETE(CancellationToken cancel = default)
         {
             _contentTypes ??= _tree.Values.Where(x => x.Type == "ContentType").ToArray();
             if (_contentTypeIndex >= _contentTypes.Length)
@@ -43,7 +43,7 @@ namespace SenseNet.IO.Tests.Implementations
 
         private int _settingsIndex;
         private ContentNode[] _settings;
-        public Task<bool> ReadSettingsAsync(CancellationToken cancel = default)
+        public Task<bool> ReadSettingsAsync_DELETE(CancellationToken cancel = default)
         {
             _settings ??= _tree.Values.Where(x => x.Type == "Settings").ToArray();
             if (_settingsIndex >= _settings.Length)
@@ -55,7 +55,7 @@ namespace SenseNet.IO.Tests.Implementations
 
         private int _aspectIndex;
         private ContentNode[] _aspects;
-        public Task<bool> ReadAspectsAsync(CancellationToken cancel = default)
+        public Task<bool> ReadAspectsAsync_DELETE(CancellationToken cancel = default)
         {
             _aspects ??= _tree.Values.Where(x => x.Type == "Aspect").ToArray();
             if (_aspectIndex >= _aspects.Length)

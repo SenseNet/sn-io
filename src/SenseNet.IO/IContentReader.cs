@@ -41,7 +41,7 @@ namespace SenseNet.IO
         /// <param name="cancel">The token to monitor for cancellation requests.</param>
         /// <returns>A Task that represents the asynchronous operation and wraps a boolean value that is true
         /// if there are more items or false if there aren't.</returns>
-        Task<bool> ReadContentTypesAsync(CancellationToken cancel = default);
+        Task<bool> ReadContentTypesAsync_DELETE(CancellationToken cancel = default);
         /// <summary>
         /// Reads a forward-only stream of the Settings subtree under the /Root/System/Settings logical path.
         /// The start position is before the first content. Therefore, you must call ReadAsync to begin accessing data.
@@ -52,7 +52,7 @@ namespace SenseNet.IO
         /// <param name="cancel">The token to monitor for cancellation requests.</param>
         /// <returns>A Task that represents the asynchronous operation and wraps a boolean value that is true
         /// if there are more items or false if there aren't.</returns>
-        Task<bool> ReadSettingsAsync(CancellationToken cancel = default);
+        Task<bool> ReadSettingsAsync_DELETE(CancellationToken cancel = default);
         /// <summary>
         /// Reads a forward-only stream of the Aspects subtree under the /Root/System/Schema/Aspects logical path.
         /// The start position is before the first content. Therefore, you must call ReadAsync to begin accessing data.
@@ -63,7 +63,7 @@ namespace SenseNet.IO
         /// <param name="cancel">The token to monitor for cancellation requests.</param>
         /// <returns>A Task that represents the asynchronous operation and wraps a boolean value that is true
         /// if there are more items or false if there aren't.</returns>
-        Task<bool> ReadAspectsAsync(CancellationToken cancel = default);
+        Task<bool> ReadAspectsAsync_DELETE(CancellationToken cancel = default);
 
         Task<bool> ReadSubTreeAsync(string relativePath, CancellationToken cancel = default);
 

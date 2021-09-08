@@ -465,17 +465,17 @@ namespace SenseNet.IO.Tests
             var actualRelativePaths = new List<string>();
 
             // ACTION
-            while (await reader.ReadContentTypesAsync())
+            while (await reader.ReadContentTypesAsync_DELETE())
             {
                 actualRelativePaths.Add(reader.RelativePath);
                 readings.Add(reader.RelativePath, reader.Content);
             }
-            while (await reader.ReadSettingsAsync())
+            while (await reader.ReadSettingsAsync_DELETE())
             {
                 actualRelativePaths.Add(reader.RelativePath);
                 readings.Add(reader.RelativePath, reader.Content);
             }
-            while (await reader.ReadAspectsAsync())
+            while (await reader.ReadAspectsAsync_DELETE())
             {
                 actualRelativePaths.Add(reader.RelativePath);
                 readings.Add(reader.RelativePath, reader.Content);
@@ -562,17 +562,17 @@ namespace SenseNet.IO.Tests
             var actualRelativePaths = new List<string>();
 
             // ACTION
-            while (await reader.ReadContentTypesAsync())
+            while (await reader.ReadContentTypesAsync_DELETE())
             {
                 actualRelativePaths.Add(reader.RelativePath);
                 readings.Add(reader.RelativePath, reader.Content);
             }
-            while (await reader.ReadSettingsAsync())
+            while (await reader.ReadSettingsAsync_DELETE())
             {
                 actualRelativePaths.Add(reader.RelativePath);
                 readings.Add(reader.RelativePath, reader.Content);
             }
-            while (await reader.ReadAspectsAsync())
+            while (await reader.ReadAspectsAsync_DELETE())
             {
                 actualRelativePaths.Add(reader.RelativePath);
                 readings.Add(reader.RelativePath, reader.Content);
