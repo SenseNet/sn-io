@@ -56,7 +56,7 @@ namespace SenseNet.IO.Tests
             private readonly Func<string, TextReader> _fsContentCreateStreamReader;
             private readonly Func<string, FileMode, Stream> _fsContentCreateFileStream;
 
-            public FsReaderMock(string fsRootPath, string rootPath,
+            public FsReaderMock(string fsRootPath,
                 Func<string, bool> isFileExists,
                 Func<string, bool> isDirectoryExists,
                 Func<string, string[]> getFsDirectories,
@@ -64,7 +64,7 @@ namespace SenseNet.IO.Tests
                 Func<string, bool> fsContentIsFileExists,
                 Func<string, TextReader> fsContentCreateStreamReader,
                 Func<string, FileMode, Stream> fsContentCreateFileStream
-                ) : base(fsRootPath, rootPath)
+                ) : base(fsRootPath)
             {
                 _isFileExists = isFileExists;
                 _isDirectoryExists = isDirectoryExists;
@@ -115,7 +115,7 @@ namespace SenseNet.IO.Tests
                                             "'LocalOnly':true,'Permissions':{'See':'allow'}}]}}"}
             };
 
-            var reader = new FsReaderMock(@"Q:\Import", "/Root",
+            var reader = new FsReaderMock(@"Q:\Import\Root",
                 isFileExists: fsPath => files.ContainsKey(fsPath),
                 isDirectoryExists: fsPath => directories.Contains(fsPath),
                 getFsDirectories: fsPath => GetDirectories(fsPath, directories),
@@ -157,7 +157,7 @@ namespace SenseNet.IO.Tests
                                             "'LocalOnly':true,'Permissions':{'See':'allow'}}]}}"}
             };
 
-            var reader = new FsReaderMock(@"Q:\Import", "/Root",
+            var reader = new FsReaderMock(@"Q:\Import\Root",
                 isFileExists: fsPath => files.ContainsKey(fsPath),
                 isDirectoryExists: fsPath => directories.Contains(fsPath),
                 getFsDirectories: fsPath => GetDirectories(fsPath, directories),
@@ -203,7 +203,7 @@ namespace SenseNet.IO.Tests
             };
 
 
-            var reader = new FsReaderMock(@"Q:\Import", "/Root",
+            var reader = new FsReaderMock(@"Q:\Import\Root",
                 isFileExists: fsPath => files.ContainsKey(fsPath),
                 isDirectoryExists: fsPath => directories.Contains(fsPath),
                 getFsDirectories: fsPath => GetDirectories(fsPath, directories),
@@ -248,7 +248,7 @@ namespace SenseNet.IO.Tests
                 {@"Q:\Import\Root\F2.Content", "{'ContentType':'Folder','ContentName':'F2','Fields':{}}"}
             };
 
-            var reader = new FsReaderMock(@"Q:\Import", "/Root",
+            var reader = new FsReaderMock(@"Q:\Import\Root",
                 isFileExists: fsPath => files.ContainsKey(fsPath),
                 isDirectoryExists: fsPath => directories.Contains(fsPath),
                 getFsDirectories: fsPath => GetDirectories(fsPath, directories),
@@ -307,7 +307,7 @@ namespace SenseNet.IO.Tests
                 {@"Q:\Import\Root\F1.txt", "Text content 1."}
             };
 
-            var reader = new FsReaderMock(@"Q:\Import", "/Root",
+            var reader = new FsReaderMock(@"Q:\Import\Root",
                 isFileExists: fsPath => files.ContainsKey(fsPath),
                 isDirectoryExists: fsPath => directories.Contains(fsPath),
                 getFsDirectories: fsPath => GetDirectories(fsPath, directories),
@@ -368,7 +368,7 @@ namespace SenseNet.IO.Tests
                 {@"Q:\Import\Root\F1.txt.Bin2", "Text content 2."}
             };
 
-            var reader = new FsReaderMock(@"Q:\Import", "/Root",
+            var reader = new FsReaderMock(@"Q:\Import\Root",
                 isFileExists: fsPath => files.ContainsKey(fsPath),
                 isDirectoryExists: fsPath => directories.Contains(fsPath),
                 getFsDirectories: fsPath => GetDirectories(fsPath, directories),
@@ -452,7 +452,7 @@ namespace SenseNet.IO.Tests
                 {@"Q:\Import\Root\System\Schema\ContentTypes\GenericContent\File.Content", "{'ContentType':'ContentType','ContentName':'File','Fields':{}}"},
             };
 
-            var reader = new FsReaderMock(@"Q:\Import", "/Root",
+            var reader = new FsReaderMock(@"Q:\Import\Root",
                 isFileExists: fsPath => files.ContainsKey(fsPath),
                 isDirectoryExists: fsPath => directories.Contains(fsPath),
                 getFsDirectories: fsPath => GetDirectories(fsPath, directories),
@@ -550,7 +550,7 @@ namespace SenseNet.IO.Tests
                 {@"Q:\Import\Root\System\Schema\ContentTypes\GenericContent\File.Content", "{'ContentType':'ContentType','ContentName':'File','Fields':{}}"},
             };
 
-            var reader = new FsReaderMock(@"Q:\Import", "/Root/System/Schema",
+            var reader = new FsReaderMock(@"Q:\Import\Root\System\Schema",
                 isFileExists: fsPath => files.ContainsKey(fsPath),
                 isDirectoryExists: fsPath => directories.Contains(fsPath),
                 getFsDirectories: fsPath => GetDirectories(fsPath, directories),
@@ -637,7 +637,7 @@ namespace SenseNet.IO.Tests
                 {@"Q:\Import\Root\System\Schema\ContentTypes\GenericContent\File.Content", "{'ContentType':'ContentType','ContentName':'File','Fields':{}}"},
             };
 
-            var reader = new FsReaderMock(@"Q:\Import", "/Root",
+            var reader = new FsReaderMock(@"Q:\Import\Root",
                 isFileExists: fsPath => files.ContainsKey(fsPath),
                 isDirectoryExists: fsPath => directories.Contains(fsPath),
                 getFsDirectories: fsPath => GetDirectories(fsPath, directories),
@@ -709,7 +709,7 @@ namespace SenseNet.IO.Tests
                 {@"Q:\Import\System\Schema\ContentTypes\GenericContent\File.Content", "{'ContentType':'ContentType','ContentName':'File','Fields':{}}"},
             };
 
-            var reader = new FsReaderMock(@"Q:\Import", "/System",
+            var reader = new FsReaderMock(@"Q:\Import\System",
                 isFileExists: fsPath => files.ContainsKey(fsPath),
                 isDirectoryExists: fsPath => directories.Contains(fsPath),
                 getFsDirectories: fsPath => GetDirectories(fsPath, directories),
@@ -781,7 +781,7 @@ namespace SenseNet.IO.Tests
                 {@"Q:\Import\Root\System\Schema\ContentTypes\GenericContent\File.Content", "{'ContentType':'ContentType','ContentName':'File','Fields':{}}"},
             };
 
-            var reader = new FsReaderMock(@"Q:\Import", "/Root",
+            var reader = new FsReaderMock(@"Q:\Import\Root",
                 isFileExists: fsPath => files.ContainsKey(fsPath),
                 isDirectoryExists: fsPath => directories.Contains(fsPath),
                 getFsDirectories: fsPath => GetDirectories(fsPath, directories),
@@ -849,7 +849,7 @@ namespace SenseNet.IO.Tests
                 {@"Q:\Import\Root\System\Schema\ContentTypes\GenericContent\File.Content", "{'ContentType':'ContentType','ContentName':'File','Fields':{}}"},
             };
 
-            var reader = new FsReaderMock(@"Q:\Import", "/Root",
+            var reader = new FsReaderMock(@"Q:\Import\Root",
                 isFileExists: fsPath => files.ContainsKey(fsPath),
                 isDirectoryExists: fsPath => directories.Contains(fsPath),
                 getFsDirectories: fsPath => GetDirectories(fsPath, directories),
@@ -911,7 +911,7 @@ namespace SenseNet.IO.Tests
                 {@"Q:\Import\System\Schema\ContentTypes\GenericContent\File.Content", "{'ContentType':'ContentType','ContentName':'File','Fields':{}}"},
             };
 
-            var reader = new FsReaderMock(@"Q:\Import", "/System",
+            var reader = new FsReaderMock(@"Q:\Import\System",
                 isFileExists: fsPath => files.ContainsKey(fsPath),
                 isDirectoryExists: fsPath => directories.Contains(fsPath),
                 getFsDirectories: fsPath => GetDirectories(fsPath, directories),

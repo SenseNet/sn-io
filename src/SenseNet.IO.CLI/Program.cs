@@ -92,46 +92,27 @@ namespace SenseNet.IO.CLI
         static async Task Main()
         {
             //var reader = new RepositoryTreeReader("https://localhost:44362", "/Root", 10);
-            //var reader = new RepositoryTreeReader("https://localhost:44362", "/Root/(apps)", 10);
-            //var reader = new RepositoryTreeReader("https://localhost:44362", "/Root/IMS", 10);
-            //var reader = new RepositoryTreeReader("https://localhost:44362", "/Root/IMS/BuiltIn/Portal/Admin", 10);
-            //var reader = new RepositoryTreeReader("https://localhost:44362", "/Root/System", 10);
-            //var reader = new RepositoryTreeReader("https://localhost:44362", "/Root/System/Settings", 10);
-            //var reader = new RepositoryTreeReader("https://localhost:44362", "/Root/System/Schema", 10);
-
-            //var reader = new FsReader(@"D:\dev\_sn-io-test\FsReader", "/Root/(apps)");
-            //var reader = new FsReader(@"D:\dev\_sn-io-test\FsReader", "/Root/IMS");
-            //var reader = new FsReader(@"D:\dev\_sn-io-test\FsReader", "/Root/IMS/BuiltIn/Portal/Admin");
-            //var reader = new FsReader(@"D:\dev\_sn-io-test\FsReader", "/Root/System/Settings");
-            //var reader = new FsReader(@"D:\dev\_sn-io-test\FsReader", "/Root/System/Schema");
-
-            /* =================================================================================== TEST CASES */
-
-            //var reader = new RepositoryTreeReader("https://localhost:44362", "/Root", 10);
             //var writer = new FsWriter(@"D:\dev\_sn-io-test\localhost_44362_(export)");
 
-            //var reader = new FsReader(@"D:\dev\_sn-io-test\FsReader", "/Root");
+            //var reader = new FsReader(@"D:\dev\_sn-io-test\FsReader\Root");
             //var writer = new FsWriter(@"D:\dev\_sn-io-test\FsWriter");
 
-            //var reader = new FsReader(@"D:\dev\_sn-io-test\FsReader", "/Root/GyebiTesztel");
+            //var reader = new FsReader(@"D:\dev\_sn-io-test\FsReader\Root\GyebiTesztel");
             //var writer = new FsWriter(@"D:\dev\_sn-io-test\FsWriter", "/Root", "XXX");
 
-            var reader = new FsReader(@"D:\dev\_sn-io-test\FsReader", "/Root");
-            var writer = new RepositoryWriter("https://localhost:44362");
+            //var reader = new FsReader(@"D:\dev\_sn-io-test\FsReader\Root");
+            //var writer = new RepositoryWriter("https://localhost:44362");
 
-            //var reader = new FsReader(@"D:\dev\_sn-io-test\FsReader", "/Root/(apps)");
+            //var reader = new FsReader(@"D:\dev\_sn-io-test\FsReader\Root\(apps)");
             //var writer = new RepositoryWriter("https://localhost:44362", "/Root");
 
-            //var reader = new FsReader(@"D:\dev\_sn-io-test\FsReader", "/Root/IMS");
+            //var reader = new FsReader(@"D:\dev\_sn-io-test\FsReader\Root\IMS");
             //var writer = new RepositoryWriter("https://localhost:44362", "/Root");
 
-            //var reader = new FsReader(@"D:\dev\_sn-io-test\FsReader", "/Root/System/Settings");
-            //var writer = new RepositoryWriter("https://localhost:44362", "/Root/System");
-            //var reader = new FsReader(@"D:\dev\_sn-io-test\FsReader\Root\System\Settings");
-            //var writer = new RepositoryWriter("https://localhost:44362", "/Root/System");
+            var reader = new FsReader(@"D:\dev\_sn-io-test\FsReader\Root\System\Settings");
+            var writer = new RepositoryWriter("https://localhost:44362", "/Root/System");
 
-
-
+            /* =================================================================================== TEST CASES */
 
             _displayLevel = DisplayLevel.Verbose;
             var flow = ContentFlow.Create(reader, writer);

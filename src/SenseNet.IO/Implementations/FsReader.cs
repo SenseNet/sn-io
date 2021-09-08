@@ -26,10 +26,10 @@ namespace SenseNet.IO.Implementations
         /// </summary>
         /// <param name="fsRootPath">Parent of "/Root" of repository.</param>
         /// <param name="rootPath">Repository path under the <paramref name="fsRootPath"/>.</param>
-        public FsReader(string fsRootPath, [NotNull] string rootPath)
+        public FsReader(string fsRootPath)
         {
             _fsRootDirectory = fsRootPath;
-            RootPath = rootPath;
+            RootPath = "/";
         }
 
         private void Initialize()
@@ -121,22 +121,6 @@ namespace SenseNet.IO.Implementations
             _content = content;
 
             return Task.FromResult(true);
-        }
-
-        private bool IsContentType(IContent content)
-        {
-            return ContentPath.Combine(RootPath, content.Path)
-                .StartsWith("/Root/System/Schema/ContentTypes/", StringComparison.OrdinalIgnoreCase);
-        }
-        private bool IsAspect(IContent content)
-        {
-            return ContentPath.Combine(RootPath, content.Path)
-                .StartsWith("/Root/System/Schema/Aspects/", StringComparison.OrdinalIgnoreCase);
-        }
-        private bool IsSettings(IContent content)
-        {
-            return ContentPath.Combine(RootPath, content.Path)
-                .StartsWith("/Root/System/Settings/", StringComparison.OrdinalIgnoreCase);
         }
 
         private FsContent GetRootContent(string fsRootPath)
