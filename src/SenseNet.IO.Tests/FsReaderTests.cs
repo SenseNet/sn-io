@@ -659,7 +659,6 @@ namespace SenseNet.IO.Tests
 
             // ASSERT
             var contents = readings.ToArray();
-            Assert.AreEqual(18, contents.Length);
             var expectedRelativePaths = new[]
             {
                 "",
@@ -685,36 +684,32 @@ namespace SenseNet.IO.Tests
             {
                 @"Q:",
                 @"Q:\Import",
-                @"Q:\Import\Root",
-                @"Q:\Import\Root\System\F2",
-                @"Q:\Import\Root\System\F1",
-                @"Q:\Import\Root\Content",
-                @"Q:\Import\Root\System\Schema\Aspects",
-                @"Q:\Import\Root\System\Schema\ContentTypes\GenericContent",
-                @"Q:\Import\Root\System\Schema\ContentTypes\GenericContent\Folder",
-                @"Q:\Import\Root\System\Schema\ContentTypes",
-                @"Q:\Import\Root\System\Schema",
-                @"Q:\Import\Root\System",
-                @"Q:\Import\Root\System\Settings",
+                @"Q:\Import\System\F2",
+                @"Q:\Import\System\F1",
+                @"Q:\Import\Content",
+                @"Q:\Import\System\Schema\Aspects",
+                @"Q:\Import\System\Schema\ContentTypes\GenericContent",
+                @"Q:\Import\System\Schema\ContentTypes\GenericContent\Folder",
+                @"Q:\Import\System\Schema\ContentTypes",
+                @"Q:\Import\System\Schema",
+                @"Q:\Import\System",
+                @"Q:\Import\System\Settings",
             };
             var files = new Dictionary<string, string>
             {
-                {@"Q:\Import\Root\F2.Content", "{'ContentType':'Folder','ContentName':'F2','Fields':{}}"},
-                {@"Q:\Import\Root\System\F3.Content", "{'ContentType':'Folder','ContentName':'F3','Fields':{}}"},
-                {@"Q:\Import\Root.Content", "{'ContentType':'PortalRoot','ContentName':'Root','Fields':{}}"},
-                {@"Q:\Import\Root\F1.Content", "{'ContentType':'Folder','ContentName':'F1','Fields':{}}"},
-                {@"Q:\Import\Root\System\Schema\ContentTypes.Content", "{'ContentType':'SystemFolder','ContentName':'ContentTypes','Fields':{}}"},
-                {@"Q:\Import\Root\System\Schema.Content", "{'ContentType':'SystemFolder','ContentName':'Schema','Fields':{}}"},
-                {@"Q:\Import\Root\System.Content", "{'ContentType':'SystemFolder','ContentName':'System','Fields':{}}"},
-                {@"Q:\Import\Root\System\Settings\Settings1.Content", "{'ContentType':'Settings','ContentName':'Setting1','Fields':{}}"},
-                {@"Q:\Import\Root\System\Settings\Settings2.Content", "{'ContentType':'Settings','ContentName':'Setting2','Fields':{}}"},
-                {@"Q:\Import\Root\System\Schema\ContentTypes\GenericContent.Content", "{'ContentType':'ContentType','ContentName':'GenericContent','Fields':{}}"},
-                {@"Q:\Import\Root\System\Schema\Aspects\Aspect1.Content", "{'ContentType':'Aspect','ContentName':'Aspect1','Fields':{}}"},
-                {@"Q:\Import\Root\System\Schema\ContentTypes\GenericContent\Folder.Content", "{'ContentType':'ContentType','ContentName':'Folder','Fields':{}}"},
-                {@"Q:\Import\Root\System\Schema\ContentTypes\GenericContent\File.Content", "{'ContentType':'ContentType','ContentName':'File','Fields':{}}"},
+                {@"Q:\Import\System\F3.Content", "{'ContentType':'Folder','ContentName':'F3','Fields':{}}"},
+                {@"Q:\Import\System\Schema\ContentTypes.Content", "{'ContentType':'SystemFolder','ContentName':'ContentTypes','Fields':{}}"},
+                {@"Q:\Import\System\Schema.Content", "{'ContentType':'SystemFolder','ContentName':'Schema','Fields':{}}"},
+                {@"Q:\Import\System.Content", "{'ContentType':'SystemFolder','ContentName':'System','Fields':{}}"},
+                {@"Q:\Import\System\Settings\Settings1.Content", "{'ContentType':'Settings','ContentName':'Setting1','Fields':{}}"},
+                {@"Q:\Import\System\Settings\Settings2.Content", "{'ContentType':'Settings','ContentName':'Setting2','Fields':{}}"},
+                {@"Q:\Import\System\Schema\ContentTypes\GenericContent.Content", "{'ContentType':'ContentType','ContentName':'GenericContent','Fields':{}}"},
+                {@"Q:\Import\System\Schema\Aspects\Aspect1.Content", "{'ContentType':'Aspect','ContentName':'Aspect1','Fields':{}}"},
+                {@"Q:\Import\System\Schema\ContentTypes\GenericContent\Folder.Content", "{'ContentType':'ContentType','ContentName':'Folder','Fields':{}}"},
+                {@"Q:\Import\System\Schema\ContentTypes\GenericContent\File.Content", "{'ContentType':'ContentType','ContentName':'File','Fields':{}}"},
             };
 
-            var reader = new FsReaderMock(@"Q:\Import", "/Root",
+            var reader = new FsReaderMock(@"Q:\Import", "/System",
                 isFileExists: fsPath => files.ContainsKey(fsPath),
                 isDirectoryExists: fsPath => directories.Contains(fsPath),
                 getFsDirectories: fsPath => GetDirectories(fsPath, directories),
@@ -736,7 +731,6 @@ namespace SenseNet.IO.Tests
 
             // ASSERT
             var contents = readings.ToArray();
-            Assert.AreEqual(18, contents.Length);
             var expectedRelativePaths = new[]
             {
                 "",
