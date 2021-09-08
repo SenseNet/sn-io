@@ -15,7 +15,7 @@ namespace SenseNet.IO.Implementations
         private FsContent _content; // Current IContent
         private readonly string _fsRootPath;
 
-        public string RootPath { get; } = "/";
+        public string RootName { get; }
         public int EstimatedCount { get; private set; }
         public IContent Content => _content;
         public string RelativePath => _content.Path;
@@ -28,6 +28,7 @@ namespace SenseNet.IO.Implementations
         public FsReader(string fsRootPath)
         {
             _fsRootPath = fsRootPath;
+            RootName = ContentPath.GetName(fsRootPath);
         }
 
         private bool _initialized;
@@ -99,7 +100,7 @@ namespace SenseNet.IO.Implementations
             var task = _referenceUpdateTasksEnumerator.Current;
 
             var relativePath = task.ReaderPath;
-            var repositoryPath = ContentPath.Combine(RootPath, relativePath);
+            var repositoryPath = "/" + relativePath;
             var metaFilePath = Path.GetFullPath(Path.Combine(_fsRootPath, relativePath)) + ".Content";
             var name = ContentPath.GetName(repositoryPath);
             var content = new FsContent(name, relativePath, metaFilePath, false);

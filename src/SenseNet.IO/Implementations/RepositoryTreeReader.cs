@@ -17,7 +17,8 @@ namespace SenseNet.IO.Implementations
         private readonly int _blockSize;
         private int _blockIndex;
 
-        public string RootPath { get; }
+        public string RootName { get; }
+        public string RepositoryRootPath { get; }
         public int EstimatedCount { get; private set; }
         public IContent Content { get; private set; }
         public string RelativePath { get; private set; }
@@ -25,7 +26,8 @@ namespace SenseNet.IO.Implementations
         public RepositoryTreeReader(string url, [NotNull] string rootPath, int? blockSize = null)
         {
             _url = url;
-            RootPath = rootPath;
+            RepositoryRootPath = rootPath;
+            RootName = ContentPath.GetName(rootPath);
             _blockSize = blockSize ?? 10;
         }
 
@@ -135,7 +137,7 @@ namespace SenseNet.IO.Implementations
             //TODO: Raise performance: read the next block (background)
             if (_currentBlock == null || _currentBlockIndex >= _currentBlock.Length)
             {
-                _currentBlock = await QueryBlockAsync(RootPath, _blockIndex * _blockSize, _blockSize, true);
+                _currentBlock = await QueryBlockAsync(RepositoryRootPath, _blockIndex * _blockSize, _blockSize, true);
                 _blockIndex++;
                 _currentBlockIndex = 0;
                 if (_currentBlock == null || _currentBlock.Length == 0)
@@ -143,7 +145,7 @@ namespace SenseNet.IO.Implementations
             }
 
             Content = _currentBlock[_currentBlockIndex++];
-            RelativePath = ContentPath.GetRelativePath(Content.Path, RootPath);
+            RelativePath = ContentPath.GetRelativePath(Content.Path, RepositoryRootPath);
             return true;
         }
 
@@ -160,7 +162,7 @@ namespace SenseNet.IO.Implementations
 
         private async Task<int> GetCountAsync()
         {
-            var result = await RESTCaller.GetResponseStringAsync(RootPath, "GetContentCountInTree");
+            var result = await RESTCaller.GetResponseStringAsync(RepositoryRootPath, "GetContentCountInTree");
             return int.TryParse(result, out var count) ? count : default;
         }
         private async Task<IContent[]> QueryBlockAsync(string rootPath, int skip, int top, bool useTypeRestrictions)

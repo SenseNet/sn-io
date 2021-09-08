@@ -26,7 +26,7 @@ namespace SenseNet.IO.Implementations
         private string _rootName;
         public override async Task TransferAsync(IProgress<TransferState> progress, CancellationToken cancel = default)
         {
-            _rootName = Writer.RootName ?? ContentPath.GetName(Reader.RootPath);
+            _rootName = Writer.RootName ?? Reader.RootName;
             var firstTargetPath = ContentPath.Combine(Writer.ContainerPath, _rootName);
 
             string[] subTreePaths = new string[0];

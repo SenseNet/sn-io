@@ -11,10 +11,10 @@ namespace SenseNet.IO
     public interface IContentReader
     {
         /// <summary>
-        /// Gets the absolute repository path of the copied subtree. Cannot be null.
+        /// Gets the name of the copied subtree. Cannot be null.
         /// </summary>
         [NotNull]
-        string RootPath { get; }
+        string RootName { get; }
         /// <summary>
         /// Gets the count of contents in the whole subtree for progress computing.
         /// </summary>
@@ -27,43 +27,10 @@ namespace SenseNet.IO
 
         /// <summary>
         /// Gets the relative repository path of the current content after calling the <see cref="ReadAsync"/> method.
-        /// The path is based on the <see cref="RootPath"/>.
+        /// The path is based on the copied subtree so the relative path of the copied subtree's root is empty string.
+        /// The separator should be slash ("/").
         /// </summary>
         string RelativePath { get; }
-//UNDONE://///
-        ///// <summary>
-        ///// Reads a forward-only stream of the ContentType subtree under the <paramref name="relativePath"/>.
-        ///// The start position is before the first content. Therefore, you must call ReadAsync to begin accessing data.
-        ///// Every call actualizes the <see cref="Content"/> and <see cref="RelativePath"/> properties.
-        ///// If the ContentTypes folder is out of reader's scope or there is no any ContentType in the source tree,
-        ///// the first call should return false.
-        ///// </summary>
-        ///// <param name="cancel">The token to monitor for cancellation requests.</param>
-        ///// <returns>A Task that represents the asynchronous operation and wraps a boolean value that is true
-        ///// if there are more items or false if there aren't.</returns>
-        //Task<bool> ReadContentTypesAsync_DELETE(CancellationToken cancel = default);
-        ///// <summary>
-        ///// Reads a forward-only stream of the Settings subtree under the /Root/System/Settings logical path.
-        ///// The start position is before the first content. Therefore, you must call ReadAsync to begin accessing data.
-        ///// Every call actualizes the <see cref="Content"/> and <see cref="RelativePath"/> properties.
-        ///// If the Settings folder is out of reader's scope or there is no any Settings in the source tree,
-        ///// the first call should return false.
-        ///// </summary>
-        ///// <param name="cancel">The token to monitor for cancellation requests.</param>
-        ///// <returns>A Task that represents the asynchronous operation and wraps a boolean value that is true
-        ///// if there are more items or false if there aren't.</returns>
-        //Task<bool> ReadSettingsAsync_DELETE(CancellationToken cancel = default);
-        ///// <summary>
-        ///// Reads a forward-only stream of the Aspects subtree under the /Root/System/Schema/Aspects logical path.
-        ///// The start position is before the first content. Therefore, you must call ReadAsync to begin accessing data.
-        ///// Every call actualizes the <see cref="Content"/> and <see cref="RelativePath"/> properties.
-        ///// If the Aspects folder is out of reader's scope or there is no any Aspect in the source tree,
-        ///// the first call should return false.
-        ///// </summary>
-        ///// <param name="cancel">The token to monitor for cancellation requests.</param>
-        ///// <returns>A Task that represents the asynchronous operation and wraps a boolean value that is true
-        ///// if there are more items or false if there aren't.</returns>
-        //Task<bool> ReadAspectsAsync_DELETE(CancellationToken cancel = default);
 
         Task<bool> ReadSubTreeAsync(string relativePath, CancellationToken cancel = default);
 

@@ -14,7 +14,8 @@ namespace SenseNet.IO.Tests.Implementations
         private readonly string[] _sortedPaths;
         private int _filteredPathIndex;
 
-        public string RootPath { get; }
+        public string RootName { get; }
+        public string ReaderRootPath { get; }
         public int EstimatedCount => _tree?.Count ?? 0;
         public IContent Content { get; private set; }
         public string RelativePath { get; private set; }
@@ -22,7 +23,8 @@ namespace SenseNet.IO.Tests.Implementations
         public TestContentReader(string rootPath, Dictionary<string, ContentNode> tree)
         {
             _tree = tree;
-            RootPath = rootPath;
+            ReaderRootPath = rootPath;
+            RootName = ContentPath.GetName(rootPath);
             _separator = rootPath.Contains("/") ? "/" : "\\";
 
             var rootPathTrailing = rootPath + _separator;
@@ -44,14 +46,14 @@ namespace SenseNet.IO.Tests.Implementations
             if (!_indexes.TryGetValue(relativePath, out var index))
                 _indexes.Add(relativePath, index = 0);
 
-            var subTreePath = NormalizePath(ContentPath.GetAbsolutePath(relativePath, RootPath));
+            var subTreePath = NormalizePath(ContentPath.GetAbsolutePath(relativePath, ReaderRootPath));
 
             var paths = _sortedPaths.Where(x => x.StartsWith(subTreePath + _separator) || x == subTreePath).ToArray();
             if (index >= paths.Length)
                 return Task.FromResult(false);
 
             var content = _tree[paths[index]];
-            RelativePath = ContentPath.GetRelativePath(content.Path, RootPath);
+            RelativePath = ContentPath.GetRelativePath(content.Path, ReaderRootPath);
             Content = content.Clone();
 
             _indexes[relativePath] = ++index;
@@ -64,7 +66,7 @@ namespace SenseNet.IO.Tests.Implementations
             if (_filteredPaths == null)
             {
                 var filters = contentsWithoutChildren
-                    .Select(x => NormalizePath(ContentPath.GetAbsolutePath(x, RootPath)) + "\\")
+                    .Select(x => NormalizePath(ContentPath.GetAbsolutePath(x, ReaderRootPath)) + "\\")
                     .ToArray();
                 _filteredPaths = _sortedPaths
                     .Where(x =>
@@ -80,7 +82,7 @@ namespace SenseNet.IO.Tests.Implementations
             if (_filteredPathIndex >= _filteredPaths.Length)
                 return Task.FromResult(false);
             var sourceContent = _tree[_filteredPaths[_filteredPathIndex]];
-            RelativePath = ContentPath.GetRelativePath(sourceContent.Path, RootPath);
+            RelativePath = ContentPath.GetRelativePath(sourceContent.Path, ReaderRootPath);
             Content = sourceContent.Clone();
 
             _filteredPathIndex++;
@@ -100,7 +102,7 @@ namespace SenseNet.IO.Tests.Implementations
                 return Task.FromResult(false);
 
             var task = _referenceUpdateTasks[_referenceUpdateTaskIndex++];
-            var path = NormalizePath(ContentPath.GetAbsolutePath(task.ReaderPath, RootPath));
+            var path = NormalizePath(ContentPath.GetAbsolutePath(task.ReaderPath, ReaderRootPath));
             Content = _tree[path];
             RelativePath = task.ReaderPath;
 

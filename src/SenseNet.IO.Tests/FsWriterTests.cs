@@ -87,14 +87,16 @@ namespace SenseNet.IO.Tests
             private int _contentIndex;
             private IContent[] _contentsToRead;
 
-            public string RootPath { get; }
+            public string RootName { get; }
+            public string RepositoryRootPath { get; }
             public int EstimatedCount { get; }
             public IContent Content { get; private set; }
             public string RelativePath { get; private set; }
 
             public TestReader(string rootPath, IContent[] contentsToRead)
             {
-                RootPath = rootPath;
+                RepositoryRootPath = rootPath;
+                RootName = ContentPath.GetName(rootPath);
                 EstimatedCount = contentsToRead.Length;
                 _contentsToRead = contentsToRead;
             }

@@ -16,7 +16,8 @@ namespace SenseNet.IO.Tests.Implementations
         private readonly int _blockSize;
         private int _blockIndex;
 
-        public string RootPath { get; }
+        public string RootName { get; }
+        public string RepositoryRootPath { get; }
         public int EstimatedCount => _tree?.Count ?? 0;
 
         public IContent Content { get; private set; }
@@ -24,7 +25,8 @@ namespace SenseNet.IO.Tests.Implementations
 
         public TestCQReader(string rootPath, int blockSize, Dictionary<string, ContentNode> tree)
         {
-            RootPath = rootPath;
+            RepositoryRootPath = rootPath;
+            RootName = ContentPath.GetName(rootPath);
             _blockSize = blockSize;
             _blockIndex = 0;
             _tree = tree;
@@ -83,7 +85,7 @@ namespace SenseNet.IO.Tests.Implementations
             //TODO: Raise performance: read the next block (background)
             if (_currentBlock == null || _currentBlockIndex >= _currentBlock.Length)
             {
-                _currentBlock = QueryBlock(RootPath, _blockIndex * _blockSize, _blockSize);
+                _currentBlock = QueryBlock(RepositoryRootPath, _blockIndex * _blockSize, _blockSize);
                 _blockIndex++;
                 _currentBlockIndex = 0;
                 if (_currentBlock == null || _currentBlock.Length == 0)
@@ -91,7 +93,7 @@ namespace SenseNet.IO.Tests.Implementations
             }
 
             Content = _currentBlock[_currentBlockIndex++].Clone();
-            RelativePath = ContentPath.GetRelativePath(Content.Path, RootPath);
+            RelativePath = ContentPath.GetRelativePath(Content.Path, RepositoryRootPath);
 
             return Task.FromResult(true);
         }
