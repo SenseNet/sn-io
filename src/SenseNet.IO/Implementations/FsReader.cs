@@ -46,90 +46,91 @@ namespace SenseNet.IO.Implementations
             Task.Run(() => GetContentCount(_fsRootPath));
         }
 
-        private List<FsContent> _contentTypeContents;
-        private int _contentTypeContentsIndex;
-        public Task<bool> ReadContentTypesAsync_DELETE(CancellationToken cancel = default)
-        {
-            if (_contentTypeContents == null)
-            {
-                Initialize();
+        //UNDONE://///
+        //private List<FsContent> _contentTypeContents;
+        //private int _contentTypeContentsIndex;
+        //public Task<bool> ReadContentTypesAsync_DELETE(CancellationToken cancel = default)
+        //{
+        //    if (_contentTypeContents == null)
+        //    {
+        //        Initialize();
 
-                if (!RootPath.Equals("/Root", StringComparison.OrdinalIgnoreCase) && 
-                    !RootPath.Equals("/Root/System", StringComparison.OrdinalIgnoreCase) &&
-                    !RootPath.Equals("/Root/System/Schema", StringComparison.OrdinalIgnoreCase) &&
-                    !RootPath.Equals("/Root/System/Schema/ContentTypes", StringComparison.OrdinalIgnoreCase)
-                    )
-                    return Task.FromResult(false);
+        //        if (!RootPath.Equals("/Root", StringComparison.OrdinalIgnoreCase) && 
+        //            !RootPath.Equals("/Root/System", StringComparison.OrdinalIgnoreCase) &&
+        //            !RootPath.Equals("/Root/System/Schema", StringComparison.OrdinalIgnoreCase) &&
+        //            !RootPath.Equals("/Root/System/Schema/ContentTypes", StringComparison.OrdinalIgnoreCase)
+        //            )
+        //            return Task.FromResult(false);
 
-                var ctdRootRelPath = "/Root/System/Schema/ContentTypes".Substring(RootPath.Length).TrimStart('/');
-                var ctdRootContent = CreateFsContent("ContentTypes", ctdRootRelPath, null, true);
-                _contentTypeContents = new List<FsContent>();
-                ReadSubTree(ctdRootContent, _contentTypeContents);
-            }
+        //        var ctdRootRelPath = "/Root/System/Schema/ContentTypes".Substring(RootPath.Length).TrimStart('/');
+        //        var ctdRootContent = CreateFsContent("ContentTypes", ctdRootRelPath, null, true);
+        //        _contentTypeContents = new List<FsContent>();
+        //        ReadSubTree(ctdRootContent, _contentTypeContents);
+        //    }
 
-            if (_contentTypeContentsIndex >= _contentTypeContents.Count)
-                return Task.FromResult(false);
+        //    if (_contentTypeContentsIndex >= _contentTypeContents.Count)
+        //        return Task.FromResult(false);
 
-            _content = _contentTypeContents[_contentTypeContentsIndex++];
+        //    _content = _contentTypeContents[_contentTypeContentsIndex++];
 
-            return Task.FromResult(true);
-        }
+        //    return Task.FromResult(true);
+        //}
 
-        private List<FsContent> _settingsContents;
-        private int _settingsContentsIndex;
-        public Task<bool> ReadSettingsAsync_DELETE(CancellationToken cancel = default)
-        {
-            if (_settingsContents == null)
-            {
-                Initialize();
+        //private List<FsContent> _settingsContents;
+        //private int _settingsContentsIndex;
+        //public Task<bool> ReadSettingsAsync_DELETE(CancellationToken cancel = default)
+        //{
+        //    if (_settingsContents == null)
+        //    {
+        //        Initialize();
 
-                if (!RootPath.Equals("/Root", StringComparison.OrdinalIgnoreCase) &&
-                    !RootPath.Equals("/Root/System", StringComparison.OrdinalIgnoreCase) &&
-                    !RootPath.Equals("/Root/System/Settings", StringComparison.OrdinalIgnoreCase))
-                    return Task.FromResult(false);
+        //        if (!RootPath.Equals("/Root", StringComparison.OrdinalIgnoreCase) &&
+        //            !RootPath.Equals("/Root/System", StringComparison.OrdinalIgnoreCase) &&
+        //            !RootPath.Equals("/Root/System/Settings", StringComparison.OrdinalIgnoreCase))
+        //            return Task.FromResult(false);
 
-                var settingsRootRelPath = "/Root/System/Settings".Substring(RootPath.Length).TrimStart('/');
-                var settingsRootContent = CreateFsContent("Settings", settingsRootRelPath, null, true);
-                _settingsContents = new List<FsContent>();
-                ReadSubTree(settingsRootContent, _settingsContents);
-            }
+        //        var settingsRootRelPath = "/Root/System/Settings".Substring(RootPath.Length).TrimStart('/');
+        //        var settingsRootContent = CreateFsContent("Settings", settingsRootRelPath, null, true);
+        //        _settingsContents = new List<FsContent>();
+        //        ReadSubTree(settingsRootContent, _settingsContents);
+        //    }
 
-            if (_settingsContentsIndex >= _settingsContents.Count)
-                return Task.FromResult(false);
+        //    if (_settingsContentsIndex >= _settingsContents.Count)
+        //        return Task.FromResult(false);
 
-            _content = _settingsContents[_settingsContentsIndex++];
+        //    _content = _settingsContents[_settingsContentsIndex++];
 
-            return Task.FromResult(true);
-        }
+        //    return Task.FromResult(true);
+        //}
 
-        private List<FsContent> _aspectContents;
-        private int _aspectContentsIndex;
-        public Task<bool> ReadAspectsAsync_DELETE(CancellationToken cancel = default)
-        {
-            if (_aspectContents == null)
-            {
-                Initialize();
+        //private List<FsContent> _aspectContents;
+        //private int _aspectContentsIndex;
+        //public Task<bool> ReadAspectsAsync_DELETE(CancellationToken cancel = default)
+        //{
+        //    if (_aspectContents == null)
+        //    {
+        //        Initialize();
 
-                if (!RootPath.Equals("/Root", StringComparison.OrdinalIgnoreCase) &&
-                    !RootPath.Equals("/Root/System", StringComparison.OrdinalIgnoreCase) &&
-                    !RootPath.Equals("/Root/System/Schema", StringComparison.OrdinalIgnoreCase) &&
-                    !RootPath.Equals("/Root/System/Schema/Aspects", StringComparison.OrdinalIgnoreCase)
-                )
-                    return Task.FromResult(false);
+        //        if (!RootPath.Equals("/Root", StringComparison.OrdinalIgnoreCase) &&
+        //            !RootPath.Equals("/Root/System", StringComparison.OrdinalIgnoreCase) &&
+        //            !RootPath.Equals("/Root/System/Schema", StringComparison.OrdinalIgnoreCase) &&
+        //            !RootPath.Equals("/Root/System/Schema/Aspects", StringComparison.OrdinalIgnoreCase)
+        //        )
+        //            return Task.FromResult(false);
 
-                var ctdRootRelPath = "/Root/System/Schema/Aspects".Substring(RootPath.Length).TrimStart('/');
-                var ctdRootContent = CreateFsContent("Aspects", ctdRootRelPath, null, true);
-                _aspectContents = new List<FsContent>();
-                ReadSubTree(ctdRootContent, _aspectContents);
-            }
+        //        var ctdRootRelPath = "/Root/System/Schema/Aspects".Substring(RootPath.Length).TrimStart('/');
+        //        var ctdRootContent = CreateFsContent("Aspects", ctdRootRelPath, null, true);
+        //        _aspectContents = new List<FsContent>();
+        //        ReadSubTree(ctdRootContent, _aspectContents);
+        //    }
 
-            if (_aspectContentsIndex >= _aspectContents.Count)
-                return Task.FromResult(false);
+        //    if (_aspectContentsIndex >= _aspectContents.Count)
+        //        return Task.FromResult(false);
 
-            _content = _aspectContents[_aspectContentsIndex++];
+        //    _content = _aspectContents[_aspectContentsIndex++];
 
-            return Task.FromResult(true);
-        }
+        //    return Task.FromResult(true);
+        //}
 
         public Task<bool> ReadSubTreeAsync(string relativePath, CancellationToken cancel = default)
         {
@@ -160,7 +161,7 @@ namespace SenseNet.IO.Implementations
             // ReSharper disable once AssignmentInConditionalExpression
             while (goAhead = ReadTree())
             {
-                if (!(IsContentType(Content) || IsAspect(Content) || IsSettings(Content)))
+                //if (!(IsContentType(Content) || IsAspect(Content) || IsSettings(Content)))
                     break;
             }
 

@@ -465,21 +465,22 @@ namespace SenseNet.IO.Tests
             var actualRelativePaths = new List<string>();
 
             // ACTION
-            while (await reader.ReadContentTypesAsync_DELETE())
-            {
-                actualRelativePaths.Add(reader.RelativePath);
-                readings.Add(reader.RelativePath, reader.Content);
-            }
-            while (await reader.ReadSettingsAsync_DELETE())
-            {
-                actualRelativePaths.Add(reader.RelativePath);
-                readings.Add(reader.RelativePath, reader.Content);
-            }
-            while (await reader.ReadAspectsAsync_DELETE())
-            {
-                actualRelativePaths.Add(reader.RelativePath);
-                readings.Add(reader.RelativePath, reader.Content);
-            }
+//UNDONE://///
+            //while (await reader.ReadContentTypesAsync_DELETE())
+            //{
+            //    actualRelativePaths.Add(reader.RelativePath);
+            //    readings.Add(reader.RelativePath, reader.Content);
+            //}
+            //while (await reader.ReadSettingsAsync_DELETE())
+            //{
+            //    actualRelativePaths.Add(reader.RelativePath);
+            //    readings.Add(reader.RelativePath, reader.Content);
+            //}
+            //while (await reader.ReadAspectsAsync_DELETE())
+            //{
+            //    actualRelativePaths.Add(reader.RelativePath);
+            //    readings.Add(reader.RelativePath, reader.Content);
+            //}
             while (await reader.ReadAllAsync(Array.Empty<string>()))
             {
                 actualRelativePaths.Add(reader.RelativePath);
@@ -491,12 +492,6 @@ namespace SenseNet.IO.Tests
             Assert.AreEqual(18, contents.Length);
             var expectedRelativePaths = new []
             {
-                "System/Schema/ContentTypes/GenericContent",
-                "System/Schema/ContentTypes/GenericContent/Folder",
-                "System/Schema/ContentTypes/GenericContent/File",
-                "System/Settings/Settings1",
-                "System/Settings/Settings2",
-                "System/Schema/Aspects/Aspect1",
                 "",
                 "Content",
                 "System",
@@ -504,8 +499,14 @@ namespace SenseNet.IO.Tests
                 "System/F2",
                 "System/Schema",
                 "System/Schema/Aspects",
+                "System/Schema/Aspects/Aspect1",
                 "System/Schema/ContentTypes",
+                "System/Schema/ContentTypes/GenericContent",
+                "System/Schema/ContentTypes/GenericContent/Folder",
+                "System/Schema/ContentTypes/GenericContent/File",
                 "System/Settings",
+                "System/Settings/Settings1",
+                "System/Settings/Settings2",
                 "System/F3",
                 "F1", // "F1" follows the "System" because "F1" is only a metafile.
                 "F2",
@@ -560,23 +561,23 @@ namespace SenseNet.IO.Tests
 
             var readings = new Dictionary<string, IContent>();
             var actualRelativePaths = new List<string>();
-
+//UNDONE://///
             // ACTION
-            while (await reader.ReadContentTypesAsync_DELETE())
-            {
-                actualRelativePaths.Add(reader.RelativePath);
-                readings.Add(reader.RelativePath, reader.Content);
-            }
-            while (await reader.ReadSettingsAsync_DELETE())
-            {
-                actualRelativePaths.Add(reader.RelativePath);
-                readings.Add(reader.RelativePath, reader.Content);
-            }
-            while (await reader.ReadAspectsAsync_DELETE())
-            {
-                actualRelativePaths.Add(reader.RelativePath);
-                readings.Add(reader.RelativePath, reader.Content);
-            }
+            //while (await reader.ReadContentTypesAsync_DELETE())
+            //{
+            //    actualRelativePaths.Add(reader.RelativePath);
+            //    readings.Add(reader.RelativePath, reader.Content);
+            //}
+            //while (await reader.ReadSettingsAsync_DELETE())
+            //{
+            //    actualRelativePaths.Add(reader.RelativePath);
+            //    readings.Add(reader.RelativePath, reader.Content);
+            //}
+            //while (await reader.ReadAspectsAsync_DELETE())
+            //{
+            //    actualRelativePaths.Add(reader.RelativePath);
+            //    readings.Add(reader.RelativePath, reader.Content);
+            //}
             while (await reader.ReadAllAsync(Array.Empty<string>()))
             {
                 actualRelativePaths.Add(reader.RelativePath);
@@ -588,13 +589,13 @@ namespace SenseNet.IO.Tests
             Assert.AreEqual(7, contents.Length);
             var expectedRelativePaths = new[]
             {
+                "",
+                "Aspects",
+                "Aspects/Aspect1",
+                "ContentTypes",
                 "ContentTypes/GenericContent",
                 "ContentTypes/GenericContent/Folder",
                 "ContentTypes/GenericContent/File",
-                "Aspects/Aspect1",
-                "",
-                "Aspects",
-                "ContentTypes",
             };
             AssertSequencesAreEqual(expectedRelativePaths, actualRelativePaths);
 
