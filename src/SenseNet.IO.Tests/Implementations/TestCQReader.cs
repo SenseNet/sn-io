@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -67,7 +68,6 @@ namespace SenseNet.IO.Tests.Implementations
 
         public Task<bool> ReadSubTreeAsync(string relativePath, CancellationToken cancel = default)
         {
-            //UNDONE:!!!!!!!!!!!!!! ReadSubTreeAsync is not implemented
             throw new System.NotImplementedException();
         }
 
@@ -75,8 +75,9 @@ namespace SenseNet.IO.Tests.Implementations
         private int _currentBlockIndex;
         public Task<bool> ReadAllAsync(string[] contentsWithoutChildren, CancellationToken cancel = default)
         {
-            //UNDONE:!!!!!!!!! Process "contentsWithoutChildren" parameter
-            //UNDONE: Implement ReadAllAsync methods well.
+            if (contentsWithoutChildren != null && contentsWithoutChildren.Length != 0)
+                //TODO Process "contentsWithoutChildren" parameter
+                throw new NotImplementedException();
 
             //TODO: Raise performance: read the next block (background)
             if (_currentBlock == null || _currentBlockIndex >= _currentBlock.Length)
@@ -94,17 +95,14 @@ namespace SenseNet.IO.Tests.Implementations
             return Task.FromResult(true);
         }
 
-        public void SetReferenceUpdateTasks(IEnumerable<TransferTask> tasks, int taskCount) { }
-        public Task<bool> ReadByReferenceUpdateTasksAsync(CancellationToken cancel) { return Task.FromResult(false); }
+        public void SetReferenceUpdateTasks(IEnumerable<TransferTask> tasks, int taskCount) { throw new NotImplementedException(); }
+        public Task<bool> ReadByReferenceUpdateTasksAsync(CancellationToken cancel) { throw new NotImplementedException(); }
 
         private ContentNode[] QueryBlock(string rootPath, int skip, int top)
         {
             var rootPathTrailing = rootPath + "/";
             var contents = _tree.Keys
                 .Where(x => x.StartsWith(rootPathTrailing) || x == rootPath)
-                .Where(x => !x.StartsWith("/Root/System/Schema/ContentTypes/"))
-                .Where(x => !x.StartsWith("/Root/System/Schema/Aspects/"))
-                .Where(x => !x.StartsWith("/Root/System/Settings/"))
                 .OrderBy(x => x)
                 .Skip(skip)
                 .Take(top)

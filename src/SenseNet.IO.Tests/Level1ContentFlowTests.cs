@@ -185,18 +185,7 @@ namespace SenseNet.IO.Tests
             // ASSERT
             var actual = string.Join("\r\n", progress.Paths);
             Assert.AreEqual(sourceTree.Count, targetTree.Count);
-            var expected = @"System/Schema/ContentTypes/ContentType-1
-System/Schema/ContentTypes/ContentType-1/ContentType-3
-System/Schema/ContentTypes/ContentType-1/ContentType-4
-System/Schema/ContentTypes/ContentType-1/ContentType-5
-System/Schema/ContentTypes/ContentType-1/ContentType-5/ContentType-6
-System/Schema/ContentTypes/ContentType-2
-System/Settings/Settings-1.settings
-System/Settings/Settings-2.settings
-System/Settings/Settings-3.settings
-System/Schema/Aspects/Aspect-1
-System/Schema/Aspects/Aspect-2
-
+            var expected = @"
 (apps)
 Content
 Content/Workspace-1
@@ -210,8 +199,19 @@ IMS
 System
 System/Schema
 System/Schema/Aspects
+System/Schema/Aspects/Aspect-1
+System/Schema/Aspects/Aspect-2
 System/Schema/ContentTypes
+System/Schema/ContentTypes/ContentType-1
+System/Schema/ContentTypes/ContentType-1/ContentType-3
+System/Schema/ContentTypes/ContentType-1/ContentType-4
+System/Schema/ContentTypes/ContentType-1/ContentType-5
+System/Schema/ContentTypes/ContentType-1/ContentType-5/ContentType-6
+System/Schema/ContentTypes/ContentType-2
 System/Settings
+System/Settings/Settings-1.settings
+System/Settings/Settings-2.settings
+System/Settings/Settings-3.settings
 ";
             Assert.AreEqual(expected.TrimEnd(), actual);
         }
@@ -258,22 +258,22 @@ Workspace-2
             // ASSERT
             var actual = string.Join("\r\n", progress.Paths);
             //Assert.AreEqual(sourceTree.Count, targetTree.Count);
-            var expected = @"Schema/ContentTypes/ContentType-1
+            var expected = @"
+Schema
+Schema/Aspects
+Schema/Aspects/Aspect-1
+Schema/Aspects/Aspect-2
+Schema/ContentTypes
+Schema/ContentTypes/ContentType-1
 Schema/ContentTypes/ContentType-1/ContentType-3
 Schema/ContentTypes/ContentType-1/ContentType-4
 Schema/ContentTypes/ContentType-1/ContentType-5
 Schema/ContentTypes/ContentType-1/ContentType-5/ContentType-6
 Schema/ContentTypes/ContentType-2
+Settings
 Settings/Settings-1.settings
 Settings/Settings-2.settings
 Settings/Settings-3.settings
-Schema/Aspects/Aspect-1
-Schema/Aspects/Aspect-2
-
-Schema
-Schema/Aspects
-Schema/ContentTypes
-Settings
 ";
             Assert.AreEqual(expected.TrimEnd(), actual);
         }
@@ -293,17 +293,17 @@ Settings
             // ASSERT
             var actual = string.Join("\r\n", progress.Paths);
             //Assert.AreEqual(sourceTree.Count, targetTree.Count);
-            var expected = @"ContentTypes/ContentType-1
+            var expected = @"
+Aspects
+Aspects/Aspect-1
+Aspects/Aspect-2
+ContentTypes
+ContentTypes/ContentType-1
 ContentTypes/ContentType-1/ContentType-3
 ContentTypes/ContentType-1/ContentType-4
 ContentTypes/ContentType-1/ContentType-5
 ContentTypes/ContentType-1/ContentType-5/ContentType-6
 ContentTypes/ContentType-2
-Aspects/Aspect-1
-Aspects/Aspect-2
-
-Aspects
-ContentTypes
 ";
             Assert.AreEqual(expected.TrimEnd(), actual);
         }
@@ -323,7 +323,7 @@ ContentTypes
             // ASSERT
             var actual = string.Join(",", progress.Paths);
             //Assert.AreEqual(sourceTree.Count, targetTree.Count);
-            var expected = @"Settings-1.settings,Settings-2.settings,Settings-3.settings,";
+            var expected = @",Settings-1.settings,Settings-2.settings,Settings-3.settings";
             Assert.AreEqual(expected.TrimEnd(), actual);
         }
 
