@@ -116,8 +116,8 @@ namespace SenseNet.IO.CLI
             //var reader = new FsReader(@"D:\dev\_sn-io-test\FsReader", "/Root/GyebiTesztel");
             //var writer = new FsWriter(@"D:\dev\_sn-io-test\FsWriter", "/Root", "XXX");
 
-            //var reader = new FsReader(@"D:\dev\_sn-io-test\FsReader", "/Root");
-            //var writer = new RepositoryWriter("https://localhost:44362");
+            var reader = new FsReader(@"D:\dev\_sn-io-test\FsReader", "/Root");
+            var writer = new RepositoryWriter("https://localhost:44362");
 
             //var reader = new FsReader(@"D:\dev\_sn-io-test\FsReader", "/Root/(apps)");
             //var writer = new RepositoryWriter("https://localhost:44362", "/Root");
@@ -125,8 +125,10 @@ namespace SenseNet.IO.CLI
             //var reader = new FsReader(@"D:\dev\_sn-io-test\FsReader", "/Root/IMS");
             //var writer = new RepositoryWriter("https://localhost:44362", "/Root");
 
-            var reader = new FsReader(@"D:\dev\_sn-io-test\FsReader", "/Root/System/Settings");
-            var writer = new RepositoryWriter("https://localhost:44362", "/Root/System");
+            //var reader = new FsReader(@"D:\dev\_sn-io-test\FsReader", "/Root/System/Settings");
+            //var writer = new RepositoryWriter("https://localhost:44362", "/Root/System");
+            //var reader = new FsReader(@"D:\dev\_sn-io-test\FsReader\Root\System\Settings");
+            //var writer = new RepositoryWriter("https://localhost:44362", "/Root/System");
 
 
 

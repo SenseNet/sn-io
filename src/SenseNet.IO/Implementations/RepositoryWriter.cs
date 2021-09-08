@@ -19,7 +19,7 @@ namespace SenseNet.IO.Implementations
         public RepositoryWriter(string url, string containerPath = null, string rootName = null)
         {
             _url = url;
-            ContainerPath = containerPath;
+            ContainerPath = containerPath ?? "/";
             RootName = rootName;
             Initialize();
         }

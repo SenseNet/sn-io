@@ -132,10 +132,22 @@ namespace SenseNet.IO.Implementations
         //    return Task.FromResult(true);
         //}
 
+        private TreeState _mainState;
+        private readonly Dictionary<string, TreeState> _treeStates = new Dictionary<string, TreeState>();
         public Task<bool> ReadSubTreeAsync(string relativePath, CancellationToken cancel = default)
-        {
-            //UNDONE:!!!!!!!!!!!!!! ReadSubTreeAsync is not implemented
-            throw new NotImplementedException();
+        {// "System/Schema/ContentTypes"
+
+            Initialize();
+
+            if (!_treeStates.TryGetValue(relativePath, out var treeState))
+            {
+                var absPath = Path.GetFullPath(Path.Combine(_fsRootDirectory, RootPath.TrimStart('/'), relativePath));
+                treeState = new TreeState{RootFsPath = absPath};
+                _treeStates.Add(relativePath, treeState);
+            }
+
+            var goAhead = ReadTree(treeState);
+            return Task.FromResult(goAhead);
         }
 
         private void ReadSubTree(FsContent parentContent, List<FsContent> container)
@@ -146,6 +158,11 @@ namespace SenseNet.IO.Implementations
                 ReadSubTree(child, container);
         }
 
+        private class TreeState
+        {
+            public string RootFsPath { get; set; }
+            public Stack<Level> Levels { get; } = new Stack<Level>();
+        }
         private class Level
         {
             public FsContent CurrentContent => Contents[Index];
@@ -154,17 +171,16 @@ namespace SenseNet.IO.Implementations
         }
         public Task<bool> ReadAllAsync(string[] contentsWithoutChildren, CancellationToken cancel = default)
         {
-            //UNDONE:!!!!!!!!! Process "contentsWithoutChildren" parameter
-            Initialize();
-
-            bool goAhead;
-            // ReSharper disable once AssignmentInConditionalExpression
-            while (goAhead = ReadTree())
+            if (_mainState == null)
             {
-                //if (!(IsContentType(Content) || IsAspect(Content) || IsSettings(Content)))
-                    break;
+                Initialize();
+                _mainState = new TreeState {RootFsPath = _fsRootPath};
             }
+            if (contentsWithoutChildren != null && contentsWithoutChildren.Length != 0)
+                //UNDONE:!!!!!!!!! Process "contentsWithoutChildren" parameter
+                throw new NotImplementedException();
 
+            bool goAhead = ReadTree(_mainState);
             return Task.FromResult(goAhead);
         }
 
@@ -214,30 +230,27 @@ namespace SenseNet.IO.Implementations
             if (!IsFileExists(metaFilePath))
                 metaFilePath = null;
             var contentIsDirectory = IsDirectoryExists(fsRootPath);
-
-            var content = CreateFsContent(contentName, string.Empty, metaFilePath, contentIsDirectory, null);
+            var relativePath = fsRootPath.Remove(0, _fsRootPath.Length).Replace('\\', '/').TrimStart('/');
+            var content = CreateFsContent(contentName, relativePath, metaFilePath, contentIsDirectory, null);
             content.InitializeMetadata();
             return content;
         }
 
-        private Stack<Level> _levels;
-        private bool ReadTree()
+        //private Stack<Level> _levels;
+        private bool ReadTree(TreeState state)
         {
-            if (_levels == null)
-            {
-                _levels = new Stack<Level>();
-                return MoveToFirst();
-            }
-            if (MoveToFirstChild())
+            if (state.Levels.Count == 0)
+                return MoveToFirst(state);
+            if (MoveToFirstChild(state))
                 return true;
-            if (MoveToNextSibling())
+            if (MoveToNextSibling(state))
                 return true;
             while (true)
             {
-                if (MoveToParent())
-                    if (MoveToNextSibling())
+                if (MoveToParent(state))
+                    if (MoveToNextSibling(state))
                         return true;
-                if (_levels.Count == 0)
+                if (state.Levels.Count == 0)
                     break;
             }
             return false;
@@ -248,44 +261,44 @@ namespace SenseNet.IO.Implementations
             var level = levels.Peek();
             _content = level.Contents[level.Index];
         }
-        private bool MoveToFirst()
+        private bool MoveToFirst(TreeState state)
         {
-            var rootContent = GetRootContent(_fsRootPath);
+            var rootContent = GetRootContent(state.RootFsPath);
             if (rootContent == null)
                 return false;
             var level = new Level {Contents = new[] {rootContent}};
-            _levels.Push(level);
-            SetCurrentContent(_levels);
+            state.Levels.Push(level);
+            SetCurrentContent(state.Levels);
             return true;
         }
-        private bool MoveToParent()
+        private bool MoveToParent(TreeState state)
         {
-            if (_levels.Count == 0)
+            if (state.Levels.Count == 0)
                 return false;
-            _levels.Pop();
-            if (_levels.Count == 0)
+            state.Levels.Pop();
+            if (state.Levels.Count == 0)
                 return false;
-            SetCurrentContent(_levels);
+            SetCurrentContent(state.Levels);
             return true;
         }
-        private bool MoveToNextSibling()
+        private bool MoveToNextSibling(TreeState state)
         {
-            var level = _levels.Peek();
+            var level = state.Levels.Peek();
             var index = level.Index + 1;
             if (index >= level.Contents.Length)
                 return false;
             level.Index = index;
-            SetCurrentContent(_levels);
+            SetCurrentContent(state.Levels);
             return true;
         }
-        private bool MoveToFirstChild()
+        private bool MoveToFirstChild(TreeState state)
         {
-            var contents = ReadChildren(_levels.Peek().CurrentContent);
+            var contents = ReadChildren(state.Levels.Peek().CurrentContent);
             if (contents.Length == 0)
                 return false;
             var level = new Level { Contents = contents };
-            _levels.Push(level);
-            SetCurrentContent(_levels);
+            state.Levels.Push(level);
+            SetCurrentContent(state.Levels);
             return true;
 
         }
