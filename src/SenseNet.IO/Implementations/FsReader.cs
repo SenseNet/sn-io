@@ -12,11 +12,10 @@ namespace SenseNet.IO.Implementations
 {
     public class FsReader : IContentReader
     {
-        private readonly string _fsRootDirectory; // Constructor param
         private FsContent _content; // Current IContent
-        private string _fsRootPath;
+        private readonly string _fsRootPath;
 
-        public string RootPath { get; }
+        public string RootPath { get; } = "/";
         public int EstimatedCount { get; private set; }
         public IContent Content => _content;
         public string RelativePath => _content.Path;
@@ -28,19 +27,15 @@ namespace SenseNet.IO.Implementations
         /// <param name="rootPath">Repository path under the <paramref name="fsRootPath"/>.</param>
         public FsReader(string fsRootPath)
         {
-            _fsRootDirectory = fsRootPath;
-            RootPath = "/";
+            _fsRootPath = fsRootPath;
         }
 
+        private bool _initialized;
         private void Initialize()
         {
-            if (_fsRootPath != null)
+            if (_initialized)
                 return;
-
-            var fsRootPath = RootPath == null
-                ? _fsRootDirectory
-                : Path.Combine(_fsRootDirectory, RootPath.TrimStart('/'));
-            _fsRootPath = Path.GetFullPath(fsRootPath); // normalize path separators
+            _initialized = true;
 
             EstimatedCount = 1;
             Task.Run(() => GetContentCount(_fsRootPath));
@@ -49,27 +44,18 @@ namespace SenseNet.IO.Implementations
         private TreeState _mainState;
         private readonly Dictionary<string, TreeState> _treeStates = new Dictionary<string, TreeState>();
         public Task<bool> ReadSubTreeAsync(string relativePath, CancellationToken cancel = default)
-        {// "System/Schema/ContentTypes"
-
+        {
             Initialize();
 
             if (!_treeStates.TryGetValue(relativePath, out var treeState))
             {
-                var absPath = Path.GetFullPath(Path.Combine(_fsRootDirectory, RootPath.TrimStart('/'), relativePath));
+                var absPath = Path.GetFullPath(Path.Combine(_fsRootPath, relativePath));
                 treeState = new TreeState{FsRootPath = absPath};
                 _treeStates.Add(relativePath, treeState);
             }
 
             var goAhead = ReadTree(treeState);
             return Task.FromResult(goAhead);
-        }
-
-        private void ReadSubTree(FsContent parentContent, List<FsContent> container)
-        {
-            var children = ReadChildren(parentContent);
-            container.AddRange(children);
-            foreach (var child in children)
-                ReadSubTree(child, container);
         }
 
         private class TreeState
