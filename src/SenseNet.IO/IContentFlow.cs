@@ -10,5 +10,6 @@ namespace SenseNet.IO
         IContentWriter Writer { get; }
 
         Task TransferAsync(IProgress<TransferState> progress, CancellationToken cancel = default);
+        void WriteLogHead();
     }
 }

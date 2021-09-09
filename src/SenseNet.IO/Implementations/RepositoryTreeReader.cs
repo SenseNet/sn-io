@@ -13,10 +13,10 @@ namespace SenseNet.IO.Implementations
     /// </summary>
     public class RepositoryTreeReader : IContentReader
     {
-        private readonly string _url;
         private readonly int _blockSize;
         private int _blockIndex;
 
+        public string Url { get; }
         public string RootName { get; }
         public string RepositoryRootPath { get; }
         public int EstimatedCount { get; private set; }
@@ -25,7 +25,7 @@ namespace SenseNet.IO.Implementations
 
         public RepositoryTreeReader(string url, [NotNull] string rootPath, int? blockSize = null)
         {
-            _url = url;
+            Url = url;
             RepositoryRootPath = rootPath;
             RootName = ContentPath.GetName(rootPath);
             _blockSize = blockSize ?? 10;
@@ -37,7 +37,7 @@ namespace SenseNet.IO.Implementations
             {
                 ClientContext.Current.AddServer(new ServerContext
                 {
-                    Url = _url,
+                    Url = Url,
                     Username = "builtin\\admin",
                     Password = "admin"
                 });

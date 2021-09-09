@@ -13,7 +13,7 @@ namespace SenseNet.IO.Implementations
     public class FsReader : IContentReader
     {
         private FsContent _content; // Current IContent
-        private readonly string _fsRootPath;
+        public string ReaderRootPath { get; }
 
         public string RootName { get; }
         public int EstimatedCount { get; private set; }
@@ -24,10 +24,9 @@ namespace SenseNet.IO.Implementations
         /// Initializes an FsReader instance.
         /// </summary>
         /// <param name="fsRootPath">Parent of "/Root" of repository.</param>
-        /// <param name="rootPath">Repository path under the <paramref name="fsRootPath"/>.</param>
         public FsReader(string fsRootPath)
         {
-            _fsRootPath = fsRootPath;
+            ReaderRootPath = fsRootPath;
             RootName = ContentPath.GetName(fsRootPath);
         }
 
@@ -39,7 +38,7 @@ namespace SenseNet.IO.Implementations
             _initialized = true;
 
             EstimatedCount = 1;
-            Task.Run(() => GetContentCount(_fsRootPath));
+            Task.Run(() => GetContentCount(ReaderRootPath));
         }
 
         private TreeState _mainState;
@@ -50,7 +49,7 @@ namespace SenseNet.IO.Implementations
 
             if (!_treeStates.TryGetValue(relativePath, out var treeState))
             {
-                var absPath = Path.GetFullPath(Path.Combine(_fsRootPath, relativePath));
+                var absPath = Path.GetFullPath(Path.Combine(ReaderRootPath, relativePath));
                 treeState = new TreeState{FsRootPath = absPath};
                 _treeStates.Add(relativePath, treeState);
             }
@@ -78,7 +77,7 @@ namespace SenseNet.IO.Implementations
                 Initialize();
                 _mainState = new TreeState
                 {
-                    FsRootPath = _fsRootPath,
+                    FsRootPath = ReaderRootPath,
                     ContentsWithoutChildren = contentsWithoutChildren ?? Array.Empty<string>()
                 };
             }
@@ -101,7 +100,7 @@ namespace SenseNet.IO.Implementations
 
             var relativePath = task.ReaderPath;
             var repositoryPath = "/" + relativePath;
-            var metaFilePath = Path.GetFullPath(Path.Combine(_fsRootPath, relativePath)) + ".Content";
+            var metaFilePath = Path.GetFullPath(Path.Combine(ReaderRootPath, relativePath)) + ".Content";
             var name = ContentPath.GetName(repositoryPath);
             var content = new FsContent(name, relativePath, metaFilePath, false);
             content.InitializeMetadata(task.BrokenReferences, task.RetryPermissions);
@@ -119,7 +118,7 @@ namespace SenseNet.IO.Implementations
             var contentIsDirectory = IsDirectoryExists(fsRootPath);
             if (!contentIsDirectory && metaFilePath == null)
                 return null;
-            var relativePath = fsRootPath.Remove(0, _fsRootPath.Length).Replace('\\', '/').TrimStart('/');
+            var relativePath = fsRootPath.Remove(0, ReaderRootPath.Length).Replace('\\', '/').TrimStart('/');
             var content = CreateFsContent(contentName, relativePath, metaFilePath, contentIsDirectory, null);
             content.InitializeMetadata();
             return content;
@@ -200,7 +199,7 @@ namespace SenseNet.IO.Implementations
 
             if (!parentContent.IsDirectory)
                 return new FsContent[0];
-            var fsPath = Path.GetFullPath(Path.Combine(_fsRootPath, parentContent.Path));
+            var fsPath = Path.GetFullPath(Path.Combine(ReaderRootPath, parentContent.Path));
 
             var dirs = GetFsDirectories(fsPath).OrderBy(x => x).ToList();
             var filePaths = GetFsFiles(fsPath).OrderBy(x => x).ToList();

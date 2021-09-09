@@ -9,13 +9,13 @@ namespace SenseNet.IO.Implementations
 {
     public class FsWriter : IContentWriter
     {
-        private readonly string _outputDirectory;
+        public string OutputDirectory { get; }
         public string ContainerPath { get; }
         public string RootName { get; }
 
         public FsWriter(string outputDirectory, string containerPath = null, string rootName = null)
         {
-            _outputDirectory = outputDirectory;
+            OutputDirectory = outputDirectory;
             ContainerPath = containerPath;
             RootName = rootName;
         }
@@ -25,7 +25,7 @@ namespace SenseNet.IO.Implementations
             var name = content.Name;
             var src = ToJson(content);
             var containerPath = (ContainerPath ?? "").TrimStart('/');
-            var contentPath = Path.Combine(_outputDirectory, containerPath, path) + ".Content";
+            var contentPath = Path.Combine(OutputDirectory, containerPath, path) + ".Content";
             var fileDir = Path.GetDirectoryName(contentPath);
             if (fileDir == null)
                 throw new NotSupportedException("The fileDir cannot be null");

@@ -17,7 +17,7 @@ namespace SenseNet.IO.Tests
             public List<TransferTask> TransferTasks { get; } = new List<TransferTask>();
 
             public Level5ContentFlowMock(IContentReader reader, ISnRepositoryWriter writer) : base(reader, writer) { }
-            protected override void WriteLog(string entry) { Log.Add(entry); }
+            protected override void WriteLog(string entry, bool head = false) { Log.Add(entry); }
 
             protected override void WriteTask(WriterState state)
             {

@@ -103,8 +103,8 @@ namespace SenseNet.IO.CLI
             /* =================================================================================== TEST CASES */
 
             // Export Settings
-            var reader = new RepositoryTreeReader("https://localhost:44362", "/Root/System/Settings", 10);
-            var writer = new FsWriter(@"D:\dev\_sn-io-test\localhost_44362_Settings");
+            //var reader = new RepositoryTreeReader("https://localhost:44362", "/Root/System/Settings", 10);
+            //var writer = new FsWriter(@"D:\dev\_sn-io-test\localhost_44362_Settings");
 
             // Export Settings to Settings2
             //var reader = new RepositoryTreeReader("https://localhost:44362", "/Root/System/Settings", 10);
@@ -123,8 +123,16 @@ namespace SenseNet.IO.CLI
             //var writer = new RepositoryWriter("https://localhost:44362", "/Root/System", "Settings");
 
             // Import All
-            //var reader = new FsReader(@"D:\dev\_sn-io-test\localhost_44362");
-            //var writer = new RepositoryWriter("https://localhost:44362");
+            var reader = new FsReader(@"D:\dev\_sn-io-test\localhost_44362\Root");
+            var writer = new RepositoryWriter("https://localhost:44362");
+
+            // Copy Settings to Settings3
+            //var reader = new FsReader(@"D:\dev\_sn-io-test\localhost_44362_Settings\Settings");
+            //var writer = new FsWriter(@"D:\dev\_sn-io-test\localhost_44362_Settings", null, "Settings3");
+
+            // Copy All
+            //var reader = new FsReader(@"D:\dev\_sn-io-test\localhost_44362\Root");
+            //var writer = new FsWriter(@"D:\dev\_sn-io-test\localhost_44362_backup");
 
             /* =================================================================================== TEST CASES */
 

@@ -13,9 +13,11 @@ namespace SenseNet.IO
     {
         public static IContentFlow Create(IContentReader reader, IContentWriter writer)
         {
-            return writer is ISnRepositoryWriter repoWriter
-                ? new Level5ContentFlow(reader, repoWriter)
+            var flow = writer is ISnRepositoryWriter repoWriter
+                ? (IContentFlow)new Level5ContentFlow(reader, repoWriter)
                 : new Level1ContentFlow(reader, writer);
+            flow.WriteLogHead();
+            return flow;
         }
 
         /* ========================================================================== LOGGING */
@@ -23,6 +25,67 @@ namespace SenseNet.IO
         public abstract IContentReader Reader { get; }
         public abstract IContentWriter Writer { get; }
         public abstract Task TransferAsync(IProgress<TransferState> progress, CancellationToken cancel = default);
+
+        public void WriteLogHead()
+        {
+            string source;
+            string target;
+            var readFromRepo = false;
+            var readFromDisk = false;
+            var writeToRepo = false;
+            var writeToDisk = false;
+            if (Reader is RepositoryTreeReader repoReader)
+            {
+                readFromRepo = true;
+                source = $"{repoReader.Url} ... {repoReader.RepositoryRootPath}";
+            }
+            else if (Reader is FsReader fsReader)
+            {
+                readFromDisk = true;
+                source = fsReader.ReaderRootPath;
+            }
+            else
+            {
+                source = Reader.GetType().FullName;
+            }
+
+            if (Writer is FsWriter fsWriter)
+            {
+                writeToDisk = true;
+                target = fsWriter.RootName == null
+                    ? fsWriter.OutputDirectory
+                    : $"{fsWriter.OutputDirectory} rename to {fsWriter.RootName}";
+            }
+            else if (Writer is RepositoryWriter repoWriter)
+            {
+                writeToRepo = true;
+                target = repoWriter.RootName == null
+                    ? $"{repoWriter.Url} ... {repoWriter.ContainerPath}"
+                    : $"{repoWriter.Url} ... {repoWriter.ContainerPath} rename to {repoWriter.RootName}";
+            }
+            else
+            {
+                target = Writer.GetType().FullName;
+            }
+
+            string operation;
+            if (readFromDisk && writeToDisk)
+                operation = "Copy";
+            else if (readFromRepo && writeToRepo)
+                operation = "Sync";
+            else if (readFromRepo)
+                operation = "Export";
+            else if (writeToRepo)
+                operation = "Import";
+            else
+                operation = "Transfer";
+
+            WriteLog(operation.ToUpper(), true);
+            WriteLog($"    from: {source}", true);
+            WriteLog($"    to  : {target}", true);
+            WriteLog(string.Empty, true);
+            WriteLog("START");
+        }
 
         /* ========================================================================== TOOLS */
 
@@ -74,13 +137,13 @@ namespace SenseNet.IO
 
         /* -------------------------------------------------------------------------- TESTABILITY */
 
-        protected virtual void WriteLog(string entry)
+        protected virtual void WriteLog(string entry, bool head = false)
         {
             if (_logFilePath == null)
                 _logFilePath = CreateLogFile(true, "log");
 
             using (StreamWriter writer = new StreamWriter(_logFilePath, true))
-                writer.WriteLine($"{DateTime.Now:yyyy-MM-dd HH:mm:ss.fffff}  {entry}");
+                writer.WriteLine(head ? entry : $"{DateTime.Now:yyyy-MM-dd HH:mm:ss.fffff}  {entry}");
         }
         protected virtual void WriteTask(WriterState state)
         {

@@ -14,7 +14,7 @@ namespace SenseNet.IO.Tests
         private class ContentFlowMock : Level1ContentFlow
         {
             public ContentFlowMock(IContentReader reader, IContentWriter writer) : base(reader, writer) { }
-            protected override void WriteLog(string entry) { }
+            protected override void WriteLog(string entry, bool head = false) { }
             protected override void WriteTask(WriterState state) { }
             protected override int LoadTaskCount() { return 0; }
             protected override IEnumerable<TransferTask> LoadTasks() { return new TransferTask[0]; }
