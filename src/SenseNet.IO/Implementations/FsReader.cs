@@ -117,6 +117,8 @@ namespace SenseNet.IO.Implementations
             if (!IsFileExists(metaFilePath))
                 metaFilePath = null;
             var contentIsDirectory = IsDirectoryExists(fsRootPath);
+            if (!contentIsDirectory && metaFilePath == null)
+                return null;
             var relativePath = fsRootPath.Remove(0, _fsRootPath.Length).Replace('\\', '/').TrimStart('/');
             var content = CreateFsContent(contentName, relativePath, metaFilePath, contentIsDirectory, null);
             content.InitializeMetadata();
