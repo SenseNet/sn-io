@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -23,7 +24,7 @@ namespace SenseNet.IO.Tests
             // ACTION
             var reader = new TestContentReader("/Root/Folder-1", tree);
             var result = new List<string>();
-            while (await reader.ReadAllAsync())
+            while (await reader.ReadAllAsync(Array.Empty<string>()))
                 result.Add(reader.Content.Path);
 
             // ASSERT

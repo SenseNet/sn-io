@@ -1,4 +1,7 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.InteropServices;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SenseNet.IO.Tests.Implementations;
 
 namespace SenseNet.IO.Tests
@@ -7,23 +10,31 @@ namespace SenseNet.IO.Tests
     {
         public Dictionary<string, ContentNode> CreateTree(string[] paths)
         {
+            var separator = paths[0].Contains('\\') ? '\\' : '/';
+
             var contents = new Dictionary<string, ContentNode>();
 
             var id = 0;
             foreach (var path in paths)
             {
-                var name = path.Split('/')[^1];
+                var name = path.Split(separator)[^1];
                 var type = GetContentTypeFromName(name);
                 var content = new ContentNode {Path = path, Name = name, Type = type, ["Id"] = ++id};
+                content["F1"] = "f1";
+                content["F2"] = "f2";
+                content["F3"] = "f3";
+                content.Permissions = new PermissionInfo();
                 contents.Add(path, content);
 
                 var parentPath = path.Substring(0, path.Length - name.Length - 1);
                 if (parentPath.Length == 0)
                     continue;
 
-                var parent = contents[parentPath];
-                parent.Children.Add(content);
-                content.Parent = parent;
+                if(contents.TryGetValue(parentPath, out var parent))
+                {
+                    parent.Children.Add(content);
+                    content.Parent = parent;
+                }
             }
 
             return contents;
@@ -45,5 +56,13 @@ namespace SenseNet.IO.Tests
                 default: return name.Split('-')[0];
             }
         }
+
+        protected void AssertSequencesAreEqual<T>(IEnumerable<T> expected, IEnumerable<T> actual)
+        {
+            var e = string.Join(", ", expected.Select(x => x.ToString()));
+            var a = string.Join(", ", actual.Select(x => x.ToString()));
+            Assert.AreEqual(e, a);
+        }
+
     }
 }

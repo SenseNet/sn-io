@@ -12,11 +12,10 @@ namespace SenseNet.IO.Implementations
 {
     public class FsReader : IContentReader
     {
-        private readonly string _fsRootDirectory; // Constructor param
         private FsContent _content; // Current IContent
-        private string _fsRootPath;
+        public string ReaderRootPath { get; }
 
-        public string RootPath { get; }
+        public string RootName { get; }
         public int EstimatedCount { get; private set; }
         public IContent Content => _content;
         public string RelativePath => _content.Path;
@@ -25,138 +24,65 @@ namespace SenseNet.IO.Implementations
         /// Initializes an FsReader instance.
         /// </summary>
         /// <param name="fsRootPath">Parent of "/Root" of repository.</param>
-        /// <param name="rootPath">Repository path under the <paramref name="fsRootPath"/>.</param>
-        public FsReader(string fsRootPath, [NotNull] string rootPath)
+        public FsReader(string fsRootPath)
         {
-            _fsRootDirectory = fsRootPath;
-            RootPath = rootPath;
+            ReaderRootPath = fsRootPath;
+            RootName = ContentPath.GetName(fsRootPath);
         }
 
+        private bool _initialized;
         private void Initialize()
         {
-            if (_fsRootPath != null)
+            if (_initialized)
                 return;
-
-            var fsRootPath = RootPath == null
-                ? _fsRootDirectory
-                : Path.Combine(_fsRootDirectory, RootPath.TrimStart('/'));
-            _fsRootPath = Path.GetFullPath(fsRootPath); // normalize path separators
+            _initialized = true;
 
             EstimatedCount = 1;
-            Task.Run(() => GetContentCount(_fsRootPath));
+            Task.Run(() => GetContentCount(ReaderRootPath));
         }
 
-        private List<FsContent> _contentTypeContents;
-        private int _contentTypeContentsIndex;
-        public Task<bool> ReadContentTypesAsync(CancellationToken cancel = default)
+        private TreeState _mainState;
+        private readonly Dictionary<string, TreeState> _treeStates = new Dictionary<string, TreeState>();
+        public Task<bool> ReadSubTreeAsync(string relativePath, CancellationToken cancel = default)
         {
-            if (_contentTypeContents == null)
+            Initialize();
+
+            if (!_treeStates.TryGetValue(relativePath, out var treeState))
             {
-                Initialize();
-
-                if (!RootPath.Equals("/Root", StringComparison.OrdinalIgnoreCase) && 
-                    !RootPath.Equals("/Root/System", StringComparison.OrdinalIgnoreCase) &&
-                    !RootPath.Equals("/Root/System/Schema", StringComparison.OrdinalIgnoreCase) &&
-                    !RootPath.Equals("/Root/System/Schema/ContentTypes", StringComparison.OrdinalIgnoreCase)
-                    )
-                    return Task.FromResult(false);
-
-                var ctdRootRelPath = "/Root/System/Schema/ContentTypes".Substring(RootPath.Length).TrimStart('/');
-                var ctdRootContent = CreateFsContent("ContentTypes", ctdRootRelPath, null, true);
-                _contentTypeContents = new List<FsContent>();
-                ReadSubTree(ctdRootContent, _contentTypeContents);
+                var absPath = Path.GetFullPath(Path.Combine(ReaderRootPath, relativePath));
+                treeState = new TreeState{FsRootPath = absPath};
+                _treeStates.Add(relativePath, treeState);
             }
 
-            if (_contentTypeContentsIndex >= _contentTypeContents.Count)
-                return Task.FromResult(false);
-
-            _content = _contentTypeContents[_contentTypeContentsIndex++];
-
-            return Task.FromResult(true);
+            var goAhead = ReadTree(treeState);
+            return Task.FromResult(goAhead);
         }
 
-        private List<FsContent> _settingsContents;
-        private int _settingsContentsIndex;
-        public Task<bool> ReadSettingsAsync(CancellationToken cancel = default)
+        private class TreeState
         {
-            if (_settingsContents == null)
-            {
-                Initialize();
-
-                if (!RootPath.Equals("/Root", StringComparison.OrdinalIgnoreCase) &&
-                    !RootPath.Equals("/Root/System", StringComparison.OrdinalIgnoreCase) &&
-                    !RootPath.Equals("/Root/System/Settings", StringComparison.OrdinalIgnoreCase))
-                    return Task.FromResult(false);
-
-                var settingsRootRelPath = "/Root/System/Settings".Substring(RootPath.Length).TrimStart('/');
-                var settingsRootContent = CreateFsContent("Settings", settingsRootRelPath, null, true);
-                _settingsContents = new List<FsContent>();
-                ReadSubTree(settingsRootContent, _settingsContents);
-            }
-
-            if (_settingsContentsIndex >= _settingsContents.Count)
-                return Task.FromResult(false);
-
-            _content = _settingsContents[_settingsContentsIndex++];
-
-            return Task.FromResult(true);
+            public string FsRootPath { get; set; }
+            public string[] ContentsWithoutChildren { get; set; } = Array.Empty<string>();
+            public Stack<Level> Levels { get; } = new Stack<Level>();
         }
-
-        private List<FsContent> _aspectContents;
-        private int _aspectContentsIndex;
-        public Task<bool> ReadAspectsAsync(CancellationToken cancel = default)
-        {
-            if (_aspectContents == null)
-            {
-                Initialize();
-
-                if (!RootPath.Equals("/Root", StringComparison.OrdinalIgnoreCase) &&
-                    !RootPath.Equals("/Root/System", StringComparison.OrdinalIgnoreCase) &&
-                    !RootPath.Equals("/Root/System/Schema", StringComparison.OrdinalIgnoreCase) &&
-                    !RootPath.Equals("/Root/System/Schema/Aspects", StringComparison.OrdinalIgnoreCase)
-                )
-                    return Task.FromResult(false);
-
-                var ctdRootRelPath = "/Root/System/Schema/Aspects".Substring(RootPath.Length).TrimStart('/');
-                var ctdRootContent = CreateFsContent("Aspects", ctdRootRelPath, null, true);
-                _aspectContents = new List<FsContent>();
-                ReadSubTree(ctdRootContent, _aspectContents);
-            }
-
-            if (_aspectContentsIndex >= _aspectContents.Count)
-                return Task.FromResult(false);
-
-            _content = _aspectContents[_aspectContentsIndex++];
-
-            return Task.FromResult(true);
-        }
-
-        private void ReadSubTree(FsContent parentContent, List<FsContent> container)
-        {
-            var children = ReadChildren(parentContent);
-            container.AddRange(children);
-            foreach (var child in children)
-                ReadSubTree(child, container);
-        }
-
         private class Level
         {
             public FsContent CurrentContent => Contents[Index];
             public int Index { get; set; }
             public FsContent[] Contents { get; set; }
         }
-        public Task<bool> ReadAllAsync(CancellationToken cancel = default)
+        public Task<bool> ReadAllAsync(string[] contentsWithoutChildren, CancellationToken cancel = default)
         {
-            Initialize();
-
-            bool goAhead;
-            // ReSharper disable once AssignmentInConditionalExpression
-            while (goAhead = ReadTree())
+            if (_mainState == null)
             {
-                if (!(IsContentType(Content) || IsAspect(Content) || IsSettings(Content)))
-                    break;
+                Initialize();
+                _mainState = new TreeState
+                {
+                    FsRootPath = ReaderRootPath,
+                    ContentsWithoutChildren = contentsWithoutChildren ?? Array.Empty<string>()
+                };
             }
 
+            bool goAhead = ReadTree(_mainState);
             return Task.FromResult(goAhead);
         }
 
@@ -173,30 +99,14 @@ namespace SenseNet.IO.Implementations
             var task = _referenceUpdateTasksEnumerator.Current;
 
             var relativePath = task.ReaderPath;
-            var repositoryPath = ContentPath.Combine(RootPath, relativePath);
-            var metaFilePath = Path.GetFullPath(Path.Combine(_fsRootPath, relativePath)) + ".Content";
+            var repositoryPath = "/" + relativePath;
+            var metaFilePath = Path.GetFullPath(Path.Combine(ReaderRootPath, relativePath)) + ".Content";
             var name = ContentPath.GetName(repositoryPath);
             var content = new FsContent(name, relativePath, metaFilePath, false);
             content.InitializeMetadata(task.BrokenReferences, task.RetryPermissions);
             _content = content;
 
             return Task.FromResult(true);
-        }
-
-        private bool IsContentType(IContent content)
-        {
-            return ContentPath.Combine(RootPath, content.Path)
-                .StartsWith("/Root/System/Schema/ContentTypes/", StringComparison.OrdinalIgnoreCase);
-        }
-        private bool IsAspect(IContent content)
-        {
-            return ContentPath.Combine(RootPath, content.Path)
-                .StartsWith("/Root/System/Schema/Aspects/", StringComparison.OrdinalIgnoreCase);
-        }
-        private bool IsSettings(IContent content)
-        {
-            return ContentPath.Combine(RootPath, content.Path)
-                .StartsWith("/Root/System/Settings/", StringComparison.OrdinalIgnoreCase);
         }
 
         private FsContent GetRootContent(string fsRootPath)
@@ -206,30 +116,29 @@ namespace SenseNet.IO.Implementations
             if (!IsFileExists(metaFilePath))
                 metaFilePath = null;
             var contentIsDirectory = IsDirectoryExists(fsRootPath);
-
-            var content = CreateFsContent(contentName, string.Empty, metaFilePath, contentIsDirectory, null);
+            if (!contentIsDirectory && metaFilePath == null)
+                return null;
+            var relativePath = fsRootPath.Remove(0, ReaderRootPath.Length).Replace('\\', '/').TrimStart('/');
+            var content = CreateFsContent(contentName, relativePath, metaFilePath, contentIsDirectory, null);
             content.InitializeMetadata();
             return content;
         }
 
-        private Stack<Level> _levels;
-        private bool ReadTree()
+        //private Stack<Level> _levels;
+        private bool ReadTree(TreeState state)
         {
-            if (_levels == null)
-            {
-                _levels = new Stack<Level>();
-                return MoveToFirst();
-            }
-            if (MoveToFirstChild())
+            if (state.Levels.Count == 0)
+                return MoveToFirst(state);
+            if (MoveToFirstChild(state))
                 return true;
-            if (MoveToNextSibling())
+            if (MoveToNextSibling(state))
                 return true;
             while (true)
             {
-                if (MoveToParent())
-                    if (MoveToNextSibling())
+                if (MoveToParent(state))
+                    if (MoveToNextSibling(state))
                         return true;
-                if (_levels.Count == 0)
+                if (state.Levels.Count == 0)
                     break;
             }
             return false;
@@ -240,44 +149,47 @@ namespace SenseNet.IO.Implementations
             var level = levels.Peek();
             _content = level.Contents[level.Index];
         }
-        private bool MoveToFirst()
+        private bool MoveToFirst(TreeState state)
         {
-            var rootContent = GetRootContent(_fsRootPath);
+            var rootContent = GetRootContent(state.FsRootPath);
             if (rootContent == null)
                 return false;
             var level = new Level {Contents = new[] {rootContent}};
-            _levels.Push(level);
-            SetCurrentContent(_levels);
+            state.Levels.Push(level);
+            SetCurrentContent(state.Levels);
             return true;
         }
-        private bool MoveToParent()
+        private bool MoveToParent(TreeState state)
         {
-            if (_levels.Count == 0)
+            if (state.Levels.Count == 0)
                 return false;
-            _levels.Pop();
-            if (_levels.Count == 0)
+            state.Levels.Pop();
+            if (state.Levels.Count == 0)
                 return false;
-            SetCurrentContent(_levels);
+            SetCurrentContent(state.Levels);
             return true;
         }
-        private bool MoveToNextSibling()
+        private bool MoveToNextSibling(TreeState state)
         {
-            var level = _levels.Peek();
+            var level = state.Levels.Peek();
             var index = level.Index + 1;
             if (index >= level.Contents.Length)
                 return false;
             level.Index = index;
-            SetCurrentContent(_levels);
+            SetCurrentContent(state.Levels);
             return true;
         }
-        private bool MoveToFirstChild()
+        private bool MoveToFirstChild(TreeState state)
         {
-            var contents = ReadChildren(_levels.Peek().CurrentContent);
+            var currentContent = state.Levels.Peek().CurrentContent;
+            if (state.ContentsWithoutChildren.Contains(currentContent.Path, StringComparer.OrdinalIgnoreCase))
+                return false;
+            var contents = ReadChildren(currentContent);
             if (contents.Length == 0)
                 return false;
             var level = new Level { Contents = contents };
-            _levels.Push(level);
-            SetCurrentContent(_levels);
+            state.Levels.Push(level);
+            SetCurrentContent(state.Levels);
             return true;
 
         }
@@ -287,7 +199,7 @@ namespace SenseNet.IO.Implementations
 
             if (!parentContent.IsDirectory)
                 return new FsContent[0];
-            var fsPath = Path.GetFullPath(Path.Combine(_fsRootPath, parentContent.Path));
+            var fsPath = Path.GetFullPath(Path.Combine(ReaderRootPath, parentContent.Path));
 
             var dirs = GetFsDirectories(fsPath).OrderBy(x => x).ToList();
             var filePaths = GetFsFiles(fsPath).OrderBy(x => x).ToList();

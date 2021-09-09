@@ -20,7 +20,7 @@ namespace SenseNet.IO.Tests
                 Func<string, bool> isDirectoryExists,
                 Action<string> createDirectory,
                 Func<string, bool, TextWriter> createTextWriter,
-                Func<string, FileMode, Stream> createBinaryStream) : base(outputDirectory, containerPath, rootName)
+                Func<string, FileMode, Stream> createBinaryStream) : base(outputDirectory, rootName)
             {
                 _isDirectoryExists = isDirectoryExists;
                 _createDirectory = createDirectory;
@@ -87,23 +87,34 @@ namespace SenseNet.IO.Tests
             private int _contentIndex;
             private IContent[] _contentsToRead;
 
-            public string RootPath { get; }
+            public string RootName { get; }
+            public string RepositoryRootPath { get; }
             public int EstimatedCount { get; }
             public IContent Content { get; private set; }
             public string RelativePath { get; private set; }
 
             public TestReader(string rootPath, IContent[] contentsToRead)
             {
-                RootPath = rootPath;
+                RepositoryRootPath = rootPath;
+                RootName = ContentPath.GetName(rootPath);
                 EstimatedCount = contentsToRead.Length;
                 _contentsToRead = contentsToRead;
             }
-
-            public Task<bool> ReadContentTypesAsync(CancellationToken cancel = default) { return Task.FromResult(false); }
-            public Task<bool> ReadSettingsAsync(CancellationToken cancel = default) { return Task.FromResult(false); }
-            public Task<bool> ReadAspectsAsync(CancellationToken cancel = default) { return Task.FromResult(false); }
-            public Task<bool> ReadAllAsync(CancellationToken cancel = default)
+//UNDONE://///
+            //public Task<bool> ReadContentTypesAsync_DELETE(CancellationToken cancel = default) { return Task.FromResult(false); }
+            //public Task<bool> ReadSettingsAsync_DELETE(CancellationToken cancel = default) { return Task.FromResult(false); }
+            //public Task<bool> ReadAspectsAsync_DELETE(CancellationToken cancel = default) { return Task.FromResult(false); }
+            public Task<bool> ReadSubTreeAsync(string relativePath, CancellationToken cancel = default)
             {
+                throw new NotImplementedException();
+            }
+
+            public Task<bool> ReadAllAsync(string[] contentsWithoutChildren, CancellationToken cancel = default)
+            {
+                if (contentsWithoutChildren != null && contentsWithoutChildren.Length != 0)
+                    //TODO Process "contentsWithoutChildren" parameter
+                    throw new NotImplementedException();
+
                 if (_contentIndex < _contentsToRead.Length)
                 {
                     Content = _contentsToRead[_contentIndex++];
@@ -149,8 +160,8 @@ namespace SenseNet.IO.Tests
                 createBinaryStream: (fsPath, fileMode) => throw new NotImplementedException());
 
             // ACTION
-            var contentFlow = new ContentFlow(reader, writer);
-            await contentFlow.TransferAsync();
+            var contentFlow = new Level1ContentFlow(reader, writer);
+            await contentFlow.TransferAsync(null);
             
             // ASSERT
             Assert.AreEqual(1, checkedPaths.Count);
@@ -196,8 +207,8 @@ namespace SenseNet.IO.Tests
                 createBinaryStream: (fsPath, fileMode) => throw new NotImplementedException());
 
             // ACTION
-            var contentFlow = new ContentFlow(reader, writer);
-            await contentFlow.TransferAsync();
+            var contentFlow = new Level1ContentFlow(reader, writer);
+            await contentFlow.TransferAsync(null);
 
             // ASSERT
             Assert.AreEqual(2, checkedPaths.Count);
@@ -246,8 +257,8 @@ namespace SenseNet.IO.Tests
                 createBinaryStream: (fsPath, fileMode) => throw new NotImplementedException());
 
             // ACTION
-            var contentFlow = new ContentFlow(reader, writer);
-            await contentFlow.TransferAsync();
+            var contentFlow = new Level1ContentFlow(reader, writer);
+            await contentFlow.TransferAsync(null);
 
             // ASSERT
             Assert.AreEqual(3, checkedPaths.Count);
@@ -287,7 +298,10 @@ namespace SenseNet.IO.Tests
                 outputDirectory: @"Q:\FsRoot",
                 containerPath: "/Root",
                 rootName: "Fx",
-                isDirectoryExists: fsPath => { checkedPaths.Add(fsPath); return false; },
+                isDirectoryExists: fsPath =>
+                {
+                    checkedPaths.Add(fsPath); return false;
+                },
                 createDirectory: fsPath => { createdPaths.Add(fsPath); },
                 createTextWriter: (fsPath, append) =>
                 {
@@ -301,8 +315,8 @@ namespace SenseNet.IO.Tests
                 createBinaryStream: (fsPath, fileMode) => throw new NotImplementedException());
 
             // ACTION
-            var contentFlow = new ContentFlow(reader, writer);
-            await contentFlow.TransferAsync();
+            var contentFlow = new Level1ContentFlow(reader, writer);
+            await contentFlow.TransferAsync(null);
 
             // ASSERT
             Assert.AreEqual(2, checkedPaths.Count);
@@ -354,8 +368,8 @@ namespace SenseNet.IO.Tests
                 createBinaryStream: (fsPath, fileMode) => throw new NotImplementedException());
 
             // ACTION
-            var contentFlow = new ContentFlow(reader, writer);
-            await contentFlow.TransferAsync();
+            var contentFlow = new Level1ContentFlow(reader, writer);
+            await contentFlow.TransferAsync(null);
 
             // ASSERT
             Assert.AreEqual(1, textBuilders.Count);
@@ -415,8 +429,8 @@ namespace SenseNet.IO.Tests
                 });
 
             // ACTION
-            var contentFlow = new ContentFlow(reader, writer);
-            await contentFlow.TransferAsync();
+            var contentFlow = new Level1ContentFlow(reader, writer);
+            await contentFlow.TransferAsync(null);
 
             // ASSERT
             Assert.AreEqual(3, checkedPaths.Count);
@@ -489,8 +503,8 @@ namespace SenseNet.IO.Tests
                 });
 
             // ACTION
-            var contentFlow = new ContentFlow(reader, writer);
-            await contentFlow.TransferAsync();
+            var contentFlow = new Level1ContentFlow(reader, writer);
+            await contentFlow.TransferAsync(null);
 
             // ASSERT
             Assert.AreEqual(3, checkedPaths.Count);

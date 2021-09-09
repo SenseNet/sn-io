@@ -10,16 +10,16 @@ using SenseNet.Client;
 
 namespace SenseNet.IO.Implementations
 {
-    public class RepositoryWriter : IContentWriter
+    public class RepositoryWriter : ISnRepositoryWriter
     {
-        private readonly string _url;
+        public string Url;
         public string ContainerPath { get; }
         public string RootName { get; }
 
         public RepositoryWriter(string url, string containerPath = null, string rootName = null)
         {
-            _url = url;
-            ContainerPath = containerPath;
+            Url = url;
+            ContainerPath = containerPath ?? "/";
             RootName = rootName;
             Initialize();
         }
@@ -28,7 +28,7 @@ namespace SenseNet.IO.Implementations
         {
             ClientContext.Current.AddServer(new ServerContext
             {
-                Url = _url,
+                Url = Url,
                 Username = "builtin\\admin",
                 Password = "admin"
             });

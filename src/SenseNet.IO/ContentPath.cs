@@ -19,8 +19,9 @@ namespace SenseNet.IO
             if (string.IsNullOrEmpty(rootPath) || rootPath == "/")
                 return path;
 
-            if (path.StartsWith(rootPath + "/", StringComparison.OrdinalIgnoreCase))
-                return path.Substring(rootPath.Length + 1);
+            if (path.StartsWith(rootPath + "/", StringComparison.OrdinalIgnoreCase) ||
+                path.StartsWith(rootPath + "\\", StringComparison.OrdinalIgnoreCase))
+                return path.Substring(rootPath.Length + 1).Replace('\\', '/');
             return path;
         }
 

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -6,7 +7,7 @@ using System.Threading.Tasks;
 namespace SenseNet.IO.Tests.Implementations
 {
     /// <summary>
-    /// Simulates ContentQuery-based block reader
+    /// Simulates ContentQuery-based block reader for Level1ContentFlowTests
     /// </summary>
     // ReSharper disable once InconsistentNaming
     internal class TestCQReader : IContentReader
@@ -15,7 +16,8 @@ namespace SenseNet.IO.Tests.Implementations
         private readonly int _blockSize;
         private int _blockIndex;
 
-        public string RootPath { get; }
+        public string RootName { get; }
+        public string RepositoryRootPath { get; }
         public int EstimatedCount => _tree?.Count ?? 0;
 
         public IContent Content { get; private set; }
@@ -23,58 +25,67 @@ namespace SenseNet.IO.Tests.Implementations
 
         public TestCQReader(string rootPath, int blockSize, Dictionary<string, ContentNode> tree)
         {
-            RootPath = rootPath;
+            RepositoryRootPath = rootPath;
+            RootName = ContentPath.GetName(rootPath);
             _blockSize = blockSize;
             _blockIndex = 0;
             _tree = tree;
         }
 
-        private int _contentTypeIndex;
-        private ContentNode[] _contentTypes;
-        public Task<bool> ReadContentTypesAsync(CancellationToken cancel = default)
-        {
-            _contentTypes ??= _tree.Values.Where(x => x.Type == "ContentType").ToArray();
-            if (_contentTypeIndex >= _contentTypes.Length)
-                return Task.FromResult(false);
-            Content = _contentTypes[_contentTypeIndex++].Clone();
-            RelativePath = ContentPath.GetRelativePath(Content.Path, RootPath);
-            return Task.FromResult(true);
-        }
+//UNDONE://///
+        //private int _contentTypeIndex;
+        //private ContentNode[] _contentTypes;
+        //public Task<bool> ReadContentTypesAsync_DELETE(CancellationToken cancel = default)
+        //{
+        //    _contentTypes ??= _tree.Values.Where(x => x.Type == "ContentType").ToArray();
+        //    if (_contentTypeIndex >= _contentTypes.Length)
+        //        return Task.FromResult(false);
+        //    Content = _contentTypes[_contentTypeIndex++].Clone();
+        //    RelativePath = ContentPath.GetRelativePath(Content.Path, RootPath);
+        //    return Task.FromResult(true);
+        //}
 
-        private int _settingsIndex;
-        private ContentNode[] _settings;
-        public Task<bool> ReadSettingsAsync(CancellationToken cancel = default)
-        {
-            _settings ??= _tree.Values.Where(x => x.Type == "Settings").ToArray();
-            if (_settingsIndex >= _settings.Length)
-                return Task.FromResult(false);
-            Content = _settings[_settingsIndex++].Clone();
-            RelativePath = ContentPath.GetRelativePath(Content.Path, RootPath);
-            return Task.FromResult(true);
-        }
+        //private int _settingsIndex;
+        //private ContentNode[] _settings;
+        //public Task<bool> ReadSettingsAsync_DELETE(CancellationToken cancel = default)
+        //{
+        //    _settings ??= _tree.Values.Where(x => x.Type == "Settings").ToArray();
+        //    if (_settingsIndex >= _settings.Length)
+        //        return Task.FromResult(false);
+        //    Content = _settings[_settingsIndex++].Clone();
+        //    RelativePath = ContentPath.GetRelativePath(Content.Path, RootPath);
+        //    return Task.FromResult(true);
+        //}
 
-        private int _aspectIndex;
-        private ContentNode[] _aspects;
-        public Task<bool> ReadAspectsAsync(CancellationToken cancel = default)
+        //private int _aspectIndex;
+        //private ContentNode[] _aspects;
+        //public Task<bool> ReadAspectsAsync_DELETE(CancellationToken cancel = default)
+        //{
+        //    _aspects ??= _tree.Values.Where(x => x.Type == "Aspect").ToArray();
+        //    if (_aspectIndex >= _aspects.Length)
+        //        return Task.FromResult(false);
+        //    Content = _aspects[_aspectIndex++].Clone();
+        //    RelativePath = ContentPath.GetRelativePath(Content.Path, RootPath);
+        //    return Task.FromResult(true);
+        //}
+
+        public Task<bool> ReadSubTreeAsync(string relativePath, CancellationToken cancel = default)
         {
-            _aspects ??= _tree.Values.Where(x => x.Type == "Aspect").ToArray();
-            if (_aspectIndex >= _aspects.Length)
-                return Task.FromResult(false);
-            Content = _aspects[_aspectIndex++].Clone();
-            RelativePath = ContentPath.GetRelativePath(Content.Path, RootPath);
-            return Task.FromResult(true);
+            throw new System.NotImplementedException();
         }
 
         private ContentNode[] _currentBlock;
         private int _currentBlockIndex;
-        public Task<bool> ReadAllAsync(CancellationToken cancel = default)
+        public Task<bool> ReadAllAsync(string[] contentsWithoutChildren, CancellationToken cancel = default)
         {
-            //UNDONE: Implement ReadAllAsync methods well.
+            if (contentsWithoutChildren != null && contentsWithoutChildren.Length != 0)
+                //TODO Process "contentsWithoutChildren" parameter
+                throw new NotImplementedException();
 
             //TODO: Raise performance: read the next block (background)
             if (_currentBlock == null || _currentBlockIndex >= _currentBlock.Length)
             {
-                _currentBlock = QueryBlock(RootPath, _blockIndex * _blockSize, _blockSize);
+                _currentBlock = QueryBlock(RepositoryRootPath, _blockIndex * _blockSize, _blockSize);
                 _blockIndex++;
                 _currentBlockIndex = 0;
                 if (_currentBlock == null || _currentBlock.Length == 0)
@@ -82,22 +93,19 @@ namespace SenseNet.IO.Tests.Implementations
             }
 
             Content = _currentBlock[_currentBlockIndex++].Clone();
-            RelativePath = ContentPath.GetRelativePath(Content.Path, RootPath);
+            RelativePath = ContentPath.GetRelativePath(Content.Path, RepositoryRootPath);
 
             return Task.FromResult(true);
         }
 
-        public void SetReferenceUpdateTasks(IEnumerable<TransferTask> tasks, int taskCount) { }
-        public Task<bool> ReadByReferenceUpdateTasksAsync(CancellationToken cancel) { return Task.FromResult(false); }
+        public void SetReferenceUpdateTasks(IEnumerable<TransferTask> tasks, int taskCount) { throw new NotImplementedException(); }
+        public Task<bool> ReadByReferenceUpdateTasksAsync(CancellationToken cancel) { throw new NotImplementedException(); }
 
         private ContentNode[] QueryBlock(string rootPath, int skip, int top)
         {
             var rootPathTrailing = rootPath + "/";
             var contents = _tree.Keys
                 .Where(x => x.StartsWith(rootPathTrailing) || x == rootPath)
-                .Where(x => !x.StartsWith("/Root/System/Schema/ContentTypes/"))
-                .Where(x => !x.StartsWith("/Root/System/Schema/Aspects/"))
-                .Where(x => !x.StartsWith("/Root/System/Settings/"))
                 .OrderBy(x => x)
                 .Skip(skip)
                 .Take(top)

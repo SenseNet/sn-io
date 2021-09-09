@@ -4,11 +4,12 @@ using System.Threading.Tasks;
 
 namespace SenseNet.IO
 {
-    interface IContentFlow
+    public interface IContentFlow
     {
         IContentReader Reader { get; }
         IContentWriter Writer { get; }
 
         Task TransferAsync(IProgress<TransferState> progress, CancellationToken cancel = default);
+        void WriteLogHead();
     }
 }

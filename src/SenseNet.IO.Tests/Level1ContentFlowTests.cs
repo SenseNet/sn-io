@@ -3,13 +3,23 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using SenseNet.IO.Implementations;
 using SenseNet.IO.Tests.Implementations;
 
 namespace SenseNet.IO.Tests
 {
     [TestClass]
-    public class ContentFlowTests : TestBase
+    public class Level1ContentFlowTests : TestBase
     {
+        private class ContentFlowMock : Level1ContentFlow
+        {
+            public ContentFlowMock(IContentReader reader, IContentWriter writer) : base(reader, writer) { }
+            protected override void WriteLog(string entry, bool head = false) { }
+            protected override void WriteTask(WriterState state) { }
+            protected override int LoadTaskCount() { return 0; }
+            protected override IEnumerable<TransferTask> LoadTasks() { return new TransferTask[0]; }
+        }
+
         /* ============================================================================ SIMPLE TESTS */
 
         [TestMethod]
@@ -30,7 +40,7 @@ namespace SenseNet.IO.Tests
             var targetTree = new Dictionary<string, ContentNode>();
 
             // ACTION
-            var flow = new ContentFlow(
+            var flow = new ContentFlowMock(
                 new TestContentReader("/Root", sourceTree),
                 new TestContentWriter(targetTree));
             var progress = new TestProgress();
@@ -51,7 +61,7 @@ namespace SenseNet.IO.Tests
             });
 
             // ACTION
-            var flow = new ContentFlow(
+            var flow = new ContentFlowMock(
                 new TestCQReader("/Root/Node-01/Node-08", 4, sourceTree),
                 new TestContentWriter(targetTree));
             var progress = new TestProgress();
@@ -68,7 +78,7 @@ namespace SenseNet.IO.Tests
             var targetTree = new Dictionary<string, ContentNode>();
 
             // ACTION
-            var flow = new ContentFlow(
+            var flow = new ContentFlowMock(
                 new TestCQReader("/Root", 4, sourceTree),
                 new TestContentWriter(targetTree));
             var progress = new TestProgress();
@@ -95,7 +105,7 @@ namespace SenseNet.IO.Tests
             });
 
             // ACTION
-            var flow = new ContentFlow(
+            var flow = new ContentFlowMock(
                 new TestCQReader("/Root/aa", 5, sourceTree),
                 new TestContentWriter(targetTree));
             var progress = new TestProgress();
@@ -117,7 +127,7 @@ namespace SenseNet.IO.Tests
             });
 
             // ACTION
-            var flow = new ContentFlow(
+            var flow = new ContentFlowMock(
                 new TestCQReader("/Root/Node-01/Node-02/Node-03", 4, sourceTree),
                 new TestContentWriter(targetTree, "/Root/Node-99"));
             await flow.TransferAsync(new TestProgress());
@@ -142,7 +152,7 @@ namespace SenseNet.IO.Tests
             });
 
             // ACTION
-            var flow = new ContentFlow(
+            var flow = new ContentFlowMock(
                 new TestCQReader("/Root/Node-01/Node-02/Node-03", 4, sourceTree),
                 new TestContentWriter(targetTree, "/Root/Node-99", "Renamed"));
             await flow.TransferAsync(new TestProgress());
@@ -166,7 +176,7 @@ namespace SenseNet.IO.Tests
             var targetTree = new Dictionary<string, ContentNode>();
 
             // ACTION
-            var flow = new ContentFlow(
+            var flow = new ContentFlowMock(
                 new TestCQReader("/Root", 4, sourceTree),
                 new TestContentWriter(targetTree));
             var progress = new TestProgress();
@@ -175,18 +185,7 @@ namespace SenseNet.IO.Tests
             // ASSERT
             var actual = string.Join("\r\n", progress.Paths);
             Assert.AreEqual(sourceTree.Count, targetTree.Count);
-            var expected = @"System/Schema/ContentTypes/ContentType-1
-System/Schema/ContentTypes/ContentType-1/ContentType-3
-System/Schema/ContentTypes/ContentType-1/ContentType-4
-System/Schema/ContentTypes/ContentType-1/ContentType-5
-System/Schema/ContentTypes/ContentType-1/ContentType-5/ContentType-6
-System/Schema/ContentTypes/ContentType-2
-System/Settings/Settings-1.settings
-System/Settings/Settings-2.settings
-System/Settings/Settings-3.settings
-System/Schema/Aspects/Aspect-1
-System/Schema/Aspects/Aspect-2
-
+            var expected = @"
 (apps)
 Content
 Content/Workspace-1
@@ -200,8 +199,19 @@ IMS
 System
 System/Schema
 System/Schema/Aspects
+System/Schema/Aspects/Aspect-1
+System/Schema/Aspects/Aspect-2
 System/Schema/ContentTypes
+System/Schema/ContentTypes/ContentType-1
+System/Schema/ContentTypes/ContentType-1/ContentType-3
+System/Schema/ContentTypes/ContentType-1/ContentType-4
+System/Schema/ContentTypes/ContentType-1/ContentType-5
+System/Schema/ContentTypes/ContentType-1/ContentType-5/ContentType-6
+System/Schema/ContentTypes/ContentType-2
 System/Settings
+System/Settings/Settings-1.settings
+System/Settings/Settings-2.settings
+System/Settings/Settings-3.settings
 ";
             Assert.AreEqual(expected.TrimEnd(), actual);
         }
@@ -212,7 +222,7 @@ System/Settings
             var targetTree = new Dictionary<string, ContentNode>();
 
             // ACTION
-            var flow = new ContentFlow(
+            var flow = new ContentFlowMock(
                 new TestCQReader("/Root/Content", 4, sourceTree),
                 new TestContentWriter(targetTree));
             var progress = new TestProgress();
@@ -239,7 +249,7 @@ Workspace-2
             var targetTree = new Dictionary<string, ContentNode>();
 
             // ACTION
-            var flow = new ContentFlow(
+            var flow = new ContentFlowMock(
                 new TestCQReader("/Root/System", 4, sourceTree),
                 new TestContentWriter(targetTree));
             var progress = new TestProgress();
@@ -248,22 +258,22 @@ Workspace-2
             // ASSERT
             var actual = string.Join("\r\n", progress.Paths);
             //Assert.AreEqual(sourceTree.Count, targetTree.Count);
-            var expected = @"Schema/ContentTypes/ContentType-1
+            var expected = @"
+Schema
+Schema/Aspects
+Schema/Aspects/Aspect-1
+Schema/Aspects/Aspect-2
+Schema/ContentTypes
+Schema/ContentTypes/ContentType-1
 Schema/ContentTypes/ContentType-1/ContentType-3
 Schema/ContentTypes/ContentType-1/ContentType-4
 Schema/ContentTypes/ContentType-1/ContentType-5
 Schema/ContentTypes/ContentType-1/ContentType-5/ContentType-6
 Schema/ContentTypes/ContentType-2
+Settings
 Settings/Settings-1.settings
 Settings/Settings-2.settings
 Settings/Settings-3.settings
-Schema/Aspects/Aspect-1
-Schema/Aspects/Aspect-2
-
-Schema
-Schema/Aspects
-Schema/ContentTypes
-Settings
 ";
             Assert.AreEqual(expected.TrimEnd(), actual);
         }
@@ -274,7 +284,7 @@ Settings
             var targetTree = new Dictionary<string, ContentNode>();
 
             // ACTION
-            var flow = new ContentFlow(
+            var flow = new ContentFlowMock(
                 new TestCQReader("/Root/System/Schema", 4, sourceTree),
                 new TestContentWriter(targetTree));
             var progress = new TestProgress();
@@ -283,17 +293,17 @@ Settings
             // ASSERT
             var actual = string.Join("\r\n", progress.Paths);
             //Assert.AreEqual(sourceTree.Count, targetTree.Count);
-            var expected = @"ContentTypes/ContentType-1
+            var expected = @"
+Aspects
+Aspects/Aspect-1
+Aspects/Aspect-2
+ContentTypes
+ContentTypes/ContentType-1
 ContentTypes/ContentType-1/ContentType-3
 ContentTypes/ContentType-1/ContentType-4
 ContentTypes/ContentType-1/ContentType-5
 ContentTypes/ContentType-1/ContentType-5/ContentType-6
 ContentTypes/ContentType-2
-Aspects/Aspect-1
-Aspects/Aspect-2
-
-Aspects
-ContentTypes
 ";
             Assert.AreEqual(expected.TrimEnd(), actual);
         }
@@ -304,7 +314,7 @@ ContentTypes
             var targetTree = new Dictionary<string, ContentNode>();
 
             // ACTION
-            var flow = new ContentFlow(
+            var flow = new ContentFlowMock(
                 new TestCQReader("/Root/System/Settings", 4, sourceTree),
                 new TestContentWriter(targetTree));
             var progress = new TestProgress();
@@ -313,7 +323,7 @@ ContentTypes
             // ASSERT
             var actual = string.Join(",", progress.Paths);
             //Assert.AreEqual(sourceTree.Count, targetTree.Count);
-            var expected = @"Settings-1.settings,Settings-2.settings,Settings-3.settings,";
+            var expected = @",Settings-1.settings,Settings-2.settings,Settings-3.settings";
             Assert.AreEqual(expected.TrimEnd(), actual);
         }
 
@@ -387,12 +397,6 @@ ContentTypes
         {
             public List<double> Log { get; } = new List<double>();
             public List<string> Paths { get; } = new List<string>();
-
-            public void Report((string Path, double Percent) value)
-            {
-                Log.Add(value.Percent);
-                Paths.Add(value.Path);
-            }
 
             public void Report(TransferState value)
             {
