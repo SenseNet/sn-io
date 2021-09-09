@@ -98,6 +98,9 @@ namespace SenseNet.IO.Implementations
                 if (firstContent)
                 {
                     firstContent = false;
+                    if (relativePath == "" && Writer.RootName != null)
+                        Rename(Reader.Content, _rootName);
+
                     if (Reader.Content.Name == "Aspects" && Reader.Content.Type == "SystemFolder")
                         continue;
                 }
@@ -122,6 +125,9 @@ namespace SenseNet.IO.Implementations
                 if (firstContent)
                 {
                     firstContent = false;
+                    if (relativePath == "" && Writer.RootName != null)
+                        Rename(Reader.Content, _rootName);
+
                     if (Reader.Content.Name == "Settings" && Reader.Content.Type == "SystemFolder")
                         continue;
                 }
