@@ -98,7 +98,7 @@ namespace SenseNet.IO.CLI
             //var writer = new FsWriter(@"D:\dev\_sn-io-test\FsWriter");
 
             //var reader = new FsReader(@"D:\dev\_sn-io-test\FsReader\Root\GyebiTesztel");
-            //var writer = new FsWriter(@"D:\dev\_sn-io-test\FsWriter", "/Root", "XXX");
+            //var writer = new FsWriter(@"D:\dev\_sn-io-test\FsWriter\Root", "XXX");
 
             /* =================================================================================== TEST CASES */
 
@@ -107,8 +107,8 @@ namespace SenseNet.IO.CLI
             //var writer = new FsWriter(@"D:\dev\_sn-io-test\localhost_44362_Settings");
 
             // Export Settings to Settings2
-            //var reader = new RepositoryTreeReader("https://localhost:44362", "/Root/System/Settings", 10);
-            //var writer = new FsWriter(@"D:\dev\_sn-io-test\localhost_44362_Settings", null, "Settings2");
+            var reader = new RepositoryTreeReader("https://localhost:44362", "/Root/System/Settings", 10);
+            var writer = new FsWriter(@"D:\dev\_sn-io-test\localhost_44362_Settings", "Settings2");
 
             // Export All
             //var reader = new RepositoryTreeReader("https://localhost:44362", "/Root", 10);
@@ -118,17 +118,21 @@ namespace SenseNet.IO.CLI
             //var reader = new FsReader(@"D:\dev\_sn-io-test\localhost_44362_Settings\Settings");
             //var writer = new RepositoryWriter("https://localhost:44362", "/Root/System");
 
+            // Import \Root\System\Settings
+            //var reader = new FsReader(@"D:\dev\_sn-io-test\localhost_44362\Root\System\Settings");
+            //var writer = new RepositoryWriter("https://localhost:44362", "/Root/System");
+
             // Import Settings2 to Settings
             //var reader = new FsReader(@"D:\dev\_sn-io-test\localhost_44362_Settings\Settings2");
             //var writer = new RepositoryWriter("https://localhost:44362", "/Root/System", "Settings");
 
             // Import All
-            var reader = new FsReader(@"D:\dev\_sn-io-test\localhost_44362\Root");
-            var writer = new RepositoryWriter("https://localhost:44362");
+            //var reader = new FsReader(@"D:\dev\_sn-io-test\localhost_44362\Root");
+            //var writer = new RepositoryWriter("https://localhost:44362");
 
             // Copy Settings to Settings3
             //var reader = new FsReader(@"D:\dev\_sn-io-test\localhost_44362_Settings\Settings");
-            //var writer = new FsWriter(@"D:\dev\_sn-io-test\localhost_44362_Settings", null, "Settings3");
+            //var writer = new FsWriter(@"D:\dev\_sn-io-test\localhost_44362_Settings", "Settings3");
 
             // Copy All
             //var reader = new FsReader(@"D:\dev\_sn-io-test\localhost_44362\Root");
