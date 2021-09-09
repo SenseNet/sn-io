@@ -131,13 +131,16 @@ namespace SenseNet.IO.Implementations
         private int _currentBlockIndex;
         public async Task<bool> ReadAllAsync(string[] contentsWithoutChildren, CancellationToken cancel = default)
         {
-            //UNDONE:!!!!!!!!! Process "contentsWithoutChildren" parameter
+            if (contentsWithoutChildren != null && contentsWithoutChildren.Length != 0)
+                //UNDONE:!!!!!!!!! Process "contentsWithoutChildren" parameter
+                throw new NotImplementedException();
+
             await InitializeAsync();
 
             //TODO: Raise performance: read the next block (background)
             if (_currentBlock == null || _currentBlockIndex >= _currentBlock.Length)
             {
-                _currentBlock = await QueryBlockAsync(RepositoryRootPath, _blockIndex * _blockSize, _blockSize, true);
+                _currentBlock = await QueryBlockAsync(RepositoryRootPath, _blockIndex * _blockSize, _blockSize, false);
                 _blockIndex++;
                 _currentBlockIndex = 0;
                 if (_currentBlock == null || _currentBlock.Length == 0)
