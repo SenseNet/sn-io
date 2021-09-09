@@ -20,7 +20,7 @@ namespace SenseNet.IO.Tests
                 Func<string, bool> isDirectoryExists,
                 Action<string> createDirectory,
                 Func<string, bool, TextWriter> createTextWriter,
-                Func<string, FileMode, Stream> createBinaryStream) : base(outputDirectory, containerPath, rootName)
+                Func<string, FileMode, Stream> createBinaryStream) : base(outputDirectory, rootName)
             {
                 _isDirectoryExists = isDirectoryExists;
                 _createDirectory = createDirectory;

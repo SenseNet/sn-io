@@ -10,13 +10,12 @@ namespace SenseNet.IO.Implementations
     public class FsWriter : IContentWriter
     {
         public string OutputDirectory { get; }
-        public string ContainerPath { get; }
+        public string ContainerPath => "/";
         public string RootName { get; }
 
-        public FsWriter(string outputDirectory, string containerPath = null, string rootName = null)
+        public FsWriter(string outputDirectory, string rootName = null)
         {
             OutputDirectory = outputDirectory;
-            ContainerPath = containerPath;
             RootName = rootName;
         }
 
