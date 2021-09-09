@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -20,7 +17,7 @@ namespace SenseNet.IO.Implementations
             Writer = writer;
         }
 
-        private int _contentCount = 0;
+        private int _contentCount;
         private string _currentBatchAction;
         private int _errorCount;
         private string _rootName;
@@ -185,9 +182,9 @@ namespace SenseNet.IO.Implementations
             var state = await Writer.WriteAsync(writerPath, Reader.Content, cancel);
             state.ReaderPath = readerPath;
             state.WriterPath = writerPath;
-            Progress(readerPath, ref _contentCount, state, updateReferences, progress);
+            Progress(ref _contentCount, state, updateReferences, progress);
         }
-        private void Progress(string readerPath, ref int count, WriterState state, bool updateReferences, IProgress<TransferState> progress = null)
+        private void Progress(ref int count, WriterState state, bool updateReferences, IProgress<TransferState> progress = null)
         {
             if (state.Action == WriterAction.Failed)
                 _errorCount++;
@@ -203,37 +200,6 @@ namespace SenseNet.IO.Implementations
                 UpdatingReferences = updateReferences,
                 State = state,
             });
-        }
-
-
-
-
-        private class InitialContent : IContent
-        {
-            public string[] FieldNames { get; } = new string[0];
-
-            public object this[string fieldName]
-            {
-                get => null;
-                set => throw new NotImplementedException();
-            }
-
-            public string Name { get; set; }
-            public string Path { get; set; }
-            public string Type { get; }
-            public PermissionInfo Permissions { get; set; }
-
-            public InitialContent(string path, string name, string type)
-            {
-                Path = path;
-                Name = name;
-                Type = type;
-            }
-
-            public Task<Attachment[]> GetAttachmentsAsync()
-            {
-                return Task.FromResult(Array.Empty<Attachment>());
-            }
         }
 
         private readonly List<string> _writtenContainers = new List<string>();
