@@ -20,11 +20,11 @@ namespace SenseNet.IO
             return flow;
         }
 
-        /* ========================================================================== LOGGING */
-
         public abstract IContentReader Reader { get; }
         public abstract IContentWriter Writer { get; }
         public abstract Task TransferAsync(IProgress<TransferState> progress, CancellationToken cancel = default);
+
+        /* ========================================================================== LOGGING */
 
         public void WriteLogHead()
         {
