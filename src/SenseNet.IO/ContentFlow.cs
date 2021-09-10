@@ -16,7 +16,6 @@ namespace SenseNet.IO
             var flow = writer is ISnRepositoryWriter repoWriter
                 ? (IContentFlow)new Level5ContentFlow(reader, repoWriter)
                 : new Level1ContentFlow(reader, writer);
-            flow.WriteLogHead();
             return flow;
         }
 
@@ -26,7 +25,7 @@ namespace SenseNet.IO
 
         /* ========================================================================== LOGGING */
 
-        public void WriteLogHead()
+        protected void WriteLogHead()
         {
             string source;
             string target;
@@ -85,6 +84,11 @@ namespace SenseNet.IO
             WriteLog($"    to  : {target}", true);
             WriteLog(string.Empty, true);
             WriteLog("START");
+        }
+
+        protected void WriteSummaryToLog(int estimatedCount, int transferredCount, int errorCount, TimeSpan duration)
+        {
+            WriteLog($"FINISH: transferred contents: {transferredCount}/{estimatedCount}, errors: {errorCount}, duration: {duration}");
         }
 
         /* ========================================================================== TOOLS */

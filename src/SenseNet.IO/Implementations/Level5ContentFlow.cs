@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -23,6 +24,9 @@ namespace SenseNet.IO.Implementations
         private string _rootName;
         public override async Task TransferAsync(IProgress<TransferState> progress, CancellationToken cancel = default)
         {
+            WriteLogHead();
+            var timer = Stopwatch.StartNew();
+
             _rootName = Writer.RootName ?? Reader.RootName;
             var firstTargetPath = ContentPath.Combine(Writer.ContainerPath, _rootName);
 
@@ -66,6 +70,9 @@ namespace SenseNet.IO.Implementations
             await CopyAllAsync(subTreePaths, progress, cancel);
 
             await UpdateReferencesAsync(progress, cancel);
+
+            timer.Stop();
+            WriteSummaryToLog(Reader.EstimatedCount, _contentCount, _errorCount, timer.Elapsed);
         }
         private async Task CopyContentTypesAsync(string relativePath, IProgress<TransferState> progress, CancellationToken cancel)
         {

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -20,8 +21,10 @@ namespace SenseNet.IO.Implementations
         private string _rootName;
         public override async Task TransferAsync(IProgress<TransferState> progress, CancellationToken cancel = default)
         {
-            _rootName = Writer.RootName ?? Reader.RootName;
+            WriteLogHead();
+            var timer = Stopwatch.StartNew();
 
+            _rootName = Writer.RootName ?? Reader.RootName;
             if (await Reader.ReadAllAsync(new string[0], cancel))
             {
                 if (Writer.RootName != null)
@@ -36,6 +39,9 @@ namespace SenseNet.IO.Implementations
                     await WriteAsync(progress, false, cancel);
                 }
             }
+
+            timer.Stop();
+            WriteSummaryToLog(Reader.EstimatedCount, _contentCount, _errorCount, timer.Elapsed);
         }
 
         private async Task WriteAsync(IProgress<TransferState> progress, bool updateReferences, CancellationToken cancel = default)
