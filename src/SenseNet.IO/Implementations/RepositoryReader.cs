@@ -11,7 +11,7 @@ namespace SenseNet.IO.Implementations
     /// <summary>
     /// Reads a subtree of a sensenet repository order by path.
     /// </summary>
-    public class RepositoryTreeReader : IContentReader
+    public class RepositoryReader : IContentReader
     {
         private readonly int _blockSize;
         private int _blockIndex;
@@ -23,7 +23,7 @@ namespace SenseNet.IO.Implementations
         public IContent Content { get; private set; }
         public string RelativePath { get; private set; }
 
-        public RepositoryTreeReader(string url, [NotNull] string rootPath, int? blockSize = null)
+        public RepositoryReader(string url, [NotNull] string rootPath, int? blockSize = null)
         {
             Url = url;
             RepositoryRootPath = rootPath;

@@ -33,7 +33,7 @@ namespace SenseNet.IO
             var readFromDisk = false;
             var writeToRepo = false;
             var writeToDisk = false;
-            if (Reader is RepositoryTreeReader repoReader)
+            if (Reader is RepositoryReader repoReader)
             {
                 readFromRepo = true;
                 source = $"{repoReader.Url} ... {repoReader.RepositoryRootPath}";

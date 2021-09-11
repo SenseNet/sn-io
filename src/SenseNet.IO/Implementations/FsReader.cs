@@ -20,10 +20,6 @@ namespace SenseNet.IO.Implementations
         public IContent Content => _content;
         public string RelativePath => _content.Path;
 
-        /// <summary>
-        /// Initializes an FsReader instance.
-        /// </summary>
-        /// <param name="fsRootPath">Parent of "/Root" of repository.</param>
         public FsReader(string fsRootPath)
         {
             ReaderRootPath = fsRootPath;

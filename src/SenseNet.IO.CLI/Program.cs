@@ -91,7 +91,7 @@ namespace SenseNet.IO.CLI
 
         static async Task Main()
         {
-            //var reader = new RepositoryTreeReader("https://localhost:44362", "/Root", 10);
+            //var reader = new RepositoryReader("https://localhost:44362", "/Root", 10);
             //var writer = new FsWriter(@"D:\dev\_sn-io-test\localhost_44362_(export)");
 
             //var reader = new FsReader(@"D:\dev\_sn-io-test\FsReader\Root");
@@ -103,20 +103,20 @@ namespace SenseNet.IO.CLI
             /* =================================================================================== TEST CASES */
 
             // Export Settings
-            //var reader = new RepositoryTreeReader("https://localhost:44362", "/Root/System/Settings", 10);
+            //var reader = new RepositoryReader("https://localhost:44362", "/Root/System/Settings", 10);
             //var writer = new FsWriter(@"D:\dev\_sn-io-test\localhost_44362_Settings");
 
             // Export Settings to Settings2
-            //var reader = new RepositoryTreeReader("https://localhost:44362", "/Root/System/Settings", 10);
+            //var reader = new RepositoryReader("https://localhost:44362", "/Root/System/Settings", 10);
             //var writer = new FsWriter(@"D:\dev\_sn-io-test\localhost_44362_Settings", "Settings2");
 
             // Export All
-            //var reader = new RepositoryTreeReader("https://localhost:44362", "/Root", 10);
+            //var reader = new RepositoryReader("https://localhost:44362", "/Root", 10);
             //var writer = new FsWriter(@"D:\dev\_sn-io-test\localhost_44362");
 
             // Import Settings
-            //var reader = new FsReader(@"D:\dev\_sn-io-test\localhost_44362_Settings\Settings");
-            //var writer = new RepositoryWriter("https://localhost:44362", "/Root/System");
+            var reader = new FsReader(@"D:\dev\_sn-io-test\localhost_44362_Settings\Settings");
+            var writer = new RepositoryWriter("https://localhost:44362", "/Root/System");
 
             // Import \Root\System\Settings
             //var reader = new FsReader(@"D:\dev\_sn-io-test\localhost_44362\Root\System\Settings");
@@ -127,8 +127,8 @@ namespace SenseNet.IO.CLI
             //var writer = new RepositoryWriter("https://localhost:44362", "/Root/System", "Settings");
 
             // Import All
-            var reader = new FsReader(@"D:\dev\_sn-io-test\localhost_44362\Root");
-            var writer = new RepositoryWriter("https://localhost:44362");
+            //var reader = new FsReader(@"D:\dev\_sn-io-test\localhost_44362\Root");
+            //var writer = new RepositoryWriter("https://localhost:44362");
 
             // Copy Settings to Settings3
             //var reader = new FsReader(@"D:\dev\_sn-io-test\localhost_44362_Settings\Settings");
@@ -138,7 +138,7 @@ namespace SenseNet.IO.CLI
             //var reader = new FsReader(@"D:\dev\_sn-io-test\localhost_44362\Root");
             //var writer = new FsWriter(@"D:\dev\_sn-io-test\localhost_44362_backup");
 
-            /* =================================================================================== TEST CASES */
+            /* =================================================================================== */
 
             _displayLevel = DisplayLevel.Verbose;
             var flow = ContentFlow.Create(reader, writer);
