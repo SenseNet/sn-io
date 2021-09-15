@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Options;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SenseNet.IO.Implementations;
 
@@ -20,7 +21,8 @@ namespace SenseNet.IO.Tests
                 Func<string, bool> isDirectoryExists,
                 Action<string> createDirectory,
                 Func<string, bool, TextWriter> createTextWriter,
-                Func<string, FileMode, Stream> createBinaryStream) : base(outputDirectory, rootName)
+                Func<string, FileMode, Stream> createBinaryStream) : base(Options.Create(
+                new FsWriterArgs { Path = outputDirectory, Name = rootName}))
             {
                 _isDirectoryExists = isDirectoryExists;
                 _createDirectory = createDirectory;

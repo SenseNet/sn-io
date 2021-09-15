@@ -7,11 +7,27 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using IdentityModel;
+using Microsoft.Extensions.Options;
 
 namespace SenseNet.IO.Implementations
 {
+    public class FsReaderArgs
+    {
+        public string Path { get; set; }
+        public void RewriteSettings(FsReaderArgs settings)
+        {
+            if (Path != null)
+                settings.Path = Path;
+        }
+        public string ParamsToDisplay()
+        {
+            return $"Path: {Path}";
+        }
+    }
+
     public class FsReader : IContentReader
     {
+        private readonly FsReaderArgs _args;
         private FsContent _content; // Current IContent
         public string ReaderRootPath { get; }
 
@@ -20,10 +36,13 @@ namespace SenseNet.IO.Implementations
         public IContent Content => _content;
         public string RelativePath => _content.Path;
 
-        public FsReader(string fsRootPath)
+        public FsReader(IOptions<FsReaderArgs> args)
         {
-            ReaderRootPath = fsRootPath;
-            RootName = ContentPath.GetName(fsRootPath);
+            if (args == null)
+                throw new ArgumentNullException(nameof(args));
+            _args = args.Value;
+            ReaderRootPath = _args.Path;
+            RootName = ContentPath.GetName(_args.Path);
         }
 
         private bool _initialized;

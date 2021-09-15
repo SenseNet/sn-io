@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Options;
 using SenseNet.IO.Implementations;
 
 namespace SenseNet.IO.CLI
@@ -91,52 +92,79 @@ namespace SenseNet.IO.CLI
 
         static async Task Main()
         {
-            //var reader = new RepositoryReader("https://localhost:44362", "/Root", 10);
-            //var writer = new FsWriter(@"D:\dev\_sn-io-test\localhost_44362_(export)");
+            IContentReader reader;
+            IContentWriter writer;
 
-            //var reader = new FsReader(@"D:\dev\_sn-io-test\FsReader\Root");
-            //var writer = new FsWriter(@"D:\dev\_sn-io-test\FsWriter");
+            reader = new RepositoryReader(Options.Create(
+                new RepositoryReaderArgs { Url = "https://localhost:44362", Path = "/Root", BlockSize = 10}));
+            writer = new FsWriter(Options.Create(
+                new FsWriterArgs{ Path = @"D:\dev\_sn-io-test\localhost_44362_(export)" }));
 
-            //var reader = new FsReader(@"D:\dev\_sn-io-test\FsReader\Root\GyebiTesztel");
-            //var writer = new FsWriter(@"D:\dev\_sn-io-test\FsWriter\Root", "XXX");
+            reader = new FsReader(Options.Create(
+                new FsReaderArgs { Path = @"D:\dev\_sn-io-test\FsReader\Root" }));
+            writer = new FsWriter(Options.Create(
+                new FsWriterArgs { Path = @"D:\dev\_sn-io-test\FsWriter" }));
+
+            reader = new FsReader(Options.Create(
+                new FsReaderArgs { Path = @"D:\dev\_sn-io-test\FsReader\Root\GyebiTesztel" }));
+            writer = new FsWriter(Options.Create(
+                new FsWriterArgs { Path = @"D:\dev\_sn-io-test\FsWriter\Root", Name= "XXX" }));
 
             /* =================================================================================== TEST CASES */
 
             // Export Settings
-            //var reader = new RepositoryReader("https://localhost:44362", "/Root/System/Settings", 10);
-            //var writer = new FsWriter(@"D:\dev\_sn-io-test\localhost_44362_Settings");
+            reader = new RepositoryReader(Options.Create(
+                new RepositoryReaderArgs { Url = "https://localhost:44362", Path = "/Root/System/Settings", BlockSize = 10}));
+            writer = new FsWriter(Options.Create(
+                new FsWriterArgs { Path = @"D:\dev\_sn-io-test\localhost_44362_Settings" }));
 
             // Export Settings to Settings2
-            //var reader = new RepositoryReader("https://localhost:44362", "/Root/System/Settings", 10);
-            //var writer = new FsWriter(@"D:\dev\_sn-io-test\localhost_44362_Settings", "Settings2");
+            reader = new RepositoryReader(Options.Create(
+                new RepositoryReaderArgs { Url = "https://localhost:44362", Path = "/Root/System/Settings", BlockSize = 10}));
+            writer = new FsWriter(Options.Create(
+                new FsWriterArgs { Path = @"D:\dev\_sn-io-test\localhost_44362_Settings", Name = "Settings2" }));
 
             // Export All
-            //var reader = new RepositoryReader("https://localhost:44362", "/Root", 10);
-            //var writer = new FsWriter(@"D:\dev\_sn-io-test\localhost_44362");
+            reader = new RepositoryReader(Options.Create(
+                new RepositoryReaderArgs { Url = "https://localhost:44362", Path = "/Root", BlockSize = 10}));
+            writer = new FsWriter(Options.Create(
+                new FsWriterArgs { Path = @"D:\dev\_sn-io-test\localhost_44362" }));
 
             // Import Settings
-            var reader = new FsReader(@"D:\dev\_sn-io-test\localhost_44362_Settings\Settings");
-            var writer = new RepositoryWriter("https://localhost:44362", "/Root/System");
+            reader = new FsReader(Options.Create(
+                new FsReaderArgs { Path = @"D:\dev\_sn-io-test\localhost_44362_Settings\Settings" }));
+            writer = new RepositoryWriter(Options.Create(
+                new RepositoryWriterArgs { Url = "https://localhost:44362", Path = "/Root/System"}));
 
             // Import \Root\System\Settings
-            //var reader = new FsReader(@"D:\dev\_sn-io-test\localhost_44362\Root\System\Settings");
-            //var writer = new RepositoryWriter("https://localhost:44362", "/Root/System");
+            reader = new FsReader(Options.Create(
+                new FsReaderArgs { Path = @"D:\dev\_sn-io-test\localhost_44362\Root\System\Settings" }));
+            writer = new RepositoryWriter(Options.Create(
+                new RepositoryWriterArgs { Url = "https://localhost:44362", Path = "/Root/System"}));
 
             // Import Settings2 to Settings
-            //var reader = new FsReader(@"D:\dev\_sn-io-test\localhost_44362_Settings\Settings2");
-            //var writer = new RepositoryWriter("https://localhost:44362", "/Root/System", "Settings");
+            reader = new FsReader(Options.Create(
+                new FsReaderArgs { Path = @"D:\dev\_sn-io-test\localhost_44362_Settings\Settings2" }));
+            writer = new RepositoryWriter(Options.Create(
+                new RepositoryWriterArgs { Url = "https://localhost:44362", Path = "/Root/System", Name = "Settings"}));
 
             // Import All
-            //var reader = new FsReader(@"D:\dev\_sn-io-test\localhost_44362\Root");
-            //var writer = new RepositoryWriter("https://localhost:44362");
+            reader = new FsReader(Options.Create(
+                new FsReaderArgs { Path = @"D:\dev\_sn-io-test\localhost_44362\Root" }));
+            writer = new RepositoryWriter(Options.Create(
+                new RepositoryWriterArgs { Url = "https://localhost:44362" }));
 
             // Copy Settings to Settings3
-            //var reader = new FsReader(@"D:\dev\_sn-io-test\localhost_44362_Settings\Settings");
-            //var writer = new FsWriter(@"D:\dev\_sn-io-test\localhost_44362_Settings", "Settings3");
+            reader = new FsReader(Options.Create(
+                new FsReaderArgs { Path = @"D:\dev\_sn-io-test\localhost_44362_Settings\Settings" }));
+            writer = new FsWriter(Options.Create(
+                new FsWriterArgs { Path = @"D:\dev\_sn-io-test\localhost_44362_Settings", Name = "Settings3" }));
 
             // Copy All
-            //var reader = new FsReader(@"D:\dev\_sn-io-test\localhost_44362\Root");
-            //var writer = new FsWriter(@"D:\dev\_sn-io-test\localhost_44362_backup");
+            reader = new FsReader(Options.Create(
+                new FsReaderArgs { Path = @"D:\dev\_sn-io-test\localhost_44362\Root" }));
+            writer = new FsWriter(Options.Create(
+                new FsWriterArgs { Path = @"D:\dev\_sn-io-test\localhost_44362_backup" }));
 
             /* =================================================================================== */
 

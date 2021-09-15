@@ -4,23 +4,48 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using SenseNet.Client;
 
 namespace SenseNet.IO.Implementations
 {
+    public class RepositoryWriterArgs
+    {
+        public string Url { get; set; }
+        public string Path { get; set; }
+        public string Name { get; set; }
+        public void RewriteSettings(RepositoryWriterArgs settings)
+        {
+            if (Url != null)
+                settings.Url = Url;
+            if (Path != null)
+                settings.Path = Path;
+            if (Name != null)
+                settings.Name = Name;
+        }
+        public string ParamsToDisplay()
+        {
+            return $"Url: {Url}, Path: {Path ?? "/"}{(Name == null ? string.Empty : $", Name: {Name}")}";
+        }
+    }
+
     public class RepositoryWriter : ISnRepositoryWriter
     {
+        private readonly RepositoryWriterArgs _args;
         public string Url;
         public string ContainerPath { get; }
         public string RootName { get; }
 
-        public RepositoryWriter(string url, string containerPath = null, string rootName = null)
+        public RepositoryWriter(IOptions<RepositoryWriterArgs> args)
         {
-            Url = url;
-            ContainerPath = containerPath ?? "/";
-            RootName = rootName;
+            if (args == null)
+                throw new ArgumentNullException(nameof(args));
+            _args = args.Value;
+            Url = _args.Url;
+            ContainerPath = _args.Path;
+            RootName = _args.Name;
             Initialize();
         }
 

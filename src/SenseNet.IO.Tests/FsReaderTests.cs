@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Options;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json.Linq;
 using SenseNet.IO.Implementations;
@@ -64,7 +65,7 @@ namespace SenseNet.IO.Tests
                 Func<string, bool> fsContentIsFileExists,
                 Func<string, TextReader> fsContentCreateStreamReader,
                 Func<string, FileMode, Stream> fsContentCreateFileStream
-                ) : base(fsRootPath)
+                ) : base(Options.Create(new FsReaderArgs { Path = fsRootPath }))
             {
                 _isFileExists = isFileExists;
                 _isDirectoryExists = isDirectoryExists;

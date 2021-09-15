@@ -4,15 +4,37 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Options;
 using SenseNet.Client;
 
 namespace SenseNet.IO.Implementations
 {
+    public class RepositoryReaderArgs
+    {
+        public string Url { get; set; }
+        public string Path { get; set; }
+        public int? BlockSize { get; set; }
+        public void RewriteSettings(RepositoryReaderArgs settings)
+        {
+            if (Url != null)
+                settings.Url = Url;
+            if (Path != null)
+                settings.Path = Path;
+            if (BlockSize != null)
+                settings.BlockSize = BlockSize;
+        }
+        public string ParamsToDisplay()
+        {
+            return $"Url: {Url}, Path: {Path}, BlockSize: {BlockSize}";
+        }
+    }
+
     /// <summary>
     /// Reads a subtree of a sensenet repository order by path.
     /// </summary>
     public class RepositoryReader : IContentReader
     {
+        private readonly RepositoryReaderArgs _args;
         private readonly int _blockSize;
         private int _blockIndex;
 
@@ -23,12 +45,15 @@ namespace SenseNet.IO.Implementations
         public IContent Content { get; private set; }
         public string RelativePath { get; private set; }
 
-        public RepositoryReader(string url, [NotNull] string rootPath, int? blockSize = null)
+        public RepositoryReader(IOptions<RepositoryReaderArgs> args)
         {
-            Url = url;
-            RepositoryRootPath = rootPath;
-            RootName = ContentPath.GetName(rootPath);
-            _blockSize = blockSize ?? 10;
+            if (args == null)
+                throw new ArgumentNullException(nameof(args));
+            _args = args.Value;
+            Url = _args.Url;
+            RepositoryRootPath = _args.Path;
+            RootName = ContentPath.GetName(_args.Path);
+            _blockSize = _args.BlockSize ?? 10;
         }
 
         private async Task InitializeAsync()
