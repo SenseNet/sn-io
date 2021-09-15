@@ -12,22 +12,11 @@ namespace SenseNet.IO.Implementations
     {
         public string Path { get; set; }
         public string Name { get; set; }
-        public void RewriteSettings(FsWriterArgs settings)
-        {
-            if (Path != null)
-                settings.Path = Path;
-            if (Name != null)
-                settings.Name = Name;
-        }
-        public string ParamsToDisplay()
-        {
-            return Name == null ? $"Path: {Path}" : $"Path: {Path}, Name: {Name}";
-        }
     }
 
     public class FsWriter : IContentWriter
     {
-        private FsWriterArgs _args;
+        public FsWriterArgs Args { get; }
         public string OutputDirectory { get; }
         public string ContainerPath => "/";
         public string RootName { get; }
@@ -36,9 +25,9 @@ namespace SenseNet.IO.Implementations
         {
             if (args == null)
                 throw new ArgumentNullException(nameof(args));
-            _args = args.Value;
-            OutputDirectory = _args.Path;
-            RootName = _args.Name;
+            Args = args.Value;
+            OutputDirectory = Args.Path;
+            RootName = Args.Name;
         }
 
         public async Task<WriterState> WriteAsync(string path, IContent content, CancellationToken cancel = default)

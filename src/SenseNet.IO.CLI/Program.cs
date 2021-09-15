@@ -1,11 +1,15 @@
 ﻿using System;
+using System.IO;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using SenseNet.IO.Implementations;
 
 namespace SenseNet.IO.CLI
 {
-    class Program
+    public class Program
     {
         /*
         private static int[] _source = new int[500];
@@ -90,6 +94,7 @@ namespace SenseNet.IO.CLI
         }
         */
 
+        /*
         static async Task Main()
         {
             IContentReader reader;
@@ -110,7 +115,7 @@ namespace SenseNet.IO.CLI
             writer = new FsWriter(Options.Create(
                 new FsWriterArgs { Path = @"D:\dev\_sn-io-test\FsWriter\Root", Name= "XXX" }));
 
-            /* =================================================================================== TEST CASES */
+            // =================================================================================== TEST CASES
 
             // Export Settings
             reader = new RepositoryReader(Options.Create(
@@ -166,7 +171,7 @@ namespace SenseNet.IO.CLI
             writer = new FsWriter(Options.Create(
                 new FsWriterArgs { Path = @"D:\dev\_sn-io-test\localhost_44362_backup" }));
 
-            /* =================================================================================== */
+            // ===================================================================================
 
             _displayLevel = DisplayLevel.Verbose;
             var flow = ContentFlow.Create(reader, writer);
@@ -177,6 +182,119 @@ namespace SenseNet.IO.CLI
 
             Console.WriteLine();
             Console.WriteLine("Done.");
+        }
+        */
+
+        private static async Task Main(string[] args)
+        {
+            //args = new[] { "COPY", "-SOURCE", @"D:\_sn-io-test\source", "-TARGET", @"D:\_sn-io-test", "target" };
+            //args = new[] { "EXPORT", "-SOURCE", "https://localhost1", "\"/Root/Content\"", "-TARGET", @"D:\_sn-io-test", "old-contents" };
+            //args = new[] { "EXPORT", "-SOURCE", "-PATH", "\"/Root/Content\"", "-TARGET", @"D:\_sn-io-test", "old-contents" };
+            args = new[] { "IMPORT", "-SOURCE", @"D:\_sn-io-test\old-contents", "-TARGET", "https://localhost1" };
+
+            var app = CreateApp(args);
+            await app.RunAsync(ShowProgress);
+
+            await Task.Delay(1000);
+
+            Console.WriteLine();
+            Console.WriteLine("Done.");
+        }
+
+        public static IoApp CreateApp(string[] args, Stream settingsFile = null)
+        {
+            var host = CreateHost(args, settingsFile);
+            var app = ActivatorUtilities.CreateInstance<IoApp>(host.Services);
+            return app;
+        }
+        public static IHost CreateHost(string[] args, Stream settingsFile = null)
+        {
+            var appArguments = new ArgumentParser().Parse(args);
+
+            var host = Host.CreateDefaultBuilder()
+                .ConfigureAppConfiguration((hostBuilderContext, configurationBuilder) =>
+                {
+                    configurationBuilder.SetBasePath(Directory.GetCurrentDirectory());
+                    if (settingsFile != null)
+                        configurationBuilder.AddJsonStream(settingsFile);
+                    else
+                        configurationBuilder.AddJsonFile("localhostContents.json");
+                    configurationBuilder
+                        .AddEnvironmentVariables()
+                        .AddCommandLine(args);
+                })
+                .ConfigureServices((hostBuilderContext, serviceCollection) =>
+                {
+                    switch (appArguments.Verb)
+                    {
+                        case Verb.Export:
+                            var exportArgs = (ExportArguments)appArguments;
+                            serviceCollection
+                                .AddSingleton<IContentReader, RepositoryReader>()
+                                .AddSingleton<IContentWriter, FsWriter>()
+                                // settings file
+                                .Configure<RepositoryReaderArgs>(hostBuilderContext.Configuration.GetSection("repositoryReader"))
+                                .Configure<FsWriterArgs>(hostBuilderContext.Configuration.GetSection("fsWriter"))
+                                // rewrite settings
+                                .Configure<RepositoryReaderArgs>(settings => exportArgs.ReaderArgs.RewriteSettings(settings))
+                                .Configure<FsWriterArgs>(settings => exportArgs.WriterArgs.RewriteSettings(settings))
+                                ;
+                            break;
+                        case Verb.Import:
+                            var importArgs = (ImportArguments)appArguments;
+                            serviceCollection
+                                      .AddSingleton<IContentReader, FsReader>()
+                                .AddSingleton<IContentWriter, RepositoryWriter>()
+                                // settings file
+                                .Configure<FsReaderArgs>(hostBuilderContext.Configuration.GetSection("fsReader"))
+                                .Configure<RepositoryWriterArgs>(hostBuilderContext.Configuration.GetSection("repositoryWriter"))
+                                // rewrite settings
+                                .Configure<FsReaderArgs>(settings => importArgs.ReaderArgs.RewriteSettings(settings))
+                                .Configure<RepositoryWriterArgs>(settings => importArgs.WriterArgs.RewriteSettings(settings))
+                                ;
+                            break;
+                        case Verb.Copy:
+                            var copyArgs = (CopyArguments)appArguments;
+                            serviceCollection
+                                           .AddSingleton<IContentReader, FsReader>()
+                                .AddSingleton<IContentWriter, FsWriter>()
+                                // settings file
+                                .Configure<FsReaderArgs>(hostBuilderContext.Configuration.GetSection("fsReader"))
+                                .Configure<FsWriterArgs>(hostBuilderContext.Configuration.GetSection("fsWriter"))
+                                // rewrite settings
+                                .Configure<FsReaderArgs>(settings => copyArgs.ReaderArgs.RewriteSettings(settings))
+                                .Configure<FsWriterArgs>(settings => copyArgs.WriterArgs.RewriteSettings(settings))
+                                ;
+                            break;
+                        case Verb.Sync:
+                            var syncArgs = (SyncArguments)appArguments;
+                            serviceCollection
+                                         .AddSingleton<IContentReader, RepositoryReader>()
+                                .AddSingleton<IContentWriter, RepositoryWriter>()
+                                // settings file
+                                .Configure<RepositoryReaderArgs>(hostBuilderContext.Configuration.GetSection("repositoryReader"))
+                                .Configure<RepositoryWriterArgs>(hostBuilderContext.Configuration.GetSection("repositoryWriter"))
+                                // rewrite settings
+                                .Configure<RepositoryReaderArgs>(settings => syncArgs.ReaderArgs.RewriteSettings(settings))
+                                .Configure<RepositoryWriterArgs>(settings => syncArgs.WriterArgs.RewriteSettings(settings))
+                                ;
+                            break;
+                        case Verb.Transfer:
+                            throw new NotSupportedException("'Transfer' is not supported in this version.");
+                        default:
+                            throw new ArgumentOutOfRangeException();
+                    }
+                })
+                .ConfigureLogging(loggingBuilder =>
+                {
+                    loggingBuilder
+                        .ClearProviders()
+                        .AddConsole()
+                        .SetMinimumLevel(LogLevel.Information);
+                })
+                .Build();
+
+            return host;
         }
 
         /* ========================================================================== Display progress */

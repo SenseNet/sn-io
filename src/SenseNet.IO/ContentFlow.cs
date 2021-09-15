@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -11,7 +12,7 @@ namespace SenseNet.IO
 {
     public abstract class ContentFlow : IContentFlow
     {
-        public static IContentFlow Create(IContentReader reader, IContentWriter writer)
+        public static IContentFlow Create([NotNull] IContentReader reader, [NotNull] IContentWriter writer)
         {
             var flow = writer is ISnRepositoryWriter repoWriter
                 ? (IContentFlow)new Level5ContentFlow(reader, repoWriter)

@@ -14,19 +14,6 @@ namespace SenseNet.IO.Implementations
         public string Url { get; set; }
         public string Path { get; set; }
         public int? BlockSize { get; set; }
-        public void RewriteSettings(RepositoryReaderArgs settings)
-        {
-            if (Url != null)
-                settings.Url = Url;
-            if (Path != null)
-                settings.Path = Path;
-            if (BlockSize != null)
-                settings.BlockSize = BlockSize;
-        }
-        public string ParamsToDisplay()
-        {
-            return $"Url: {Url}, Path: {Path}, BlockSize: {BlockSize}";
-        }
     }
 
     /// <summary>
@@ -34,7 +21,7 @@ namespace SenseNet.IO.Implementations
     /// </summary>
     public class RepositoryReader : IContentReader
     {
-        private readonly RepositoryReaderArgs _args;
+        public RepositoryReaderArgs Args { get; }
         private readonly int _blockSize;
         private int _blockIndex;
 
@@ -49,11 +36,11 @@ namespace SenseNet.IO.Implementations
         {
             if (args == null)
                 throw new ArgumentNullException(nameof(args));
-            _args = args.Value;
-            Url = _args.Url;
-            RepositoryRootPath = _args.Path;
-            RootName = ContentPath.GetName(_args.Path);
-            _blockSize = _args.BlockSize ?? 10;
+            Args = args.Value;
+            Url = Args.Url;
+            RepositoryRootPath = Args.Path;
+            RootName = ContentPath.GetName(Args.Path);
+            _blockSize = Args.BlockSize ?? 10;
         }
 
         private async Task InitializeAsync()

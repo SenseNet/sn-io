@@ -14,20 +14,11 @@ namespace SenseNet.IO.Implementations
     public class FsReaderArgs
     {
         public string Path { get; set; }
-        public void RewriteSettings(FsReaderArgs settings)
-        {
-            if (Path != null)
-                settings.Path = Path;
-        }
-        public string ParamsToDisplay()
-        {
-            return $"Path: {Path}";
-        }
     }
 
     public class FsReader : IContentReader
     {
-        private readonly FsReaderArgs _args;
+        public FsReaderArgs Args { get; }
         private FsContent _content; // Current IContent
         public string ReaderRootPath { get; }
 
@@ -40,9 +31,9 @@ namespace SenseNet.IO.Implementations
         {
             if (args == null)
                 throw new ArgumentNullException(nameof(args));
-            _args = args.Value;
-            ReaderRootPath = _args.Path;
-            RootName = ContentPath.GetName(_args.Path);
+            Args = args.Value;
+            ReaderRootPath = Args.Path;
+            RootName = ContentPath.GetName(Args.Path);
         }
 
         private bool _initialized;
