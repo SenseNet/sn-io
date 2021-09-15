@@ -57,6 +57,13 @@ namespace SenseNet.IO.Tests
             }
         }
 
+        protected void AssertLogsAreEqual(string[] expected, string[] actual)
+        {
+            var cutoff = actual
+                .SkipWhile(x => !x.StartsWith("---------"))
+                .TakeWhile(x=> !x.StartsWith("FINISH")).ToArray();
+            AssertSequencesAreEqual(expected, cutoff);
+        }
         protected void AssertSequencesAreEqual<T>(IEnumerable<T> expected, IEnumerable<T> actual)
         {
             var e = string.Join(", ", expected.Select(x => x.ToString()));
