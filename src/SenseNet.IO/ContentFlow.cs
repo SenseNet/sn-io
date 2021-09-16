@@ -123,6 +123,10 @@ namespace SenseNet.IO
                 WriteLog(writer.GetStringBuilder().ToString().Trim());
             }
         }
+        protected void WriteLog(Exception e)
+        {
+            WriteLog(e.ToString());
+        }
         private string CreateLogFile(bool createNew, string extension)
         {
             var asm = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);

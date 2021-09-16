@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -109,10 +110,17 @@ namespace SenseNet.IO.Implementations
             var server = ClientContext.Current.Server; //UNDONE: do not use static servers
             var absoluteUrl = server.Url + url;
             Stream result = null;
-            await RESTCaller.ProcessWebResponseAsync(absoluteUrl, HttpMethod.Get, ClientContext.Current.Server, async response =>
+            try
             {
-                result = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
-            }, CancellationToken.None);
+                await RESTCaller.ProcessWebResponseAsync(absoluteUrl, HttpMethod.Get, ClientContext.Current.Server, async response =>
+                {
+                    result = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
+                }, CancellationToken.None);
+            }
+            catch (Exception e)
+            {
+                throw new SnException(0, "RepositoryReader: cannot get attachment stream.", e);
+            }
 
             return result;
         }

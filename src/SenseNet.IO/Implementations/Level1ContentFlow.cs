@@ -25,19 +25,27 @@ namespace SenseNet.IO.Implementations
             var timer = Stopwatch.StartNew();
 
             _rootName = Writer.RootName ?? Reader.RootName;
-            if (await Reader.ReadAllAsync(new string[0], cancel))
+            try
             {
-                if (Writer.RootName != null)
-                    Rename(Reader.Content, _rootName);
-
-                _currentBatchAction = "Transfer contents";
-                WriteLog($"------------ {_currentBatchAction.ToUpper()} ------------");
-
-                await WriteAsync(progress, false, cancel);
-                while (await Reader.ReadAllAsync(new string[0], cancel))
+                if (await Reader.ReadAllAsync(new string[0], cancel))
                 {
+                    if (Writer.RootName != null)
+                        Rename(Reader.Content, _rootName);
+
+                    _currentBatchAction = "Transfer contents";
+                    WriteLog($"------------ {_currentBatchAction.ToUpper()} ------------");
+
                     await WriteAsync(progress, false, cancel);
+                    while (await Reader.ReadAllAsync(new string[0], cancel))
+                    {
+                        await WriteAsync(progress, false, cancel);
+                    }
                 }
+            }
+            catch (Exception e)
+            {
+                WriteLog(e);
+                throw;
             }
 
             timer.Stop();
