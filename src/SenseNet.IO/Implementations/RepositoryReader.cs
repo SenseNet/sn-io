@@ -38,7 +38,7 @@ namespace SenseNet.IO.Implementations
                 throw new ArgumentNullException(nameof(args));
             Args = args.Value;
 
-            if (Args.Path == null)
+            if (string.IsNullOrEmpty(Args.Path))
                 Args.Path = "/Root";
             if (Args.BlockSize == null)
                 Args.BlockSize = 10;

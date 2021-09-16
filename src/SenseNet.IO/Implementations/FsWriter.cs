@@ -27,7 +27,7 @@ namespace SenseNet.IO.Implementations
                 throw new ArgumentNullException(nameof(args));
             Args = args.Value;
             OutputDirectory = Args.Path;
-            RootName = Args.Name;
+            RootName = string.IsNullOrEmpty(Args.Name) ? null : Args.Name;
         }
 
         public async Task<WriterState> WriteAsync(string path, IContent content, CancellationToken cancel = default)
