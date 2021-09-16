@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using SenseNet.IO.Implementations;
 
 namespace SenseNet.IO.CLI
 {
@@ -22,8 +21,14 @@ namespace SenseNet.IO.CLI
         {
             var flow = ContentFlow.Create(Reader, Writer);
             var progress = new Progress<TransferState>(progressCallback);
-            await flow.TransferAsync(progress);
-
+            try
+            {
+                await flow.TransferAsync(progress);
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, e.Message);
+            }
         }
     }
 }

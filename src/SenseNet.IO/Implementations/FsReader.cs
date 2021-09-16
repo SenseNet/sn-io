@@ -25,7 +25,7 @@ namespace SenseNet.IO.Implementations
         public string RootName { get; }
         public int EstimatedCount { get; private set; }
         public IContent Content => _content;
-        public string RelativePath => _content.Path;
+        public string RelativePath => _content?.Path;
 
         public FsReader(IOptions<FsReaderArgs> args)
         {

@@ -244,8 +244,7 @@ namespace SenseNet.IO.Tests
             Type writerType, string expectedWriterParams)
         {
             // ACTION
-            var host = SenseNet.IO.CLI.Program.CreateHost(args, new MemoryStream(Encoding.UTF8.GetBytes(settings)));
-            var app = ActivatorUtilities.CreateInstance<IoApp>(host.Services);
+            var app = SenseNet.IO.CLI.Program.CreateApp(args, new MemoryStream(Encoding.UTF8.GetBytes(settings)));
 
             // ASSERT
             Assert.AreEqual(readerType, app.Reader.GetType());

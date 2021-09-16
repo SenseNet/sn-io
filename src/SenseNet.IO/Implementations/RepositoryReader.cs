@@ -12,8 +12,8 @@ namespace SenseNet.IO.Implementations
     public class RepositoryReaderArgs
     {
         public string Url { get; set; }
-        public string Path { get; set; }
-        public int? BlockSize { get; set; }
+        public string Path { get; set; } = "/Root";
+        public int? BlockSize { get; set; } = 10;
     }
 
     /// <summary>
@@ -177,8 +177,15 @@ namespace SenseNet.IO.Implementations
 
         private async Task<int> GetCountAsync()
         {
-            var result = await RESTCaller.GetResponseStringAsync(RepositoryRootPath, "GetContentCountInTree");
-            return int.TryParse(result, out var count) ? count : default;
+            try
+            {
+                var result = await RESTCaller.GetResponseStringAsync(RepositoryRootPath, "GetContentCountInTree");
+                return int.TryParse(result, out var count) ? count : default;
+            }
+            catch (Exception e)
+            {
+                throw new SnException(0, "RepositoryReader: cannot get count of contents.", e);
+            }
         }
         private async Task<IContent[]> QueryBlockAsync(string rootPath, int skip, int top, bool useTypeRestrictions)
         {
@@ -192,7 +199,7 @@ namespace SenseNet.IO.Implementations
             // ReSharper disable once CoVariantArrayConversion
             return result;
         }
-        public static async Task<IEnumerable<Content>> QueryAsync(string queryText, ServerContext server = null)
+        private static async Task<IEnumerable<Content>> QueryAsync(string queryText, ServerContext server = null)
         {
             var oDataRequest = new ODataRequest(server)
             {
@@ -200,9 +207,14 @@ namespace SenseNet.IO.Implementations
                 ContentQuery = queryText,
                 Parameters = {{"$format", "export"}}
             };
-
-            return await Client.Content.LoadCollectionAsync(oDataRequest, server).ConfigureAwait(false);
+            try
+            {
+                return await Client.Content.LoadCollectionAsync(oDataRequest, server).ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                throw new SnException(0, "RepositoryReader: cannot get content block.", e);
+            }
         }
-
     }
 }

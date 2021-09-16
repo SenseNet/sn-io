@@ -190,9 +190,12 @@ namespace SenseNet.IO.CLI
             //args = new[] { "COPY", "-SOURCE", @"D:\_sn-io-test\source", "-TARGET", @"D:\_sn-io-test", "target" };
             //args = new[] { "EXPORT", "-SOURCE", "https://localhost1", "\"/Root/Content\"", "-TARGET", @"D:\_sn-io-test", "old-contents" };
             //args = new[] { "EXPORT", "-SOURCE", "-PATH", "\"/Root/Content\"", "-TARGET", @"D:\_sn-io-test", "old-contents" };
-            args = new[] { "IMPORT", "-SOURCE", @"D:\_sn-io-test\old-contents", "-TARGET", "https://localhost1" };
+            //args = new[] { "IMPORT", "-SOURCE", @"D:\_sn-io-test\old-contents", "-TARGET", "https://localhost1" };
+
+            args = new[] { "EXPORT" };
 
             var app = CreateApp(args);
+            Console.WriteLine(app.ParamsToDisplay());
             await app.RunAsync(ShowProgress);
 
             await Task.Delay(1000);
@@ -207,7 +210,7 @@ namespace SenseNet.IO.CLI
             var app = ActivatorUtilities.CreateInstance<IoApp>(host.Services);
             return app;
         }
-        public static IHost CreateHost(string[] args, Stream settingsFile = null)
+        private static IHost CreateHost(string[] args, Stream settingsFile = null)
         {
             var appArguments = new ArgumentParser().Parse(args);
 
@@ -218,7 +221,7 @@ namespace SenseNet.IO.CLI
                     if (settingsFile != null)
                         configurationBuilder.AddJsonStream(settingsFile);
                     else
-                        configurationBuilder.AddJsonFile("localhostContents.json");
+                        configurationBuilder.AddJsonFile("appsettings.json");
                     configurationBuilder
                         .AddEnvironmentVariables()
                         .AddCommandLine(args);

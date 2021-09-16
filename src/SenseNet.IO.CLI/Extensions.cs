@@ -5,6 +5,13 @@ namespace SenseNet.IO.CLI
 {
     public static class Extensions
     {
+        public static string GetAllMessages(this Exception e)
+        {
+            var msg = e.Message;
+            while ((e = e.InnerException) != null)
+                msg += " | " + e.Message;
+            return msg;
+        }
         public static void RewriteSettings(this FsReaderArgs args, FsReaderArgs settings)
         {
             if (args.Path != null)
@@ -79,7 +86,7 @@ namespace SenseNet.IO.CLI
         }
         public static string ParamsToDisplay(this FsWriterArgs args)
         {
-            return args.Name == null ? $"Path: {args.Path}" : $"Path: {args.Path}, Name: {args.Name}";
+            return string.IsNullOrEmpty(args.Name) ? $"Path: {args.Path}" : $"Path: {args.Path}, Name: {args.Name}";
         }
         public static string ParamsToDisplay(this RepositoryReaderArgs args)
         {
