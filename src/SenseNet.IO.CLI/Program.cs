@@ -221,7 +221,7 @@ namespace SenseNet.IO.CLI
                     if (settingsFile != null)
                         configurationBuilder.AddJsonStream(settingsFile);
                     else
-                        configurationBuilder.AddJsonFile("appsettings.json");
+                        configurationBuilder.AddJsonFile("appsettings(test).json");
                     configurationBuilder
                         .AddEnvironmentVariables()
                         .AddCommandLine(args);

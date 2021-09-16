@@ -180,7 +180,7 @@ namespace SenseNet.IO.Tests
   ""repositoryWriter"": { ""url"": ""https://localhost"", ""path"": ""/Root"", ""name"": ""Content"" },
   ""fsReader"": { ""path"": ""Q:\\_sn-io-test\\content""  },
   ""fsWriter"": { ""path"": ""Q:\\_sn-io-test"", } }",
-                typeof(RepositoryReader), "Url: , Path: , BlockSize: ",
+                typeof(RepositoryReader), "Url: , Path: /Root, BlockSize: 10",
                 typeof(FsWriter), "Path: Q:\\_sn-io-test\\content1");
         }
         [TestMethod]

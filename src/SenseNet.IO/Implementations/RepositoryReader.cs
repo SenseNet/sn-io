@@ -12,8 +12,8 @@ namespace SenseNet.IO.Implementations
     public class RepositoryReaderArgs
     {
         public string Url { get; set; }
-        public string Path { get; set; } = "/Root";
-        public int? BlockSize { get; set; } = 10;
+        public string Path { get; set; }
+        public int? BlockSize { get; set; }
     }
 
     /// <summary>
@@ -37,8 +37,14 @@ namespace SenseNet.IO.Implementations
             if (args == null)
                 throw new ArgumentNullException(nameof(args));
             Args = args.Value;
+
+            if (Args.Path == null)
+                Args.Path = "/Root";
+            if (Args.BlockSize == null)
+                Args.BlockSize = 10;
+
             Url = Args.Url;
-            RepositoryRootPath = Args.Path;
+            RepositoryRootPath = Args.Path ?? "/Root";
             RootName = ContentPath.GetName(Args.Path);
             _blockSize = Args.BlockSize ?? 10;
         }
