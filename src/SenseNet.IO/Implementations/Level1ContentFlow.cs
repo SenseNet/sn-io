@@ -21,7 +21,6 @@ namespace SenseNet.IO.Implementations
         private string _rootName;
         public override async Task TransferAsync(IProgress<TransferState> progress, CancellationToken cancel = default)
         {
-            WriteLogHead();
             var timer = Stopwatch.StartNew();
 
             _rootName = Writer.RootName ?? Reader.RootName;

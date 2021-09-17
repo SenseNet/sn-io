@@ -20,6 +20,8 @@ namespace SenseNet.IO.CLI
         public async Task RunAsync(Action<TransferState> progressCallback)
         {
             var flow = ContentFlow.Create(Reader, Writer);
+            flow.WriteLogHead(this.ParamsToDisplay());
+
             var progress = new Progress<TransferState>(progressCallback);
             try
             {

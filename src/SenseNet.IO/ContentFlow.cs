@@ -26,64 +26,9 @@ namespace SenseNet.IO
 
         /* ========================================================================== LOGGING */
 
-        protected void WriteLogHead()
+        public void WriteLogHead(string head)
         {
-            string source;
-            string target;
-            var readFromRepo = false;
-            var readFromDisk = false;
-            var writeToRepo = false;
-            var writeToDisk = false;
-            if (Reader is RepositoryReader repoReader)
-            {
-                readFromRepo = true;
-                source = $"{repoReader.Url} ... {repoReader.RepositoryRootPath}";
-            }
-            else if (Reader is FsReader fsReader)
-            {
-                readFromDisk = true;
-                source = fsReader.ReaderRootPath;
-            }
-            else
-            {
-                source = Reader.GetType().FullName;
-            }
-
-            if (Writer is FsWriter fsWriter)
-            {
-                writeToDisk = true;
-                target = fsWriter.RootName == null
-                    ? fsWriter.OutputDirectory
-                    : $"{fsWriter.OutputDirectory} rename to {fsWriter.RootName}";
-            }
-            else if (Writer is RepositoryWriter repoWriter)
-            {
-                writeToRepo = true;
-                target = repoWriter.RootName == null
-                    ? $"{repoWriter.Url} ... {repoWriter.ContainerPath}"
-                    : $"{repoWriter.Url} ... {repoWriter.ContainerPath} rename to {repoWriter.RootName}";
-            }
-            else
-            {
-                target = Writer.GetType().FullName;
-            }
-
-            string operation;
-            if (readFromDisk && writeToDisk)
-                operation = "Copy";
-            else if (readFromRepo && writeToRepo)
-                operation = "Sync";
-            else if (readFromRepo)
-                operation = "Export";
-            else if (writeToRepo)
-                operation = "Import";
-            else
-                operation = "Transfer";
-
-            WriteLog(operation.ToUpper(), true);
-            WriteLog($"    from: {source}", true);
-            WriteLog($"    to  : {target}", true);
-            WriteLog(string.Empty, true);
+            WriteLog(head, true);
             WriteLog("START");
         }
 

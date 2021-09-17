@@ -193,11 +193,14 @@ namespace SenseNet.IO.CLI
             //args = new[] { "IMPORT", "-SOURCE", @"D:\_sn-io-test\old-contents", "-TARGET", "https://localhost1" };
 
             //args = new[] { "EXPORT" };
-            args = new[] { "COPY", "-TARGET", @"D:\_sn-io-test\localhost_44362_backup" };
+            //args = new[] { "COPY", "-TARGET", @"D:\_sn-io-test\localhost_44362_backup" };
+            args = new[] { "COPY", "-SOURCE", @"D:\_sn-io-test\localhost_44362\Root\System\Settings", 
+                                   "-TARGET", @"D:\_sn-io-test\localhost_44362_backup", "Settings_backup" };
             //args = new[] { "IMPORT" };
 
             var app = CreateApp(args);
             Console.WriteLine(app.ParamsToDisplay());
+            //UNDONE: Write 'app.ParamsToDisplay()' to log after the final logger integration.
             await app.RunAsync(ShowProgress);
 
             await Task.Delay(1000);
