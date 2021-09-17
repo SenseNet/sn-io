@@ -12,9 +12,9 @@ namespace SenseNet.IO.CLI
         public IAppArguments Parse(string[] args)
         {
             if (args.Length == 0)
-                throw new ArgumentParserException("Missing verb (export, import, copy, sync or transfer)");
+                throw new ArgumentParserException("Missing verb (EXPORT, IMPORT, COPY, SYNC or TRANSFER)");
             if (!Enum.TryParse<Verb>(args[0], true, out var verb))
-                throw new ArgumentParserException($"Invalid verb '{args[0]}'. Valid values are export, import, copy, sync or transfer");
+                throw new ArgumentParserException($"Invalid verb '{args[0]}'. Valid values are EXPORT, IMPORT, COPY, SYNC or TRANSFER");
 
             var sourceSection = args
                 .SkipWhile(x => !x.Equals("-source", Cmp))
@@ -77,7 +77,7 @@ namespace SenseNet.IO.CLI
             {
                 var arg = parsedArgs[0];
                 if ((arg.Key.Equals("PATH", Cmp) || arg.Key == "0") && arg.Value != null)
-                    return new FsReaderArgs { Path = arg.Value.Trim('\'', '"') };
+                    return new FsReaderArgs { Path = arg.Value?.Trim('\'', '"') };
                 throw new ArgumentParserException("Invalid FsReader args.");
             }
 
@@ -98,13 +98,13 @@ namespace SenseNet.IO.CLI
                 {
                     if (result.Path != null)
                         throw new ArgumentParserException("Invalid FsWriter arguments.");
-                    result.Path = arg.Value.Trim('\'', '"');
+                    result.Path = arg.Value?.Trim('\'', '"');
                 }
                 else if (arg.Key == "1" || arg.Key.Equals("NAME", Cmp))
                 {
                     if (result.Name != null)
                         throw new ArgumentParserException("Invalid FsWriter arguments.");
-                    result.Name = arg.Value.Trim('\'', '"');
+                    result.Name = arg.Value?.Trim('\'', '"');
                 }
                 else
                     throw new ArgumentParserException("Unknown FsWriter argument: " + arg.Key);
@@ -126,13 +126,13 @@ namespace SenseNet.IO.CLI
                 {
                     if (result.Url != null)
                         throw new ArgumentParserException("Invalid RepositoryReader arguments.");
-                    result.Url = arg.Value.Trim('\'', '"');
+                    result.Url = arg.Value?.Trim('\'', '"');
                 }
                 else if (arg.Key == "1" || arg.Key.Equals("PATH", Cmp))
                 {
                     if (result.Path != null)
                         throw new ArgumentParserException("Invalid RepositoryReader arguments.");
-                    result.Path = arg.Value.Trim('\'', '"');
+                    result.Path = arg.Value?.Trim('\'', '"');
                 }
                 else if (arg.Key == "2" || arg.Key.Equals("BLOCKSIZE", Cmp))
                 {
@@ -162,19 +162,19 @@ namespace SenseNet.IO.CLI
                 {
                     if (result.Url != null)
                         throw new ArgumentParserException("Invalid RepositoryWriter arguments.");
-                    result.Url = arg.Value.Trim('\'', '"');
+                    result.Url = arg.Value?.Trim('\'', '"');
                 }
                 else if (arg.Key == "1" || arg.Key.Equals("PATH", Cmp))
                 {
                     if (result.Path != null)
                         throw new ArgumentParserException("Invalid RepositoryWriter arguments.");
-                    result.Path = arg.Value.Trim('\'', '"');
+                    result.Path = arg.Value?.Trim('\'', '"');
                 }
                 else if (arg.Key == "2" || arg.Key.Equals("NAME", Cmp))
                 {
                     if (result.Name != null)
                         throw new ArgumentParserException("Invalid RepositoryWriter arguments.");
-                    result.Name = arg.Value.Trim('\'', '"');
+                    result.Name = arg.Value?.Trim('\'', '"');
                 }
                 else
                     throw new ArgumentParserException("Unknown RepositoryWriter argument: " + arg.Key);
@@ -190,7 +190,7 @@ namespace SenseNet.IO.CLI
             string name = null;
             foreach (var arg in args)
             {
-                if (arg.StartsWith("/") || arg.StartsWith("-"))
+                if (/*arg.StartsWith("/") || */arg.StartsWith("-"))
                 {
                     if (name != null)
                         result.Add(name, null);

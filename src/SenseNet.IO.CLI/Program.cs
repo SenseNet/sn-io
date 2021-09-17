@@ -192,14 +192,29 @@ namespace SenseNet.IO.CLI
             //args = new[] { "EXPORT", "-SOURCE", "-PATH", "\"/Root/Content\"", "-TARGET", @"D:\_sn-io-test", "old-contents" };
             //args = new[] { "IMPORT", "-SOURCE", @"D:\_sn-io-test\old-contents", "-TARGET", "https://localhost1" };
 
+            //args = new string[0];
+            //args = new[] { "fake" };
+
             //args = new[] { "EXPORT" };
             //args = new[] { "COPY", "-TARGET", @"D:\_sn-io-test\localhost_44362_backup" };
-            args = new[] { "COPY", "-SOURCE", @"D:\_sn-io-test\localhost_44362\Root\System\Settings", 
-                                   "-TARGET", @"D:\_sn-io-test\localhost_44362_backup", "Settings_backup" };
-            //args = new[] { "IMPORT" };
+            //args = new[] { "COPY", "-SOURCE", @"D:\_sn-io-test\localhost_44362\Root\System\Settings", 
+            //                       "-TARGET", @"D:\_sn-io-test\localhost_44362_backup", "Settings_backup" };
+            args = new[] { "IMPORT" };
+            //args = new[] { "IMPORT", "-SOURCE", @"D:\_sn-io-test\localhost_44362_backup\Settings_backup",
+            //              "-TARGET", "-PATH", "/Root/System", "-NAME", "Settings"};
 
-            var app = CreateApp(args);
-            Console.WriteLine(app.ParamsToDisplay());
+            IoApp app;
+            try
+            {
+                app = CreateApp(args);
+                Console.WriteLine(app.ParamsToDisplay());
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Cannot create the application.");
+                Console.WriteLine(e.Message);
+                return;
+            }
             //UNDONE: Write 'app.ParamsToDisplay()' to log after the final logger integration.
             await app.RunAsync(ShowProgress);
 
