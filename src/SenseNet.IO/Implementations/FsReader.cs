@@ -43,7 +43,7 @@ namespace SenseNet.IO.Implementations
                 return;
             _initialized = true;
 
-            EstimatedCount = 0;
+            EstimatedCount = Directory.Exists(ReaderRootPath) || File.Exists(ReaderRootPath) ? 1 : 0;
             Task.Run(() => GetContentCount(ReaderRootPath));
         }
 
