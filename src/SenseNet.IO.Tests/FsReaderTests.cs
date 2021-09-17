@@ -186,7 +186,51 @@ namespace SenseNet.IO.Tests
             Assert.AreEqual(1, content.Permissions.Entries.Length);
         }
 
-        //UNDONE: Missing test: ContentName meta-field overrides the name of the filesystem file/folder
+        [TestMethod]
+        public async Task FsReader_Read_Root_ContentNameOverridesFileName()
+        {
+            var directories = new[]
+            {
+                @"Q:\Import"
+            };
+            var files = new Dictionary<string, string>
+            {
+                {@"Q:\Import\Root_Backup.Content", "{'ContentType':'PortalRoot','ContentName':'Root'," +
+                                                   "'Fields':{'Type':'ContentType1'}," +
+                                                   "'Permissions':{'IsInherited':true,'Entries':[{'Identity':" +
+                                                   "'/Root/IMS/BuiltIn/Portal/Everyone','LocalOnly':true,'Permissions':{'See':'allow'}}]}}"}
+            };
+
+
+            var reader = new FsReaderMock(@"Q:\Import\Root_Backup",
+                isFileExists: fsPath => files.ContainsKey(fsPath),
+                isDirectoryExists: fsPath => directories.Contains(fsPath),
+                getFsDirectories: fsPath => GetDirectories(fsPath, directories),
+                getFsFiles: fsPath => { if (fsPath == @"Q:\Import\Root_Backup") return new string[0]; throw new Exception("##"); },
+                fsContentIsFileExists: null,
+                fsContentCreateStreamReader: fsPath => new StringReader(files[fsPath]),
+                fsContentCreateFileStream: null);
+
+            var readings = new Dictionary<string, IContent>();
+
+            // ACTION
+            while (await reader.ReadAllAsync(Array.Empty<string>()))
+                readings.Add(reader.RelativePath, reader.Content);
+
+            // ASSERT
+            var contents = readings.ToArray();
+            Assert.AreEqual(1, contents.Length);
+            Assert.AreEqual("", contents[0].Key);
+            var content = contents[0].Value;
+            Assert.AreEqual("Root", content.Name);
+            Assert.AreEqual("PortalRoot", content.Type);
+            Assert.AreEqual(1, content.FieldNames.Length);
+            Assert.AreEqual("Type", content.FieldNames[0]);
+            Assert.AreEqual("ContentType1", content["Type"]);
+            Assert.AreEqual(0, (await content.GetAttachmentsAsync()).Length);
+            Assert.AreEqual(true, content.Permissions.IsInherited);
+            Assert.AreEqual(1, content.Permissions.Entries.Length);
+        }
 
         [TestMethod]
         public async Task FsReader_Read_Root_TypeFieldIsIrrelevant()
@@ -198,7 +242,7 @@ namespace SenseNet.IO.Tests
             var files = new Dictionary<string, string>
             {
                 {@"Q:\Import\Root.Content", "{'ContentType':'PortalRoot','ContentName':'Root'," +
-                                            "'Fields':{'Type':'ContentType1'}," +
+                                            "'Fields':{'Type':'ContentType_Irrelevant'}," +
                                             "'Permissions':{'IsInherited':true,'Entries':[{'Identity':" +
                                             "'/Root/IMS/BuiltIn/Portal/Everyone','LocalOnly':true,'Permissions':{'See':'allow'}}]}}"}
             };
@@ -228,7 +272,7 @@ namespace SenseNet.IO.Tests
             Assert.AreEqual("PortalRoot", content.Type);
             Assert.AreEqual(1, content.FieldNames.Length);
             Assert.AreEqual("Type", content.FieldNames[0]);
-            Assert.AreEqual("ContentType1", content["Type"]);
+            Assert.AreEqual("ContentType_Irrelevant", content["Type"]);
             Assert.AreEqual(0, (await content.GetAttachmentsAsync()).Length);
             Assert.AreEqual(true, content.Permissions.IsInherited);
             Assert.AreEqual(1, content.Permissions.Entries.Length);
@@ -466,22 +510,6 @@ namespace SenseNet.IO.Tests
             var actualRelativePaths = new List<string>();
 
             // ACTION
-//UNDONE://///
-            //while (await reader.ReadContentTypesAsync_DELETE())
-            //{
-            //    actualRelativePaths.Add(reader.RelativePath);
-            //    readings.Add(reader.RelativePath, reader.Content);
-            //}
-            //while (await reader.ReadSettingsAsync_DELETE())
-            //{
-            //    actualRelativePaths.Add(reader.RelativePath);
-            //    readings.Add(reader.RelativePath, reader.Content);
-            //}
-            //while (await reader.ReadAspectsAsync_DELETE())
-            //{
-            //    actualRelativePaths.Add(reader.RelativePath);
-            //    readings.Add(reader.RelativePath, reader.Content);
-            //}
             while (await reader.ReadAllAsync(Array.Empty<string>()))
             {
                 actualRelativePaths.Add(reader.RelativePath);
@@ -562,7 +590,7 @@ namespace SenseNet.IO.Tests
 
             var readings = new Dictionary<string, IContent>();
             var actualRelativePaths = new List<string>();
-//UNDONE://///
+            //UNDONE://///
             // ACTION
             //while (await reader.ReadContentTypesAsync_DELETE())
             //{
