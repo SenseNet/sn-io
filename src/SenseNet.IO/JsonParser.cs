@@ -36,7 +36,7 @@ namespace SenseNet.IO
 
         private void ParseFields(IoContent content, JObject json)
         {
-            //UNDONE: Implement JsonParser.ParseFields
+            //TODO: Implement JsonParser.ParseFields
         }
     }
 }

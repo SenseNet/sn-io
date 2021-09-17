@@ -102,15 +102,11 @@ namespace SenseNet.IO.Tests
                 EstimatedCount = contentsToRead.Length;
                 _contentsToRead = contentsToRead;
             }
-//UNDONE://///
-            //public Task<bool> ReadContentTypesAsync_DELETE(CancellationToken cancel = default) { return Task.FromResult(false); }
-            //public Task<bool> ReadSettingsAsync_DELETE(CancellationToken cancel = default) { return Task.FromResult(false); }
-            //public Task<bool> ReadAspectsAsync_DELETE(CancellationToken cancel = default) { return Task.FromResult(false); }
+
             public Task<bool> ReadSubTreeAsync(string relativePath, CancellationToken cancel = default)
             {
                 throw new NotImplementedException();
             }
-
             public Task<bool> ReadAllAsync(string[] contentsWithoutChildren, CancellationToken cancel = default)
             {
                 if (contentsWithoutChildren != null && contentsWithoutChildren.Length != 0)

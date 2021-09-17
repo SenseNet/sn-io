@@ -195,9 +195,9 @@ namespace SenseNet.IO.CLI
             //args = new[] { "EXPORT", "-SOURCE", "-PATH", "\"/Root/Content\"", "-TARGET", @"D:\_sn-io-test", "old-contents" };
             //args = new[] { "IMPORT", "-SOURCE", @"D:\_sn-io-test\old-contents", "-TARGET", "https://localhost1" };
 
-            args = new[] { "?" };
-            args = new[] { "-help" };
-            //args = new[] { "export", "-help" };
+            //args = new[] { "?" };
+            //args = new[] { "-help" };
+            args = new[] { "export", "-help" };
             //args = new[] { "import", "-help" };
             //args = new[] { "copy", "-help" };
             //args = new[] { "sync", "-help" };

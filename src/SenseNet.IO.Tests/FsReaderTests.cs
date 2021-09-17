@@ -588,25 +588,9 @@ namespace SenseNet.IO.Tests
                 fsContentCreateStreamReader: fsPath => new StringReader(files[fsPath]),
                 fsContentCreateFileStream: null);
 
+            // ACTION
             var readings = new Dictionary<string, IContent>();
             var actualRelativePaths = new List<string>();
-            //UNDONE://///
-            // ACTION
-            //while (await reader.ReadContentTypesAsync_DELETE())
-            //{
-            //    actualRelativePaths.Add(reader.RelativePath);
-            //    readings.Add(reader.RelativePath, reader.Content);
-            //}
-            //while (await reader.ReadSettingsAsync_DELETE())
-            //{
-            //    actualRelativePaths.Add(reader.RelativePath);
-            //    readings.Add(reader.RelativePath, reader.Content);
-            //}
-            //while (await reader.ReadAspectsAsync_DELETE())
-            //{
-            //    actualRelativePaths.Add(reader.RelativePath);
-            //    readings.Add(reader.RelativePath, reader.Content);
-            //}
             while (await reader.ReadAllAsync(Array.Empty<string>()))
             {
                 actualRelativePaths.Add(reader.RelativePath);

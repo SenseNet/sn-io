@@ -63,83 +63,9 @@ namespace SenseNet.IO.Implementations
             }
         }
 
-//UNDONE://///
-        //private IContent[] _contentTypeContents;
-        //private int _contentTypeContentsIndex;
-        //public async Task<bool> ReadContentTypesAsync_DELETE(CancellationToken cancel = default)
-        //{
-        //    if (_contentTypeContents == null)
-        //    {
-        //        await InitializeAsync();
-
-        //        if (!RootPath.Equals("/Root", StringComparison.OrdinalIgnoreCase) &&
-        //            !RootPath.Equals("/Root/System", StringComparison.OrdinalIgnoreCase) &&
-        //            !RootPath.Equals("/Root/System/Schema", StringComparison.OrdinalIgnoreCase) &&
-        //            !RootPath.Equals("/Root/System/Schema/ContentTypes", StringComparison.OrdinalIgnoreCase)
-        //            )
-        //            return false;
-
-        //        _contentTypeContents = await QueryBlockAsync("/Root/System/Schema/ContentTypes", 1, int.MaxValue, false); // Skip subtree-root
-        //    }
-
-        //    if (_contentTypeContentsIndex >= _contentTypeContents.Length)
-        //        return false;
-        //    Content = _contentTypeContents[_contentTypeContentsIndex++];
-        //    RelativePath = ContentPath.GetRelativePath(Content.Path, RootPath);
-        //    return true;
-        //}
-
-        //private IContent[] _settingsContents;
-        //private int _settingsContentsIndex;
-        //public async Task<bool> ReadSettingsAsync_DELETE(CancellationToken cancel = default)
-        //{
-        //    if (_settingsContents == null)
-        //    {
-        //        await InitializeAsync();
-
-        //        if (!RootPath.Equals("/Root", StringComparison.OrdinalIgnoreCase) &&
-        //            !RootPath.Equals("/Root/System", StringComparison.OrdinalIgnoreCase) &&
-        //            !RootPath.Equals("/Root/System/Settings", StringComparison.OrdinalIgnoreCase))
-        //            return false;
-
-        //        _settingsContents = await QueryBlockAsync("/Root/System/Settings", 1, int.MaxValue, false); // Skip subtree-root
-        //    }
-
-        //    if (_settingsContentsIndex >= _settingsContents.Length)
-        //        return false;
-        //    Content = _settingsContents[_settingsContentsIndex++];
-        //    RelativePath = ContentPath.GetRelativePath(Content.Path, RootPath);
-        //    return true;
-        //}
-
-        //private IContent[] _aspectContents;
-        //private int _aspectContentsIndex;
-        //public async Task<bool> ReadAspectsAsync_DELETE(CancellationToken cancel = default)
-        //{
-        //    if (_aspectContents == null)
-        //    {
-        //        await InitializeAsync();
-
-        //        if (!RootPath.Equals("/Root", StringComparison.OrdinalIgnoreCase) &&
-        //            !RootPath.Equals("/Root/System", StringComparison.OrdinalIgnoreCase) &&
-        //            !RootPath.Equals("/Root/System/Schema", StringComparison.OrdinalIgnoreCase) &&
-        //            !RootPath.Equals("/Root/System/Schema/Aspects", StringComparison.OrdinalIgnoreCase)
-        //        )
-        //            return false;
-
-        //        _aspectContents = await QueryBlockAsync("/Root/System/Schema/Aspects", 1, int.MaxValue, false); // Skip subtree-root
-        //    }
-
-        //    if (_aspectContentsIndex >= _aspectContents.Length)
-        //        return false;
-        //    Content = _aspectContents[_aspectContentsIndex++];
-        //    RelativePath = ContentPath.GetRelativePath(Content.Path, RootPath);
-        //    return true;
-        //}
-
         public Task<bool> ReadSubTreeAsync(string relativePath, CancellationToken cancel = default)
         {
-            //UNDONE:!!!!!!!!!!!!!! ReadSubTreeAsync is not implemented
+            //UNDONE:!!!! ReadSubTreeAsync is not implemented
             throw new NotImplementedException();
         }
 
@@ -148,7 +74,7 @@ namespace SenseNet.IO.Implementations
         public async Task<bool> ReadAllAsync(string[] contentsWithoutChildren, CancellationToken cancel = default)
         {
             if (contentsWithoutChildren != null && contentsWithoutChildren.Length != 0)
-                //UNDONE:!!!!!!!!! Process "contentsWithoutChildren" parameter
+                //UNDONE:!!!! Process "contentsWithoutChildren" parameter
                 throw new NotImplementedException();
 
             await InitializeAsync();
@@ -170,12 +96,12 @@ namespace SenseNet.IO.Implementations
 
         public void SetReferenceUpdateTasks(IEnumerable<TransferTask> tasks, int taskCount)
         {
-            //UNDONE: implement SetReferenceUpdateTasks()
+            //UNDONE:!!!! implement SetReferenceUpdateTasks()
             throw new NotImplementedException();
         }
         public Task<bool> ReadByReferenceUpdateTasksAsync(CancellationToken cancel)
         {
-            //UNDONE: implement ReadRandomAsync()
+            //UNDONE:!!!! implement ReadRandomAsync()
             throw new NotImplementedException();
         }
 
