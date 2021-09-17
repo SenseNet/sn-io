@@ -150,6 +150,10 @@ namespace SenseNet.IO.Implementations
             if(_type == null)
                 throw new Exception("Cannot parse the \"ContentType\" property: " + _metaFilePath);
 
+            var name = metaFile["ContentName"]?.Value<string>();
+            if (name != null)
+                this.Name = name;
+
             var jFields = (JObject)metaFile["Fields"];
             if (jFields != null)
             {

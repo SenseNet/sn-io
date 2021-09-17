@@ -9,7 +9,7 @@ namespace SenseNet.IO
         IContentReader Reader { get; }
         IContentWriter Writer { get; }
 
+        void WriteLogHead(string head); //UNDONE:LOG: Remove after the final logger integration.
         Task TransferAsync(IProgress<TransferState> progress, CancellationToken cancel = default);
-        void WriteLogHead();
     }
 }

@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Reflection;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -20,12 +18,14 @@ namespace SenseNet.IO.Implementations
             Writer = writer;
         }
 
-        private int _contentCount = 0;
+        private int _contentCount;
         private string _currentBatchAction;
         private int _errorCount;
         private string _rootName;
         public override async Task TransferAsync(IProgress<TransferState> progress, CancellationToken cancel = default)
         {
+            var timer = Stopwatch.StartNew();
+
             _rootName = Writer.RootName ?? Reader.RootName;
             var firstTargetPath = ContentPath.Combine(Writer.ContainerPath, _rootName);
 
@@ -69,6 +69,9 @@ namespace SenseNet.IO.Implementations
             await CopyAllAsync(subTreePaths, progress, cancel);
 
             await UpdateReferencesAsync(progress, cancel);
+
+            timer.Stop();
+            WriteSummaryToLog(Reader.EstimatedCount, _contentCount, _errorCount, timer.Elapsed);
         }
         private async Task CopyContentTypesAsync(string relativePath, IProgress<TransferState> progress, CancellationToken cancel)
         {
@@ -185,9 +188,9 @@ namespace SenseNet.IO.Implementations
             var state = await Writer.WriteAsync(writerPath, Reader.Content, cancel);
             state.ReaderPath = readerPath;
             state.WriterPath = writerPath;
-            Progress(readerPath, ref _contentCount, state, updateReferences, progress);
+            Progress(ref _contentCount, state, updateReferences, progress);
         }
-        private void Progress(string readerPath, ref int count, WriterState state, bool updateReferences, IProgress<TransferState> progress = null)
+        private void Progress(ref int count, WriterState state, bool updateReferences, IProgress<TransferState> progress = null)
         {
             if (state.Action == WriterAction.Failed)
                 _errorCount++;
@@ -203,37 +206,6 @@ namespace SenseNet.IO.Implementations
                 UpdatingReferences = updateReferences,
                 State = state,
             });
-        }
-
-
-
-
-        private class InitialContent : IContent
-        {
-            public string[] FieldNames { get; } = new string[0];
-
-            public object this[string fieldName]
-            {
-                get => null;
-                set => throw new NotImplementedException();
-            }
-
-            public string Name { get; set; }
-            public string Path { get; set; }
-            public string Type { get; }
-            public PermissionInfo Permissions { get; set; }
-
-            public InitialContent(string path, string name, string type)
-            {
-                Path = path;
-                Name = name;
-                Type = type;
-            }
-
-            public Task<Attachment[]> GetAttachmentsAsync()
-            {
-                return Task.FromResult(Array.Empty<Attachment>());
-            }
         }
 
         private readonly List<string> _writtenContainers = new List<string>();

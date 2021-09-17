@@ -101,7 +101,7 @@ namespace SenseNet.IO.Tests
                 "Updated  /Root/System/Settings",
             };
             actual = flow.Log.ToArray();
-            AssertSequencesAreEqual(expected, actual);
+            AssertLogsAreEqual(expected, actual);
         }
         [TestMethod]
         public async Task ContentFlow2_RootSystem()
@@ -154,7 +154,7 @@ namespace SenseNet.IO.Tests
                 "Updated  /Root/System/Settings",
             };
             actual = flow.Log.ToArray();
-            AssertSequencesAreEqual(expected, actual);
+            AssertLogsAreEqual(expected, actual);
         }
         [TestMethod]
         public async Task ContentFlow2_RootSystemSchema()
@@ -202,7 +202,7 @@ namespace SenseNet.IO.Tests
                 "Updated  /Root/System/Schema/ContentTypes",
             };
             actual = flow.Log.ToArray();
-            AssertSequencesAreEqual(expected, actual);
+            AssertLogsAreEqual(expected, actual);
         }
         [TestMethod]
         public async Task ContentFlow2_RootSystemSchemaContentTypes()
@@ -246,7 +246,7 @@ namespace SenseNet.IO.Tests
                 "Updated  /Root/System/Schema/ContentTypes",
             };
             actual = flow.Log.ToArray();
-            AssertSequencesAreEqual(expected, actual);
+            AssertLogsAreEqual(expected, actual);
         }
         [TestMethod]
         public async Task ContentFlow2_RootSystemSchemaAspects()
@@ -286,7 +286,7 @@ namespace SenseNet.IO.Tests
                 "Updated  /Root/System/Schema/Aspects",
             };
             actual = flow.Log.ToArray();
-            AssertSequencesAreEqual(expected, actual);
+            AssertLogsAreEqual(expected, actual);
         }
         [TestMethod]
         public async Task ContentFlow2_RootSystemSettings()
@@ -326,7 +326,7 @@ namespace SenseNet.IO.Tests
                 "Updated  /Root/System/Settings",
             };
             actual = flow.Log.ToArray();
-            AssertSequencesAreEqual(expected, actual);
+            AssertLogsAreEqual(expected, actual);
         }
         [TestMethod]
         public async Task ContentFlow2_RootContent()
@@ -368,7 +368,7 @@ namespace SenseNet.IO.Tests
                 "Created  /Root/Content/Workspace-2",
             };
             actual = flow.Log.ToArray();
-            AssertSequencesAreEqual(expected, actual);
+            AssertLogsAreEqual(expected, actual);
         }
 
         /* ----------------------------------------------------------------------- q:\io\System */
@@ -424,7 +424,7 @@ namespace SenseNet.IO.Tests
                 "Updated  /Root/System/Settings",
             };
             actual = flow.Log.ToArray();
-            AssertSequencesAreEqual(expected, actual);
+            AssertLogsAreEqual(expected, actual);
         }
         [TestMethod]
         public async Task ContentFlow2_SystemSchema()
@@ -474,7 +474,7 @@ namespace SenseNet.IO.Tests
                 "Updated  /Root/System/Schema/ContentTypes",
             };
             actual = flow.Log.ToArray();
-            AssertSequencesAreEqual(expected, actual);
+            AssertLogsAreEqual(expected, actual);
         }
         [TestMethod]
         public async Task ContentFlow2_SystemSchemaContentTypes()
@@ -520,7 +520,7 @@ namespace SenseNet.IO.Tests
                 "Updated  /Root/System/Schema/ContentTypes",
             };
             actual = flow.Log.ToArray();
-            AssertSequencesAreEqual(expected, actual);
+            AssertLogsAreEqual(expected, actual);
         }
         [TestMethod]
         public async Task ContentFlow2_SystemSchemaAspects()
@@ -562,7 +562,7 @@ namespace SenseNet.IO.Tests
                 "Updated  /Root/System/Schema/Aspects",
             };
             actual = flow.Log.ToArray();
-            AssertSequencesAreEqual(expected, actual);
+            AssertLogsAreEqual(expected, actual);
         }
         [TestMethod]
         public async Task ContentFlow2_SystemSettings()
@@ -604,7 +604,7 @@ namespace SenseNet.IO.Tests
                 "Updated  /Root/System/Settings",
             };
             actual = flow.Log.ToArray();
-            AssertSequencesAreEqual(expected, actual);
+            AssertLogsAreEqual(expected, actual);
         }
 
         /* ----------------------------------------------------------------------- q:\io\Schema */
@@ -654,7 +654,7 @@ namespace SenseNet.IO.Tests
                 "Updated  /Root/System/Schema/ContentTypes",
             };
             actual = flow.Log.ToArray();
-            AssertSequencesAreEqual(expected, actual);
+            AssertLogsAreEqual(expected, actual);
         }
         [TestMethod]
         public async Task ContentFlow2_SchemaContentTypes()
@@ -699,7 +699,7 @@ namespace SenseNet.IO.Tests
                 "Updated  /Root/System/Schema/ContentTypes",
             };
             actual = flow.Log.ToArray();
-            AssertSequencesAreEqual(expected, actual);
+            AssertLogsAreEqual(expected, actual);
         }
         [TestMethod]
         public async Task ContentFlow2_SchemaAspects()
@@ -740,7 +740,7 @@ namespace SenseNet.IO.Tests
                 "Updated  /Root/System/Schema/Aspects",
             };
             actual = flow.Log.ToArray();
-            AssertSequencesAreEqual(expected, actual);
+            AssertLogsAreEqual(expected, actual);
         }
 
         /* ----------------------------------------------------------------------- q:\io\ContentTypes */
@@ -785,7 +785,7 @@ namespace SenseNet.IO.Tests
                 "Updated  /Root/System/Schema/ContentTypes",
             };
             actual = flow.Log.ToArray();
-            AssertSequencesAreEqual(expected, actual);
+            AssertLogsAreEqual(expected, actual);
         }
 
         /* ----------------------------------------------------------------------- q:\io\Aspects */
@@ -826,7 +826,7 @@ namespace SenseNet.IO.Tests
                 "Updated  /Root/System/Schema/Aspects",
             };
             actual = flow.Log.ToArray();
-            AssertSequencesAreEqual(expected, actual);
+            AssertLogsAreEqual(expected, actual);
         }
 
         /* ----------------------------------------------------------------------- q:\io\Settings */
@@ -868,7 +868,7 @@ namespace SenseNet.IO.Tests
                 "Updated  /Root/System/Settings",
             };
             actual = flow.Log.ToArray();
-            AssertSequencesAreEqual(expected, actual);
+            AssertLogsAreEqual(expected, actual);
         }
 
         /* ----------------------------------------------------------------------- q:\io\OldSettings */
@@ -913,7 +913,7 @@ namespace SenseNet.IO.Tests
                 "Updated  /Root/System/Settings",
             };
             actual = flow.Log.ToArray();
-            AssertSequencesAreEqual(expected, actual);
+            AssertLogsAreEqual(expected, actual);
         }
 
         /* =========================================================================================== UPDATE REFERENCES TESTS */
@@ -1011,7 +1011,7 @@ namespace SenseNet.IO.Tests
                 "Updated  /Root/IMS/BuiltIn/Portal/Group-3",
             };
             actual = flow.Log.ToArray();
-            AssertSequencesAreEqual(expected, actual);
+            AssertLogsAreEqual(expected, actual);
         }
 
         /* =========================================================================================== TOOLS */

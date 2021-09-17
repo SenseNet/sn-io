@@ -1,10 +1,18 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using SenseNet.IO.Implementations;
 
 namespace SenseNet.IO.CLI
 {
-    class Program
+    public class Program
     {
         /*
         private static int[] _source = new int[500];
@@ -89,56 +97,84 @@ namespace SenseNet.IO.CLI
         }
         */
 
+        /*
         static async Task Main()
         {
-            //var reader = new RepositoryTreeReader("https://localhost:44362", "/Root", 10);
-            //var writer = new FsWriter(@"D:\dev\_sn-io-test\localhost_44362_(export)");
+            IContentReader reader;
+            IContentWriter writer;
 
-            //var reader = new FsReader(@"D:\dev\_sn-io-test\FsReader\Root");
-            //var writer = new FsWriter(@"D:\dev\_sn-io-test\FsWriter");
+            reader = new RepositoryReader(Options.Create(
+                new RepositoryReaderArgs { Url = "https://localhost:44362", Path = "/Root", BlockSize = 10}));
+            writer = new FsWriter(Options.Create(
+                new FsWriterArgs{ Path = @"D:\dev\_sn-io-test\localhost_44362_(export)" }));
 
-            //var reader = new FsReader(@"D:\dev\_sn-io-test\FsReader\Root\GyebiTesztel");
-            //var writer = new FsWriter(@"D:\dev\_sn-io-test\FsWriter\Root", "XXX");
+            reader = new FsReader(Options.Create(
+                new FsReaderArgs { Path = @"D:\dev\_sn-io-test\FsReader\Root" }));
+            writer = new FsWriter(Options.Create(
+                new FsWriterArgs { Path = @"D:\dev\_sn-io-test\FsWriter" }));
 
-            /* =================================================================================== TEST CASES */
+            reader = new FsReader(Options.Create(
+                new FsReaderArgs { Path = @"D:\dev\_sn-io-test\FsReader\Root\GyebiTesztel" }));
+            writer = new FsWriter(Options.Create(
+                new FsWriterArgs { Path = @"D:\dev\_sn-io-test\FsWriter\Root", Name= "XXX" }));
+
+            // =================================================================================== TEST CASES
 
             // Export Settings
-            //var reader = new RepositoryTreeReader("https://localhost:44362", "/Root/System/Settings", 10);
-            //var writer = new FsWriter(@"D:\dev\_sn-io-test\localhost_44362_Settings");
+            reader = new RepositoryReader(Options.Create(
+                new RepositoryReaderArgs { Url = "https://localhost:44362", Path = "/Root/System/Settings", BlockSize = 10}));
+            writer = new FsWriter(Options.Create(
+                new FsWriterArgs { Path = @"D:\dev\_sn-io-test\localhost_44362_Settings" }));
 
             // Export Settings to Settings2
-            var reader = new RepositoryTreeReader("https://localhost:44362", "/Root/System/Settings", 10);
-            var writer = new FsWriter(@"D:\dev\_sn-io-test\localhost_44362_Settings", "Settings2");
+            reader = new RepositoryReader(Options.Create(
+                new RepositoryReaderArgs { Url = "https://localhost:44362", Path = "/Root/System/Settings", BlockSize = 10}));
+            writer = new FsWriter(Options.Create(
+                new FsWriterArgs { Path = @"D:\dev\_sn-io-test\localhost_44362_Settings", Name = "Settings2" }));
 
             // Export All
-            //var reader = new RepositoryTreeReader("https://localhost:44362", "/Root", 10);
-            //var writer = new FsWriter(@"D:\dev\_sn-io-test\localhost_44362");
+            reader = new RepositoryReader(Options.Create(
+                new RepositoryReaderArgs { Url = "https://localhost:44362", Path = "/Root", BlockSize = 10}));
+            writer = new FsWriter(Options.Create(
+                new FsWriterArgs { Path = @"D:\dev\_sn-io-test\localhost_44362" }));
 
             // Import Settings
-            //var reader = new FsReader(@"D:\dev\_sn-io-test\localhost_44362_Settings\Settings");
-            //var writer = new RepositoryWriter("https://localhost:44362", "/Root/System");
+            reader = new FsReader(Options.Create(
+                new FsReaderArgs { Path = @"D:\dev\_sn-io-test\localhost_44362_Settings\Settings" }));
+            writer = new RepositoryWriter(Options.Create(
+                new RepositoryWriterArgs { Url = "https://localhost:44362", Path = "/Root/System"}));
 
             // Import \Root\System\Settings
-            //var reader = new FsReader(@"D:\dev\_sn-io-test\localhost_44362\Root\System\Settings");
-            //var writer = new RepositoryWriter("https://localhost:44362", "/Root/System");
+            reader = new FsReader(Options.Create(
+                new FsReaderArgs { Path = @"D:\dev\_sn-io-test\localhost_44362\Root\System\Settings" }));
+            writer = new RepositoryWriter(Options.Create(
+                new RepositoryWriterArgs { Url = "https://localhost:44362", Path = "/Root/System"}));
 
             // Import Settings2 to Settings
-            //var reader = new FsReader(@"D:\dev\_sn-io-test\localhost_44362_Settings\Settings2");
-            //var writer = new RepositoryWriter("https://localhost:44362", "/Root/System", "Settings");
+            reader = new FsReader(Options.Create(
+                new FsReaderArgs { Path = @"D:\dev\_sn-io-test\localhost_44362_Settings\Settings2" }));
+            writer = new RepositoryWriter(Options.Create(
+                new RepositoryWriterArgs { Url = "https://localhost:44362", Path = "/Root/System", Name = "Settings"}));
 
             // Import All
-            //var reader = new FsReader(@"D:\dev\_sn-io-test\localhost_44362\Root");
-            //var writer = new RepositoryWriter("https://localhost:44362");
+            reader = new FsReader(Options.Create(
+                new FsReaderArgs { Path = @"D:\dev\_sn-io-test\localhost_44362\Root" }));
+            writer = new RepositoryWriter(Options.Create(
+                new RepositoryWriterArgs { Url = "https://localhost:44362" }));
 
             // Copy Settings to Settings3
-            //var reader = new FsReader(@"D:\dev\_sn-io-test\localhost_44362_Settings\Settings");
-            //var writer = new FsWriter(@"D:\dev\_sn-io-test\localhost_44362_Settings", "Settings3");
+            reader = new FsReader(Options.Create(
+                new FsReaderArgs { Path = @"D:\dev\_sn-io-test\localhost_44362_Settings\Settings" }));
+            writer = new FsWriter(Options.Create(
+                new FsWriterArgs { Path = @"D:\dev\_sn-io-test\localhost_44362_Settings", Name = "Settings3" }));
 
             // Copy All
-            //var reader = new FsReader(@"D:\dev\_sn-io-test\localhost_44362\Root");
-            //var writer = new FsWriter(@"D:\dev\_sn-io-test\localhost_44362_backup");
+            reader = new FsReader(Options.Create(
+                new FsReaderArgs { Path = @"D:\dev\_sn-io-test\localhost_44362\Root" }));
+            writer = new FsWriter(Options.Create(
+                new FsWriterArgs { Path = @"D:\dev\_sn-io-test\localhost_44362_backup" }));
 
-            /* =================================================================================== TEST CASES */
+            // ===================================================================================
 
             _displayLevel = DisplayLevel.Verbose;
             var flow = ContentFlow.Create(reader, writer);
@@ -150,6 +186,268 @@ namespace SenseNet.IO.CLI
             Console.WriteLine();
             Console.WriteLine("Done.");
         }
+        */
+
+        private static async Task Main(string[] args)
+        {
+            //args = new[] { "COPY", "-SOURCE", @"D:\_sn-io-test\source", "-TARGET", @"D:\_sn-io-test", "target" };
+            //args = new[] { "EXPORT", "-SOURCE", "https://localhost1", "\"/Root/Content\"", "-TARGET", @"D:\_sn-io-test", "old-contents" };
+            //args = new[] { "EXPORT", "-SOURCE", "-PATH", "\"/Root/Content\"", "-TARGET", @"D:\_sn-io-test", "old-contents" };
+            //args = new[] { "IMPORT", "-SOURCE", @"D:\_sn-io-test\old-contents", "-TARGET", "https://localhost1" };
+
+            //args = new[] { "?" };
+            //args = new[] { "-help" };
+            args = new[] { "export", "-help" };
+            //args = new[] { "import", "-help" };
+            //args = new[] { "copy", "-help" };
+            //args = new[] { "sync", "-help" };
+            //args = new string[0];
+            //args = new[] { "fake" };
+            //args = new[] { "EXPORT" };
+            //args = new[] { "COPY", "-TARGET", @"D:\_sn-io-test\localhost_44362_backup" };
+            //args = new[] { "COPY", "-SOURCE", @"D:\_sn-io-test\localhost_44362\Root\System\Settings", 
+            //                       "-TARGET", @"D:\_sn-io-test\localhost_44362_backup", "Settings_backup" };
+            //args = new[] { "IMPORT" };
+            //args = new[] { "IMPORT", "-SOURCE", @"D:\_sn-io-test\localhost_44362_backup\Settings_backup",
+            //              "-TARGET", "-PATH", "/Root/System", "-NAME", "Settings"};
+
+            if (IsHelpRequested(args))
+                return;
+
+            IoApp app;
+            try
+            {
+                app = CreateApp(args);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Cannot create the application.");
+                Console.WriteLine(e.Message);
+                return;
+            }
+
+            Console.WriteLine(app.ParamsToDisplay());
+            //UNDONE:LOG: Write 'app.ParamsToDisplay()' to log after the final logger integration.
+            await app.RunAsync(ShowProgress);
+
+            await Task.Delay(1000);
+
+            Console.WriteLine();
+            Console.WriteLine("Done.");
+        }
+
+        public static IoApp CreateApp(string[] args, Stream settingsFile = null)
+        {
+            var host = CreateHost(args, settingsFile);
+            var app = ActivatorUtilities.CreateInstance<IoApp>(host.Services);
+            return app;
+        }
+
+        private static IHost CreateHost(string[] args, Stream settingsFile = null)
+        {
+            var appArguments = new ArgumentParser().Parse(args);
+
+            var host = Host.CreateDefaultBuilder()
+                .ConfigureAppConfiguration((hostBuilderContext, configurationBuilder) =>
+                {
+                    configurationBuilder.SetBasePath(Directory.GetCurrentDirectory());
+                    if (settingsFile != null)
+                        configurationBuilder.AddJsonStream(settingsFile);
+                    else
+                        configurationBuilder.AddJsonFile("appsettings(test).json");
+                    configurationBuilder
+                        .AddEnvironmentVariables()
+                        .AddCommandLine(args);
+                })
+                .ConfigureServices((hostBuilderContext, serviceCollection) =>
+                {
+                    switch (appArguments.Verb)
+                    {
+                        case Verb.Export:
+                            var exportArgs = (ExportArguments) appArguments;
+                            serviceCollection
+                                .AddSingleton<IContentReader, RepositoryReader>()
+                                .AddSingleton<IContentWriter, FsWriter>()
+                                // settings file
+                                .Configure<RepositoryReaderArgs>(
+                                    hostBuilderContext.Configuration.GetSection("repositoryReader"))
+                                .Configure<FsWriterArgs>(hostBuilderContext.Configuration.GetSection("fsWriter"))
+                                // rewrite settings
+                                .Configure<RepositoryReaderArgs>(settings =>
+                                    exportArgs.ReaderArgs.RewriteSettings(settings))
+                                .Configure<FsWriterArgs>(settings => exportArgs.WriterArgs.RewriteSettings(settings))
+                                ;
+                            break;
+                        case Verb.Import:
+                            var importArgs = (ImportArguments) appArguments;
+                            serviceCollection
+                                .AddSingleton<IContentReader, FsReader>()
+                                .AddSingleton<IContentWriter, RepositoryWriter>()
+                                // settings file
+                                .Configure<FsReaderArgs>(hostBuilderContext.Configuration.GetSection("fsReader"))
+                                .Configure<RepositoryWriterArgs>(
+                                    hostBuilderContext.Configuration.GetSection("repositoryWriter"))
+                                // rewrite settings
+                                .Configure<FsReaderArgs>(settings => importArgs.ReaderArgs.RewriteSettings(settings))
+                                .Configure<RepositoryWriterArgs>(settings =>
+                                    importArgs.WriterArgs.RewriteSettings(settings))
+                                ;
+                            break;
+                        case Verb.Copy:
+                            var copyArgs = (CopyArguments) appArguments;
+                            serviceCollection
+                                .AddSingleton<IContentReader, FsReader>()
+                                .AddSingleton<IContentWriter, FsWriter>()
+                                // settings file
+                                .Configure<FsReaderArgs>(hostBuilderContext.Configuration.GetSection("fsReader"))
+                                .Configure<FsWriterArgs>(hostBuilderContext.Configuration.GetSection("fsWriter"))
+                                // rewrite settings
+                                .Configure<FsReaderArgs>(settings => copyArgs.ReaderArgs.RewriteSettings(settings))
+                                .Configure<FsWriterArgs>(settings => copyArgs.WriterArgs.RewriteSettings(settings))
+                                ;
+                            break;
+                        case Verb.Sync:
+                            var syncArgs = (SyncArguments) appArguments;
+                            serviceCollection
+                                .AddSingleton<IContentReader, RepositoryReader>()
+                                .AddSingleton<IContentWriter, RepositoryWriter>()
+                                // settings file
+                                .Configure<RepositoryReaderArgs>(
+                                    hostBuilderContext.Configuration.GetSection("repositoryReader"))
+                                .Configure<RepositoryWriterArgs>(
+                                    hostBuilderContext.Configuration.GetSection("repositoryWriter"))
+                                // rewrite settings
+                                .Configure<RepositoryReaderArgs>(settings =>
+                                    syncArgs.ReaderArgs.RewriteSettings(settings))
+                                .Configure<RepositoryWriterArgs>(settings =>
+                                    syncArgs.WriterArgs.RewriteSettings(settings))
+                                ;
+                            break;
+                        case Verb.Transfer:
+                            throw new NotSupportedException("'Transfer' is not supported in this version.");
+                        default:
+                            throw new ArgumentOutOfRangeException();
+                    }
+                })
+                .ConfigureLogging(loggingBuilder =>
+                {
+                    loggingBuilder
+                        .ClearProviders()
+                        .AddConsole()
+                        .SetMinimumLevel(LogLevel.Information);
+                })
+                .Build();
+
+            return host;
+        }
+
+
+        #region HelpScreen
+
+        private static StringComparison SC = StringComparison.OrdinalIgnoreCase;
+
+        private static bool IsHelpRequested(string[] args)
+        {
+            if (args.Length == 0)
+                return false;
+            var hasVerb = args[0].Equals("EXPORT", SC) ||
+                          args[0].Equals("IMPORT", SC) ||
+                          args[0].Equals("COPY", SC) ||
+                          args[0].Equals("SYNC", SC);
+            if (!args.Any(x => x.Equals("-HELP", SC) || x == "?"))
+                return false;
+
+            WriteHelpScreen(hasVerb ? args[0].ToUpper() : null);
+            return true;
+        }
+
+        private static void WriteHelpScreen(string verb = null)
+        {
+            Console.WriteLine(@$"SnIO {verb} v{Assembly.GetExecutingAssembly().GetName().Version}");
+            var key = verb ?? "General";
+            Console.WriteLine(HelpHeads[key]);
+            Console.WriteLine(HelpArguments[key]);
+        }
+
+        private static Dictionary<string, string> AtomicArguments = new Dictionary<string, string>
+        {
+            {"FsReader", @"    [-PATH] <Fully qualified path of the filesystem entry to read.>"},
+            {"FsWriter", @"    [-PATH] <Fully qualified path of a target filesystem directory.>
+    [-NAME] [Name of the target tree root if it is different from the source name.]"},
+            {"RepositoryReader", @"    [-URL] <Url of the source sensenet repository e.g. 'https:example.sensenet.cloud'.>
+    [-PATH] [Repository path of the root content of the tree to transfer. Default: '/Root'.]
+    [-BLOCKSIZE] [Count of items in one request. Default: 10.]"},
+            {"RepositoryWriter", @"    [-URL] <Url of the target sensenet repository e.g. 'https:example.sensenet.cloud'.>
+    [-PATH] [Repository path of the target container. Default: '/'.]
+    [-NAME] [Name of the target tree root if it is different from the source name.]"},
+        };
+
+        private static Dictionary<string, string> HelpArguments = new Dictionary<string, string>
+        {
+            {"General", @$""},
+            {"EXPORT", $@"  -SOURCE
+{AtomicArguments["RepositoryReader"]}
+  -TARGET
+{AtomicArguments["FsWriter"]}
+"},
+            {"IMPORT", $@"  -SOURCE
+{AtomicArguments["FsReader"]}
+  -TARGET
+{AtomicArguments["RepositoryWriter"]}
+"},
+            {"COPY", $@"  -SOURCE
+{AtomicArguments["FsReader"]}
+  -TARGET
+{AtomicArguments["FsWriter"]}
+"},
+            {"SYNC", $@"  -SOURCE
+{AtomicArguments["RepositoryReader"]}
+  -TARGET
+{AtomicArguments["RepositoryWriter"]}
+"},
+        };
+
+        private static Dictionary<string, string> HelpHeads = new Dictionary<string, string>
+        {
+            {"General", @$"Manages content transfer in the sensenet ecosystem.
+USAGE: SnIO <VERB> [-SOURCE [Source arguments]] [-TARGET [Target arguments]]
+       SnIO <VERB> [?|-help]
+       SnIO [?|-help]
+
+VERBS and operations
+  EXPORT  Transfer from a sensenet repository to a filesystem directory.
+  IMPORT  Transfer from a filesystem entry to a sensenet repository.
+  COPY    Transfer from a filesystem entry to another filesystem directory.
+  SYNC    Transfer from a sensenet repository to another sensenet repository.
+
+EXPORT arguments
+{HelpArguments["EXPORT"]}
+IMPORT arguments
+{HelpArguments["IMPORT"]}
+COPY arguments
+{HelpArguments["COPY"]}
+SYNC arguments
+{HelpArguments["SYNC"]}
+"},
+            {"EXPORT", @$"Transfers content tree from a sensenet repository to a filesystem directory.
+USAGE: SnIO EXPORT [-SOURCE [Source arguments]] [-TARGET [Target arguments]]
+       SnIO EXPORT [?|-help]
+Arguments"},
+            {"IMPORT", @$"Transfers content tree from a filesystem entry to a sensenet repository.
+USAGE: SnIO IMPORT [-SOURCE [Source arguments]] [-TARGET [Target arguments]]
+       SnIO IMPORT [?|-help]
+Arguments"},
+            {"COPY", @$"Transfers content tree from a filesystem entry to another filesystem directory.
+USAGE: SnIO COPY [-SOURCE [Source arguments]] [-TARGET [Target arguments]]
+       SnIO COPY [?|-help]
+Arguments"},
+            {"SYNC", @$"Transfers content tree from a sensenet repository to another sensenet repository.
+USAGE: SnIO SYNC [-SOURCE [Source arguments]] [-TARGET [Target arguments]]
+       SnIO SYNC [?|-help]
+Arguments"},
+        };
+
+        #endregion
 
         /* ========================================================================== Display progress */
 
@@ -158,7 +456,6 @@ namespace SenseNet.IO.CLI
         private static DisplayLevel _displayLevel = DisplayLevel.Errors;
         private static readonly string ClearLine = new string(' ', 70) + '\r';
         private static string _lastBatchAction;
-
         private static void ShowProgress(TransferState state)
         {
             if (_displayLevel == DisplayLevel.None)
@@ -195,5 +492,7 @@ namespace SenseNet.IO.CLI
             Console.Write($"{state.CurrentBatchAction} {state.Percent,5:F1}%  " +
                           $"({state.CurrentCount}/{state.TotalCount} errors:{state.ErrorCount})                     \r");
         }
+
+
     }
 }

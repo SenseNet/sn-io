@@ -7,27 +7,33 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using IdentityModel;
+using Microsoft.Extensions.Options;
 
 namespace SenseNet.IO.Implementations
 {
+    public class FsReaderArgs
+    {
+        public string Path { get; set; }
+    }
+
     public class FsReader : IContentReader
     {
+        public FsReaderArgs Args { get; }
         private FsContent _content; // Current IContent
         public string ReaderRootPath { get; }
 
         public string RootName { get; }
         public int EstimatedCount { get; private set; }
         public IContent Content => _content;
-        public string RelativePath => _content.Path;
+        public string RelativePath => _content?.Path;
 
-        /// <summary>
-        /// Initializes an FsReader instance.
-        /// </summary>
-        /// <param name="fsRootPath">Parent of "/Root" of repository.</param>
-        public FsReader(string fsRootPath)
+        public FsReader(IOptions<FsReaderArgs> args)
         {
-            ReaderRootPath = fsRootPath;
-            RootName = ContentPath.GetName(fsRootPath);
+            if (args == null)
+                throw new ArgumentNullException(nameof(args));
+            Args = args.Value;
+            ReaderRootPath = Args.Path ?? throw new ArgumentException("FsReader: Invalid root path.");
+            RootName = ContentPath.GetName(Args.Path);
         }
 
         private bool _initialized;
@@ -37,7 +43,7 @@ namespace SenseNet.IO.Implementations
                 return;
             _initialized = true;
 
-            EstimatedCount = 1;
+            EstimatedCount = IsDirectoryExists(ReaderRootPath) || IsFileExists(ReaderRootPath) || IsFileExists(ReaderRootPath + ".Content") ? 1 : 0;
             Task.Run(() => GetContentCount(ReaderRootPath));
         }
 

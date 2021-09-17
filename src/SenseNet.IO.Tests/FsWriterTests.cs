@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Options;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SenseNet.IO.Implementations;
 
@@ -16,11 +17,12 @@ namespace SenseNet.IO.Tests
         #region Nested classes
         private class FsWriterMock : FsWriter
         {
-            public FsWriterMock(string outputDirectory, string containerPath, string rootName,
+            public FsWriterMock(string outputDirectory, string rootName,
                 Func<string, bool> isDirectoryExists,
                 Action<string> createDirectory,
                 Func<string, bool, TextWriter> createTextWriter,
-                Func<string, FileMode, Stream> createBinaryStream) : base(outputDirectory, rootName)
+                Func<string, FileMode, Stream> createBinaryStream) : base(Options.Create(
+                new FsWriterArgs { Path = outputDirectory, Name = rootName}))
             {
                 _isDirectoryExists = isDirectoryExists;
                 _createDirectory = createDirectory;
@@ -100,15 +102,11 @@ namespace SenseNet.IO.Tests
                 EstimatedCount = contentsToRead.Length;
                 _contentsToRead = contentsToRead;
             }
-//UNDONE://///
-            //public Task<bool> ReadContentTypesAsync_DELETE(CancellationToken cancel = default) { return Task.FromResult(false); }
-            //public Task<bool> ReadSettingsAsync_DELETE(CancellationToken cancel = default) { return Task.FromResult(false); }
-            //public Task<bool> ReadAspectsAsync_DELETE(CancellationToken cancel = default) { return Task.FromResult(false); }
+
             public Task<bool> ReadSubTreeAsync(string relativePath, CancellationToken cancel = default)
             {
                 throw new NotImplementedException();
             }
-
             public Task<bool> ReadAllAsync(string[] contentsWithoutChildren, CancellationToken cancel = default)
             {
                 if (contentsWithoutChildren != null && contentsWithoutChildren.Length != 0)
@@ -144,7 +142,6 @@ namespace SenseNet.IO.Tests
             });
             var writer = new FsWriterMock(
                 outputDirectory: @"Q:\FsRoot",
-                containerPath: null,
                 rootName: null,
                 isDirectoryExists: fsPath => { checkedPaths.Add(fsPath); return false; },
                 createDirectory: fsPath => { createdPaths.Add(fsPath); },
@@ -191,7 +188,6 @@ namespace SenseNet.IO.Tests
             });
             var writer = new FsWriterMock(
                 outputDirectory: @"Q:\FsRoot",
-                containerPath: null,
                 rootName: null,
                 isDirectoryExists: fsPath => { checkedPaths.Add(fsPath); return false; },
                 createDirectory: fsPath => { createdPaths.Add(fsPath); },
@@ -241,7 +237,6 @@ namespace SenseNet.IO.Tests
             });
             var writer = new FsWriterMock(
                 outputDirectory: @"Q:\FsRoot",
-                containerPath: null,
                 rootName: null,
                 isDirectoryExists: fsPath => { checkedPaths.Add(fsPath); return false; },
                 createDirectory: fsPath => { createdPaths.Add(fsPath); },
@@ -295,8 +290,7 @@ namespace SenseNet.IO.Tests
                 new TestContent("F2", "F2", "Folder", new Dictionary<string, object>(), new Attachment[0]),
             });
             var writer = new FsWriterMock(
-                outputDirectory: @"Q:\FsRoot",
-                containerPath: "/Root",
+                outputDirectory: @"Q:\FsRoot\Root",
                 rootName: "Fx",
                 isDirectoryExists: fsPath =>
                 {
@@ -353,7 +347,6 @@ namespace SenseNet.IO.Tests
             });
             var writer = new FsWriterMock(
                 outputDirectory: @"Q:\FsRoot",
-                containerPath: null,
                 rootName: null,
                 isDirectoryExists: fsPath => false,
                 createDirectory: fsPath => { },
@@ -405,7 +398,6 @@ namespace SenseNet.IO.Tests
             });
             var writer = new FsWriterMock(
                 outputDirectory: @"Q:\FsRoot",
-                containerPath: null,
                 rootName: null,
                 isDirectoryExists: fsPath => { checkedPaths.Add(fsPath); return false; },
                 createDirectory: fsPath => { createdPaths.Add(fsPath); },
@@ -479,7 +471,6 @@ namespace SenseNet.IO.Tests
             });
             var writer = new FsWriterMock(
                 outputDirectory: @"Q:\FsRoot",
-                containerPath: null,
                 rootName: null,
                 isDirectoryExists: fsPath => { checkedPaths.Add(fsPath); return false; },
                 createDirectory: fsPath => { createdPaths.Add(fsPath); },

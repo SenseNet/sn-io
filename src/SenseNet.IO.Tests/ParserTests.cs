@@ -116,7 +116,7 @@ namespace SenseNet.IO.Tests
             }
         }
 
-        //UNDONE: Write more reliability test for parsers
+        //TODO: Write more reliability test for parsers
 
         /*
         [TestMethod]

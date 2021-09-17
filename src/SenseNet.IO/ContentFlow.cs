@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -11,80 +12,29 @@ namespace SenseNet.IO
 {
     public abstract class ContentFlow : IContentFlow
     {
-        public static IContentFlow Create(IContentReader reader, IContentWriter writer)
+        public static IContentFlow Create([NotNull] IContentReader reader, [NotNull] IContentWriter writer)
         {
             var flow = writer is ISnRepositoryWriter repoWriter
                 ? (IContentFlow)new Level5ContentFlow(reader, repoWriter)
                 : new Level1ContentFlow(reader, writer);
-            flow.WriteLogHead();
             return flow;
         }
-
-        /* ========================================================================== LOGGING */
 
         public abstract IContentReader Reader { get; }
         public abstract IContentWriter Writer { get; }
         public abstract Task TransferAsync(IProgress<TransferState> progress, CancellationToken cancel = default);
 
-        public void WriteLogHead()
+        /* ========================================================================== LOGGING */
+
+        public void WriteLogHead(string head)
         {
-            string source;
-            string target;
-            var readFromRepo = false;
-            var readFromDisk = false;
-            var writeToRepo = false;
-            var writeToDisk = false;
-            if (Reader is RepositoryTreeReader repoReader)
-            {
-                readFromRepo = true;
-                source = $"{repoReader.Url} ... {repoReader.RepositoryRootPath}";
-            }
-            else if (Reader is FsReader fsReader)
-            {
-                readFromDisk = true;
-                source = fsReader.ReaderRootPath;
-            }
-            else
-            {
-                source = Reader.GetType().FullName;
-            }
-
-            if (Writer is FsWriter fsWriter)
-            {
-                writeToDisk = true;
-                target = fsWriter.RootName == null
-                    ? fsWriter.OutputDirectory
-                    : $"{fsWriter.OutputDirectory} rename to {fsWriter.RootName}";
-            }
-            else if (Writer is RepositoryWriter repoWriter)
-            {
-                writeToRepo = true;
-                target = repoWriter.RootName == null
-                    ? $"{repoWriter.Url} ... {repoWriter.ContainerPath}"
-                    : $"{repoWriter.Url} ... {repoWriter.ContainerPath} rename to {repoWriter.RootName}";
-            }
-            else
-            {
-                target = Writer.GetType().FullName;
-            }
-
-            string operation;
-            if (readFromDisk && writeToDisk)
-                operation = "Copy";
-            else if (readFromRepo && writeToRepo)
-                operation = "Sync";
-            else if (readFromRepo)
-                operation = "Export";
-            else if (writeToRepo)
-                operation = "Import";
-            else
-                operation = "Transfer";
-
-            WriteLog(operation.ToUpper(), true);
-            WriteLog($"    from: {source}", true);
-            WriteLog($"    to  : {target}", true);
-            WriteLog(string.Empty, true);
+            WriteLog(head, true);
             WriteLog("START");
+        }
+
+        protected void WriteSummaryToLog(int estimatedCount, int transferredCount, int errorCount, TimeSpan duration)
+        {
+            WriteLog($"FINISH: transferred contents: {transferredCount}/{estimatedCount}, errors: {errorCount}, duration: {duration}");
         }
 
         /* ========================================================================== TOOLS */
@@ -117,6 +67,10 @@ namespace SenseNet.IO
                     writer.WriteLine($"         {message.Replace("The server returned an error (HttpStatus: InternalServerError): ", "")}");
                 WriteLog(writer.GetStringBuilder().ToString().Trim());
             }
+        }
+        protected void WriteLog(Exception e)
+        {
+            WriteLog(e.ToString());
         }
         private string CreateLogFile(bool createNew, string extension)
         {

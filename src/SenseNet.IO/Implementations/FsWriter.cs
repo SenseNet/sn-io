@@ -3,20 +3,32 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 
 namespace SenseNet.IO.Implementations
 {
+    public class FsWriterArgs
+    {
+        public string Path { get; set; }
+        public string Name { get; set; }
+    }
+
     public class FsWriter : IContentWriter
     {
+        public FsWriterArgs Args { get; }
         public string OutputDirectory { get; }
         public string ContainerPath => "/";
         public string RootName { get; }
 
-        public FsWriter(string outputDirectory, string rootName = null)
+        public FsWriter(IOptions<FsWriterArgs> args)
         {
-            OutputDirectory = outputDirectory;
-            RootName = rootName;
+            if (args == null)
+                throw new ArgumentNullException(nameof(args));
+            Args = args.Value;
+
+            OutputDirectory = Args.Path ?? throw new ArgumentException("FsWriter: Invalid target container path.");
+            RootName = Args.Name;
         }
 
         public async Task<WriterState> WriteAsync(string path, IContent content, CancellationToken cancel = default)

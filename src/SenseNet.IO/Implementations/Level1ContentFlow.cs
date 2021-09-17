@@ -1,54 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.IO;
-using System.Linq;
-using System.Reflection;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
 
 namespace SenseNet.IO.Implementations
 {
     internal class Level1ContentFlow : ContentFlow
     {
-        private class InitialContent : IContent
-        {
-            public string[] FieldNames { get; } = new string[0];
-
-            public object this[string fieldName]
-            {
-                get => null;
-                set => throw new NotImplementedException();
-            }
-
-            public string Name { get; set; }
-            public string Path { get; }
-            public string Type { get; }
-            public PermissionInfo Permissions { get; set; }
-
-            public InitialContent(string name, string type)
-            {
-                Name = name;
-                Type = type;
-            }
-
-            public Task<Attachment[]> GetAttachmentsAsync()
-            {
-                return Task.FromResult(Array.Empty<Attachment>());
-            }
-        }
-
-        private static readonly Dictionary<string, IContent> InitialContents = new Dictionary<string, IContent>
-        {
-            {"/Root", new InitialContent("Root", "PortalRoot")},
-            {"/Root/System", new InitialContent("System", "SystemFolder")},
-            {"/Root/System/Settings", new InitialContent("Settings", "SystemFolder")},
-            {"/Root/System/Schema", new InitialContent("Schema", "SystemFolder")},
-            {"/Root/System/Schema/Aspects", new InitialContent("Aspects", "SystemFolder")},
-            {"/Root/System/Schema/ContentTypes", new InitialContent("ContentTypes", "SystemFolder")},
-        };
-
         public override IContentReader Reader { get; }
         public override IContentWriter Writer { get; }
         public Level1ContentFlow(IContentReader reader, IContentWriter writer)
@@ -57,28 +15,40 @@ namespace SenseNet.IO.Implementations
             Writer = writer;
         }
 
-        private int _contentCount = 0;
+        private int _contentCount;
         private string _currentBatchAction;
         private int _errorCount;
         private string _rootName;
         public override async Task TransferAsync(IProgress<TransferState> progress, CancellationToken cancel = default)
         {
+            var timer = Stopwatch.StartNew();
+
             _rootName = Writer.RootName ?? Reader.RootName;
-
-            if (await Reader.ReadAllAsync(new string[0], cancel))
+            try
             {
-                if (Writer.RootName != null)
-                    Rename(Reader.Content, _rootName);
-
-                _currentBatchAction = "Transfer contents";
-                WriteLog($"------------ {_currentBatchAction.ToUpper()} ------------");
-
-                await WriteAsync(progress, false, cancel);
-                while (await Reader.ReadAllAsync(new string[0], cancel))
+                if (await Reader.ReadAllAsync(new string[0], cancel))
                 {
+                    if (Writer.RootName != null)
+                        Rename(Reader.Content, _rootName);
+
+                    _currentBatchAction = "Transfer contents";
+                    WriteLog($"------------ {_currentBatchAction.ToUpper()} ------------");
+
                     await WriteAsync(progress, false, cancel);
+                    while (await Reader.ReadAllAsync(new string[0], cancel))
+                    {
+                        await WriteAsync(progress, false, cancel);
+                    }
                 }
             }
+            catch (Exception e)
+            {
+                WriteLog(e);
+                throw;
+            }
+
+            timer.Stop();
+            WriteSummaryToLog(Reader.EstimatedCount, _contentCount, _errorCount, timer.Elapsed);
         }
 
         private async Task WriteAsync(IProgress<TransferState> progress, bool updateReferences, CancellationToken cancel = default)
@@ -88,9 +58,9 @@ namespace SenseNet.IO.Implementations
             var state = await Writer.WriteAsync(writerPath, Reader.Content, cancel);
             state.ReaderPath = readerPath;
             state.WriterPath = writerPath;
-            Progress(readerPath, ref _contentCount, state, updateReferences, progress);
+            Progress(ref _contentCount, state, updateReferences, progress);
         }
-        private void Progress(string readerPath, ref int count, WriterState state, bool updateReferences, IProgress<TransferState> progress = null)
+        private void Progress(ref int count, WriterState state, bool updateReferences, IProgress<TransferState> progress = null)
         {
             if(state.Action == WriterAction.Failed)
                 _errorCount++;

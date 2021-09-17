@@ -4,23 +4,36 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using SenseNet.Client;
 
 namespace SenseNet.IO.Implementations
 {
+    public class RepositoryWriterArgs
+    {
+        public string Url { get; set; }
+        public string Path { get; set; }
+        public string Name { get; set; }
+    }
+
     public class RepositoryWriter : ISnRepositoryWriter
     {
-        public string Url;
+        public RepositoryWriterArgs Args { get; }
+        public string Url { get; }
         public string ContainerPath { get; }
         public string RootName { get; }
 
-        public RepositoryWriter(string url, string containerPath = null, string rootName = null)
+        public RepositoryWriter(IOptions<RepositoryWriterArgs> args)
         {
-            Url = url;
-            ContainerPath = containerPath ?? "/";
-            RootName = rootName;
+            if (args == null)
+                throw new ArgumentNullException(nameof(args));
+            Args = args.Value;
+
+            Url = Args.Url ?? throw new ArgumentException("RepositoryWriter: Invalid URL.");
+            ContainerPath = Args.Path ?? "/";
+            RootName = Args.Name;
             Initialize();
         }
 
@@ -37,7 +50,7 @@ namespace SenseNet.IO.Implementations
 
         public async Task<WriterState> WriteAsync(string path, IContent content, CancellationToken cancel = default)
         {
-            var repositoryPath = ContentPath.Combine(ContainerPath ?? "/", path);
+            var repositoryPath = ContentPath.Combine(ContainerPath, path);
             if (content.Type == "ContentType")
                 return await WriteContentTypeAsync(repositoryPath, content, cancel);
             return await WriteContentAsync(repositoryPath, content, cancel);
