@@ -227,7 +227,7 @@ namespace SenseNet.IO.CLI
             }
 
             Console.WriteLine(app.ParamsToDisplay());
-            //UNDONE: Write 'app.ParamsToDisplay()' to log after the final logger integration.
+            //UNDONE:LOG: Write 'app.ParamsToDisplay()' to log after the final logger integration.
             await app.RunAsync(ShowProgress);
 
             await Task.Delay(1000);

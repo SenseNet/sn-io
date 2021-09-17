@@ -65,7 +65,7 @@ namespace SenseNet.IO.Implementations
 
         public Task<bool> ReadSubTreeAsync(string relativePath, CancellationToken cancel = default)
         {
-            //UNDONE:!!!! ReadSubTreeAsync is not implemented
+            //UNDONE:SYNC: ReadSubTreeAsync is not implemented
             throw new NotImplementedException();
         }
 
@@ -74,7 +74,7 @@ namespace SenseNet.IO.Implementations
         public async Task<bool> ReadAllAsync(string[] contentsWithoutChildren, CancellationToken cancel = default)
         {
             if (contentsWithoutChildren != null && contentsWithoutChildren.Length != 0)
-                //UNDONE:!!!! Process "contentsWithoutChildren" parameter
+                //UNDONE:SYNC: Process "contentsWithoutChildren" parameter
                 throw new NotImplementedException();
 
             await InitializeAsync();
@@ -96,12 +96,12 @@ namespace SenseNet.IO.Implementations
 
         public void SetReferenceUpdateTasks(IEnumerable<TransferTask> tasks, int taskCount)
         {
-            //UNDONE:!!!! implement SetReferenceUpdateTasks()
+            //UNDONE:SYNC: implement SetReferenceUpdateTasks()
             throw new NotImplementedException();
         }
         public Task<bool> ReadByReferenceUpdateTasksAsync(CancellationToken cancel)
         {
-            //UNDONE:!!!! implement ReadRandomAsync()
+            //UNDONE:SYNC: implement ReadRandomAsync()
             throw new NotImplementedException();
         }
 
