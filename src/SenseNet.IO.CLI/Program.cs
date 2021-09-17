@@ -193,6 +193,7 @@ namespace SenseNet.IO.CLI
             //args = new[] { "IMPORT", "-SOURCE", @"D:\_sn-io-test\old-contents", "-TARGET", "https://localhost1" };
 
             args = new[] { "EXPORT" };
+            args = new[] { "COPY", "-TARGET ", @"D:\_sn-io-test\localhost_44362_backup" };
             //args = new[] { "IMPORT" };
 
             var app = CreateApp(args);

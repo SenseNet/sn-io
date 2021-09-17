@@ -43,7 +43,7 @@ namespace SenseNet.IO.Implementations
                 return;
             _initialized = true;
 
-            EstimatedCount = 1;
+            EstimatedCount = 0;
             Task.Run(() => GetContentCount(ReaderRootPath));
         }
 
