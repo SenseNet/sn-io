@@ -30,8 +30,9 @@ namespace SenseNet.IO.Implementations
             if (args == null)
                 throw new ArgumentNullException(nameof(args));
             Args = args.Value;
-            Url = Args.Url;
-            ContainerPath = Args.Path;
+
+            Url = Args.Url ?? throw new ArgumentException("RepositoryWriter: Invalid URL.");
+            ContainerPath = Args.Path ?? "/";
             RootName = Args.Name;
             Initialize();
         }
@@ -49,7 +50,7 @@ namespace SenseNet.IO.Implementations
 
         public async Task<WriterState> WriteAsync(string path, IContent content, CancellationToken cancel = default)
         {
-            var repositoryPath = ContentPath.Combine(ContainerPath ?? "/", path);
+            var repositoryPath = ContentPath.Combine(ContainerPath, path);
             if (content.Type == "ContentType")
                 return await WriteContentTypeAsync(repositoryPath, content, cancel);
             return await WriteContentAsync(repositoryPath, content, cancel);

@@ -26,8 +26,9 @@ namespace SenseNet.IO.Implementations
             if (args == null)
                 throw new ArgumentNullException(nameof(args));
             Args = args.Value;
-            OutputDirectory = Args.Path;
-            RootName = string.IsNullOrEmpty(Args.Name) ? null : Args.Name;
+
+            OutputDirectory = Args.Path ?? throw new ArgumentException("FsWriter: Invalid target container path.");
+            RootName = Args.Name;
         }
 
         public async Task<WriterState> WriteAsync(string path, IContent content, CancellationToken cancel = default)

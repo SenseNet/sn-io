@@ -38,15 +38,13 @@ namespace SenseNet.IO.Implementations
                 throw new ArgumentNullException(nameof(args));
             Args = args.Value;
 
-            if (string.IsNullOrEmpty(Args.Path))
-                Args.Path = "/Root";
-            if (Args.BlockSize == null)
-                Args.BlockSize = 10;
+            Args.Path ??= "/Root";
+            Args.BlockSize ??= 10;
 
-            Url = Args.Url;
-            RepositoryRootPath = Args.Path ?? "/Root";
+            Url = Args.Url ?? throw new ArgumentException("RepositoryReader: Invalid URL.");
+            RepositoryRootPath = Args.Path;
             RootName = ContentPath.GetName(Args.Path);
-            _blockSize = Args.BlockSize ?? 10;
+            _blockSize = Args.BlockSize.Value;
         }
 
         private async Task InitializeAsync()

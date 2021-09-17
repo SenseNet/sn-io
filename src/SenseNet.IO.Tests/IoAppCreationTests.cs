@@ -83,6 +83,7 @@ namespace SenseNet.IO.Tests
                 typeof(RepositoryWriter), "Url: https://localhost:4242, Path: /Root/Backup, Name: Content2");
         }
         [TestMethod]
+        [ExpectedException(typeof(ArgumentException))]
         public void App_Import_MissingSource()
         {
             Test(new[] { "IMPORT", "-TARGET", "https://localhost1" },
@@ -95,6 +96,7 @@ namespace SenseNet.IO.Tests
                 typeof(RepositoryWriter), "Url: https://localhost1, Path: /Root, Name: Content");
         }
         [TestMethod]
+        [ExpectedException(typeof(ArgumentException))]
         public void App_Import_MissingTarget()
         {
             Test(new[] { "IMPORT", "-SOURCE", "Q:\\_sn-io-test\\content1" },
@@ -172,6 +174,7 @@ namespace SenseNet.IO.Tests
                 typeof(FsWriter), "Path: Q:\\_sn-io-test\\content1");
         }
         [TestMethod]
+        [ExpectedException(typeof(ArgumentException))]
         public void App_Export_MissingSource()
         {
             Test(new[] { "EXPORT", "-TARGET", "Q:\\_sn-io-test\\content1" },
@@ -184,6 +187,7 @@ namespace SenseNet.IO.Tests
                 typeof(FsWriter), "Path: Q:\\_sn-io-test\\content1");
         }
         [TestMethod]
+        [ExpectedException(typeof(ArgumentException))]
         public void App_Export_MissingTarget()
         {
             Test(new[] { "EXPORT", "-SOURCE", "https://localhost:4242", "\"/Root/Backup\"", "42" },

@@ -14,11 +14,23 @@ namespace SenseNet.IO.CLI
         }
         public static void RewriteSettings(this FsReaderArgs args, FsReaderArgs settings)
         {
+            // workaround for "Null configuration elements deserialized as empty strings" https://github.com/dotnet/runtime/issues/36510
+            if (string.IsNullOrEmpty(settings.Path))
+                settings.Path = null;
+
+            // rewrite
             if (args.Path != null)
                 settings.Path = args.Path;
         }
         public static void RewriteSettings(this FsWriterArgs args, FsWriterArgs settings)
         {
+            // workaround for "Null configuration elements deserialized as empty strings" https://github.com/dotnet/runtime/issues/36510
+            if (string.IsNullOrEmpty(settings.Path))
+                settings.Path = null;
+            if (string.IsNullOrEmpty(settings.Name))
+                settings.Name = null;
+
+            // rewrite
             if (args.Path != null)
                 settings.Path = args.Path;
             if (args.Name != null)
@@ -26,6 +38,15 @@ namespace SenseNet.IO.CLI
         }
         public static void RewriteSettings(this RepositoryReaderArgs args, RepositoryReaderArgs settings)
         {
+            // workaround for "Null configuration elements deserialized as empty strings" https://github.com/dotnet/runtime/issues/36510
+            if (string.IsNullOrEmpty(settings.Url))
+                settings.Url = null;
+            if (string.IsNullOrEmpty(settings.Path))
+                settings.Path = null;
+            if (settings.BlockSize < 1)
+                settings.BlockSize = null;
+
+            // rewrite
             if (args.Url != null)
                 settings.Url = args.Url;
             if (args.Path != null)
@@ -35,6 +56,15 @@ namespace SenseNet.IO.CLI
         }
         public static void RewriteSettings(this RepositoryWriterArgs args, RepositoryWriterArgs settings)
         {
+            // workaround for "Null configuration elements deserialized as empty strings" https://github.com/dotnet/runtime/issues/36510
+            if (string.IsNullOrEmpty(settings.Url))
+                settings.Url = null;
+            if (string.IsNullOrEmpty(settings.Path))
+                settings.Path = null;
+            if (string.IsNullOrEmpty(settings.Name))
+                settings.Name = null;
+
+            // rewrite
             if (args.Url != null)
                 settings.Url = args.Url;
             if (args.Path != null)

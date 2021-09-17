@@ -32,7 +32,7 @@ namespace SenseNet.IO.Implementations
             if (args == null)
                 throw new ArgumentNullException(nameof(args));
             Args = args.Value;
-            ReaderRootPath = Args.Path;
+            ReaderRootPath = Args.Path ?? throw new ArgumentException("FsReader: Invalid root path.");
             RootName = ContentPath.GetName(Args.Path);
         }
 
