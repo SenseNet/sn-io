@@ -8,6 +8,7 @@ using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using SenseNet.Client;
+using SenseNet.Client.Authentication;
 
 namespace SenseNet.IO.Implementations
 {
@@ -16,16 +17,19 @@ namespace SenseNet.IO.Implementations
         public string Url { get; set; }
         public string Path { get; set; }
         public string Name { get; set; }
+        public RepositoryAuthenticationOptions Authentication { get; set; } = new RepositoryAuthenticationOptions();
     }
 
     public class RepositoryWriter : ISnRepositoryWriter
     {
+        private readonly ITokenStore _tokenStore;
+
         public RepositoryWriterArgs Args { get; }
         public string Url { get; }
         public string ContainerPath { get; }
         public string RootName { get; }
 
-        public RepositoryWriter(IOptions<RepositoryWriterArgs> args)
+        public RepositoryWriter(ITokenStore tokenStore, IOptions<RepositoryWriterArgs> args)
         {
             if (args == null)
                 throw new ArgumentNullException(nameof(args));
@@ -34,18 +38,29 @@ namespace SenseNet.IO.Implementations
             Url = Args.Url ?? throw new ArgumentException("RepositoryWriter: Invalid URL.");
             ContainerPath = Args.Path ?? "/";
             RootName = Args.Name;
+            _tokenStore = tokenStore;
+
             Initialize();
         }
 
         private void Initialize()
         {
-            ClientContext.Current.AddServer(new ServerContext
+            var server = new ServerContext
             {
                 Url = Url,
                 Username = "builtin\\admin",
                 Password = "admin"
-            });
+            };
 
+            // this will take precedence over the username and password
+            if (!string.IsNullOrEmpty(Args.Authentication.ClientId))
+            {
+                server.Authentication.AccessToken = _tokenStore
+                    .GetTokenAsync(server, Args.Authentication.ClientId, Args.Authentication.ClientSecret)
+                    .GetAwaiter().GetResult();
+            }
+
+            ClientContext.Current.AddServer(server);
         }
 
         public async Task<WriterState> WriteAsync(string path, IContent content, CancellationToken cancel = default)

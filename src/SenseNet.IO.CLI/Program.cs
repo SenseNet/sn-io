@@ -8,6 +8,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using SenseNet.Extensions.DependencyInjection;
 using SenseNet.IO.Implementations;
 
 namespace SenseNet.IO.CLI
@@ -266,6 +267,7 @@ namespace SenseNet.IO.CLI
                         case Verb.Export:
                             var exportArgs = (ExportArguments) appArguments;
                             serviceCollection
+                                .AddSenseNetClientTokenStore()
                                 .AddSingleton<IContentReader, RepositoryReader>()
                                 .AddSingleton<IContentWriter, FsWriter>()
                                 // settings file
@@ -281,6 +283,7 @@ namespace SenseNet.IO.CLI
                         case Verb.Import:
                             var importArgs = (ImportArguments) appArguments;
                             serviceCollection
+                                .AddSenseNetClientTokenStore()
                                 .AddSingleton<IContentReader, FsReader>()
                                 .AddSingleton<IContentWriter, RepositoryWriter>()
                                 // settings file
@@ -309,6 +312,7 @@ namespace SenseNet.IO.CLI
                         case Verb.Sync:
                             var syncArgs = (SyncArguments) appArguments;
                             serviceCollection
+                                .AddSenseNetClientTokenStore()
                                 .AddSingleton<IContentReader, RepositoryReader>()
                                 .AddSingleton<IContentWriter, RepositoryWriter>()
                                 // settings file
