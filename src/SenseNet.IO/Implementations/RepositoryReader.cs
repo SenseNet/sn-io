@@ -6,14 +6,21 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Options;
 using SenseNet.Client;
+using SenseNet.Client.Authentication;
 
 namespace SenseNet.IO.Implementations
 {
+    public class RepositoryAuthenticationOptions
+    {
+        public string ClientId { get; set; }
+        public string ClientSecret { get; set; }
+    }
     public class RepositoryReaderArgs
     {
         public string Url { get; set; }
         public string Path { get; set; }
         public int? BlockSize { get; set; }
+        public RepositoryAuthenticationOptions Authentication { get; set; } = new RepositoryAuthenticationOptions();
     }
 
     /// <summary>
@@ -24,6 +31,7 @@ namespace SenseNet.IO.Implementations
         public RepositoryReaderArgs Args { get; }
         private readonly int _blockSize;
         private int _blockIndex;
+        private readonly ITokenStore _tokenStore;
 
         public string Url { get; }
         public string RootName { get; }
@@ -32,7 +40,7 @@ namespace SenseNet.IO.Implementations
         public IContent Content { get; private set; }
         public string RelativePath { get; private set; }
 
-        public RepositoryReader(IOptions<RepositoryReaderArgs> args)
+        public RepositoryReader(ITokenStore tokenStore, IOptions<RepositoryReaderArgs> args)
         {
             if (args == null)
                 throw new ArgumentNullException(nameof(args));
@@ -45,18 +53,28 @@ namespace SenseNet.IO.Implementations
             RepositoryRootPath = Args.Path;
             RootName = ContentPath.GetName(Args.Path);
             _blockSize = Args.BlockSize.Value;
+            _tokenStore = tokenStore;
         }
 
         private async Task InitializeAsync()
         {
             if (Content == null)
             {
-                ClientContext.Current.AddServer(new ServerContext
+                var server = new ServerContext
                 {
                     Url = Url,
                     Username = "builtin\\admin",
                     Password = "admin"
-                });
+                };
+
+                // this will take precedence over the username and password
+                if (!string.IsNullOrEmpty(Args.Authentication.ClientId))
+                {
+                    server.Authentication.AccessToken = await _tokenStore
+                        .GetTokenAsync(server, Args.Authentication.ClientId, Args.Authentication.ClientSecret);
+                }
+
+                ClientContext.Current.AddServer(server);
 
                 // Get tree size before first read
                 EstimatedCount = await GetCountAsync();
