@@ -36,7 +36,7 @@ namespace SenseNet.IO.Tests
         /* ----------------------------------------------------------------------- q:\io\Root */
 
         [TestMethod]
-        public async Task ContentFlow2_Root()
+        public async Task ContentFlow5_Root()
         {
             var sourceTree = CreateSourceTree(@"\");
             var targetTree = CreateTree(new[] { "/Root", "/Root/IMS" });
@@ -104,7 +104,7 @@ namespace SenseNet.IO.Tests
             AssertLogsAreEqual(expected, actual);
         }
         [TestMethod]
-        public async Task ContentFlow2_RootSystem()
+        public async Task ContentFlow5_RootSystem()
         {
             var sourceTree = CreateSourceTree(@"\");
             var targetTree = CreateTree(new[] {"/Root", "/Root/System"});
@@ -157,7 +157,7 @@ namespace SenseNet.IO.Tests
             AssertLogsAreEqual(expected, actual);
         }
         [TestMethod]
-        public async Task ContentFlow2_RootSystemSchema()
+        public async Task ContentFlow5_RootSystemSchema()
         {
             var sourceTree = CreateSourceTree(@"\");
             var targetTree = CreateTree(new[] { "/Root" });
@@ -205,7 +205,7 @@ namespace SenseNet.IO.Tests
             AssertLogsAreEqual(expected, actual);
         }
         [TestMethod]
-        public async Task ContentFlow2_RootSystemSchemaContentTypes()
+        public async Task ContentFlow5_RootSystemSchemaContentTypes()
         {
             var sourceTree = CreateSourceTree(@"\");
             var targetTree = CreateTree(new[] { "/Root" });
@@ -249,7 +249,7 @@ namespace SenseNet.IO.Tests
             AssertLogsAreEqual(expected, actual);
         }
         [TestMethod]
-        public async Task ContentFlow2_RootSystemSchemaAspects()
+        public async Task ContentFlow5_RootSystemSchemaAspects()
         {
             var sourceTree = CreateSourceTree(@"\");
             var targetTree = CreateTree(new[] { "/Root" });
@@ -289,7 +289,7 @@ namespace SenseNet.IO.Tests
             AssertLogsAreEqual(expected, actual);
         }
         [TestMethod]
-        public async Task ContentFlow2_RootSystemSettings()
+        public async Task ContentFlow5_RootSystemSettings()
         {
             var sourceTree = CreateSourceTree(@"\");
             var targetTree = CreateTree(new[] { "/Root", "/Root/System" });
@@ -329,7 +329,7 @@ namespace SenseNet.IO.Tests
             AssertLogsAreEqual(expected, actual);
         }
         [TestMethod]
-        public async Task ContentFlow2_RootContent()
+        public async Task ContentFlow5_RootContent()
         {
             var sourceTree = CreateSourceTree(@"\");
             var targetTree = CreateTree(new[] { "/Root" });
@@ -374,7 +374,7 @@ namespace SenseNet.IO.Tests
         /* ----------------------------------------------------------------------- q:\io\System */
 
         [TestMethod]
-        public async Task ContentFlow2_System()
+        public async Task ContentFlow5_System()
         {
             var sourceTree = CreateSourceTree(@"\Root\System");
             var targetTree = CreateTree(new[] { "/Root", "/Root/System" });
@@ -427,7 +427,7 @@ namespace SenseNet.IO.Tests
             AssertLogsAreEqual(expected, actual);
         }
         [TestMethod]
-        public async Task ContentFlow2_SystemSchema()
+        public async Task ContentFlow5_SystemSchema()
         {
             var sourceTree = CreateSourceTree(@"\Root\System");
             var targetTree = CreateTree(new[] { "/Root" });
@@ -477,7 +477,7 @@ namespace SenseNet.IO.Tests
             AssertLogsAreEqual(expected, actual);
         }
         [TestMethod]
-        public async Task ContentFlow2_SystemSchemaContentTypes()
+        public async Task ContentFlow5_SystemSchemaContentTypes()
         {
             var sourceTree = CreateSourceTree(@"\Root\System");
             var targetTree = CreateTree(new[] { "/Root" });
@@ -523,7 +523,7 @@ namespace SenseNet.IO.Tests
             AssertLogsAreEqual(expected, actual);
         }
         [TestMethod]
-        public async Task ContentFlow2_SystemSchemaAspects()
+        public async Task ContentFlow5_SystemSchemaAspects()
         {
             var sourceTree = CreateSourceTree(@"\Root\System");
             var targetTree = CreateTree(new[] { "/Root" });
@@ -565,7 +565,7 @@ namespace SenseNet.IO.Tests
             AssertLogsAreEqual(expected, actual);
         }
         [TestMethod]
-        public async Task ContentFlow2_SystemSettings()
+        public async Task ContentFlow5_SystemSettings()
         {
             var sourceTree = CreateSourceTree(@"\Root\System");
             var targetTree = CreateTree(new[] { "/Root" });
@@ -610,7 +610,7 @@ namespace SenseNet.IO.Tests
         /* ----------------------------------------------------------------------- q:\io\Schema */
 
         [TestMethod]
-        public async Task ContentFlow2_Schema()
+        public async Task ContentFlow5_Schema()
         {
             var sourceTree = CreateSourceTree(@"\Root\System\Schema");
             var targetTree = CreateTree(new[] { "/Root", "/Root/System", "/Root/System/Schema" });
@@ -657,7 +657,7 @@ namespace SenseNet.IO.Tests
             AssertLogsAreEqual(expected, actual);
         }
         [TestMethod]
-        public async Task ContentFlow2_SchemaContentTypes()
+        public async Task ContentFlow5_SchemaContentTypes()
         {
             var sourceTree = CreateSourceTree(@"\Root\System\Schema");
             var targetTree = CreateTree(new[] { "/Root", "/Root/System", "/Root/System/Schema" });
@@ -702,7 +702,7 @@ namespace SenseNet.IO.Tests
             AssertLogsAreEqual(expected, actual);
         }
         [TestMethod]
-        public async Task ContentFlow2_SchemaAspects()
+        public async Task ContentFlow5_SchemaAspects()
         {
             var sourceTree = CreateSourceTree(@"\Root\System\Schema");
             var targetTree = CreateTree(new[] { "/Root", "/Root/System", "/Root/System/Schema" });
@@ -746,7 +746,7 @@ namespace SenseNet.IO.Tests
         /* ----------------------------------------------------------------------- q:\io\ContentTypes */
 
         [TestMethod]
-        public async Task ContentFlow2_ContentTypes()
+        public async Task ContentFlow5_ContentTypes()
         {
             var sourceTree = CreateSourceTree(@"\Root\System\Schema\ContentTypes");
             var targetTree = CreateTree(new[] { "/Root", "/Root/System", "/Root/System/Schema" });
@@ -791,7 +791,7 @@ namespace SenseNet.IO.Tests
         /* ----------------------------------------------------------------------- q:\io\Aspects */
 
         [TestMethod]
-        public async Task ContentFlow2_Aspects()
+        public async Task ContentFlow5_Aspects()
         {
             var sourceTree = CreateSourceTree(@"\Root\System\Schema\Aspects");
             var targetTree = CreateTree(new[] { "/Root", "/Root/System", "/Root/System/Schema" });
@@ -832,7 +832,7 @@ namespace SenseNet.IO.Tests
         /* ----------------------------------------------------------------------- q:\io\Settings */
 
         [TestMethod]
-        public async Task ContentFlow2_Settings()
+        public async Task ContentFlow5_Settings()
         {
             var sourceTree = CreateSourceTree(@"\Root\System\Settings");
             var targetTree = CreateTree(new[] { "/Root", "/Root/System" });
@@ -874,7 +874,7 @@ namespace SenseNet.IO.Tests
         /* ----------------------------------------------------------------------- q:\io\OldSettings */
 
         [TestMethod]
-        public async Task ContentFlow2_Settings_RENAMED()
+        public async Task ContentFlow5_Settings_RENAMED()
         {
             var sourceTree = CreateSourceTree(@"\Root\System\Settings");
             sourceTree = ReplacePaths(sourceTree, @"io\Settings", @"io\OldSettings");
@@ -919,7 +919,7 @@ namespace SenseNet.IO.Tests
         /* =========================================================================================== UPDATE REFERENCES TESTS */
 
         [TestMethod]
-        public async Task ContentFlow2_UpdateReferences()
+        public async Task ContentFlow5_UpdateReferences()
         {
             var sourceTree = CreateSourceTree(@"\");
             var targetTree = CreateTree(new[] { "/Root", "/Root/IMS" });
