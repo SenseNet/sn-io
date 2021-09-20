@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Options;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using SenseNet.Client;
 //using SenseNet.Client;
 using SenseNet.IO.Implementations;
 using SenseNet.IO.Tests.Implementations;
@@ -108,6 +109,11 @@ namespace SenseNet.IO.Tests
                     .ToArray();
 
                 return Task.FromResult((IContent[])items);
+            }
+            protected override Task<IContent> GetContentAsync(string path, string[] fields, ServerContext server = null)
+            {
+                Queries.Add(path);
+                return Task.FromResult((IContent)_sourceTree[path]);
             }
         }
 
@@ -415,7 +421,6 @@ namespace SenseNet.IO.Tests
 
             // ASSERT
             var expected = sourceTree.Keys
-                .Select(x => x.Substring("q:\\io".Length).Replace('\\', '/'))
                 .OrderBy(x => x)
                 .ToArray();
             var actual = targetTree.Keys
@@ -425,49 +430,18 @@ namespace SenseNet.IO.Tests
 
             expected = new[]
             {
-                "------------ TRANSFER CONTENT TYPES ------------",
-                "Created  /Root/System/Schema/ContentTypes/ContentType-1",
-                "Created  /Root/System/Schema/ContentTypes/ContentType-1/ContentType-3",
-                "Creating /Root/System/Schema/ContentTypes/ContentType-1/ContentType-4",
-                "Created  /Root/System/Schema/ContentTypes/ContentType-1/ContentType-5",
-                "Created  /Root/System/Schema/ContentTypes/ContentType-1/ContentType-5/ContentType-6",
-                "Created  /Root/System/Schema/ContentTypes/ContentType-2",
-                "------------ TRANSFER SETTINGS ------------",
-                "Created  /Root/System/Settings/Settings-1.settings",
-                "Creating /Root/System/Settings/Settings-2.settings",
-                "Created  /Root/System/Settings/Settings-3.settings",
-                "------------ TRANSFER ASPECT DEFINITIONS ------------",
-                "Created  /Root/System/Schema/Aspects/Aspect-1",
-                "Created  /Root/System/Schema/Aspects/Aspect-2",
-                "------------ TRANSFER CONTENTS ------------",
-                "Updated  /Root",
-                "Created  /Root/(apps)",
-                "Created  /Root/Content",
-                "Created  /Root/Content/Workspace-1",
-                "Creating /Root/Content/Workspace-1/DocLib-1",
-                "Created  /Root/Content/Workspace-1/DocLib-1/Folder-1",
-                "Created  /Root/Content/Workspace-1/DocLib-1/Folder-1/File-1.xlsx",
-                "Created  /Root/Content/Workspace-1/DocLib-1/Folder-1/File-2.docx",
-                "Created  /Root/Content/Workspace-1/DocLib-1/Folder-2",
-                "Created  /Root/Content/Workspace-2",
-                "Updated  /Root/IMS",
-                "Created  /Root/IMS/BuiltIn",
-                "Created  /Root/IMS/BuiltIn/Portal",
-                "Creating /Root/IMS/BuiltIn/Portal/Group-3",
-                "Created  /Root/IMS/BuiltIn/Portal/User-3",
-                "Created  /Root/IMS/Public",
-                "Created  /Root/IMS/Public/Group-4",
-                "Created  /Root/IMS/Public/User-4",
-                "Updated  /Root/System",
-                "Updated  /Root/System/Schema",
-                "Updated  /Root/System/Schema/Aspects",
-                "Updated  /Root/System/Schema/ContentTypes",
-                "Updated  /Root/System/Settings",
-                "------------ UPDATE REFERENCES ------------",
-                "Updated  /Root/System/Schema/ContentTypes/ContentType-1/ContentType-4",
-                "Updated  /Root/System/Settings/Settings-2.settings",
-                "Updated  /Root/Content/Workspace-1/DocLib-1",
-                "Updated  /Root/IMS/BuiltIn/Portal/Group-3",
+                "InTree:'/Root/System/Schema/ContentTypes' .SORT:Path .TOP:99999 .SKIP:0 .AUTOFILTERS:OFF",
+                "InTree:'/Root/System/Schema/ContentTypes' .SORT:Path .TOP:99999 .SKIP:99999 .AUTOFILTERS:OFF",
+                "InTree:'/Root/System/Settings' .SORT:Path .TOP:99999 .SKIP:0 .AUTOFILTERS:OFF",
+                "InTree:'/Root/System/Settings' .SORT:Path .TOP:99999 .SKIP:99999 .AUTOFILTERS:OFF",
+                "InTree:'/Root/System/Schema/Aspects' .SORT:Path .TOP:99999 .SKIP:0 .AUTOFILTERS:OFF",
+                "InTree:'/Root/System/Schema/Aspects' .SORT:Path .TOP:99999 .SKIP:99999 .AUTOFILTERS:OFF",
+                "Path:('/Root/System/Schema/ContentTypes' '/Root/System/Settings' '/Root/System/Schema/Aspects') (+InTree:'/Root' -InTree:('/Root/System/Schema/ContentTypes' '/Root/System/Settings' '/Root/System/Schema/Aspects')) .SORT:Path .TOP:99999 .SKIP:0 .AUTOFILTERS:OFF",
+                "Path:('/Root/System/Schema/ContentTypes' '/Root/System/Settings' '/Root/System/Schema/Aspects') (+InTree:'/Root' -InTree:('/Root/System/Schema/ContentTypes' '/Root/System/Settings' '/Root/System/Schema/Aspects')) .SORT:Path .TOP:99999 .SKIP:99999 .AUTOFILTERS:OFF",
+                "/Root/System/Schema/ContentTypes/ContentType-1/ContentType-4",
+                "/Root/System/Settings/Settings-2.settings",
+                "/Root/Content/Workspace-1/DocLib-1",
+                "/Root/IMS/BuiltIn/Portal/Group-3",
             };
             actual = reader.Queries.ToArray();
             AssertSequencesAreEqual(expected, actual);

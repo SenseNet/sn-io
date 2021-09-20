@@ -123,15 +123,23 @@ namespace SenseNet.IO.Implementations
             return true;
         }
 
+        private IEnumerator<TransferTask> _referenceUpdateTasksEnumerator;
         public void SetReferenceUpdateTasks(IEnumerable<TransferTask> tasks, int taskCount)
         {
-            //UNDONE:SYNC: implement SetReferenceUpdateTasks()
-            throw new NotImplementedException();
+            _referenceUpdateTasksEnumerator = tasks.GetEnumerator();
         }
-        public Task<bool> ReadByReferenceUpdateTasksAsync(CancellationToken cancel)
+        public async Task<bool> ReadByReferenceUpdateTasksAsync(CancellationToken cancel)
         {
-            //UNDONE:SYNC: implement ReadRandomAsync()
-            throw new NotImplementedException();
+            if (!_referenceUpdateTasksEnumerator.MoveNext())
+                return false;
+
+            var task = _referenceUpdateTasksEnumerator.Current;
+
+            RelativePath = task.ReaderPath;
+            var repositoryPath = ContentPath.Combine(RepositoryRootPath, task.ReaderPath);
+            Content = await GetContentAsync(repositoryPath, task.BrokenReferences);
+
+            return true;
         }
 
         /* =================================================================================== TESTABLE METHODS FOR MOCKS */
@@ -186,6 +194,28 @@ namespace SenseNet.IO.Implementations
             catch (Exception e)
             {
                 throw new SnException(0, "RepositoryReader: cannot get content block.", e);
+            }
+        }
+
+        readonly string[] _idFields = {"Id", "Path"} ;
+        protected virtual async Task<IContent> GetContentAsync(string path, string[] fields, ServerContext server = null)
+        {
+            var f = _idFields.Union(fields);
+            var oDataRequest = new ODataRequest(server)
+            {
+                Path = path,
+                Select = fields,
+                Parameters = { { "$format", "export" } }
+            };
+            try
+            {
+                var result = await Client.Content.LoadAsync(oDataRequest, server).ConfigureAwait(false);
+                var transformed = new RepositoryReaderContent(result);
+                return transformed;
+            }
+            catch (Exception e)
+            {
+                throw new SnException(0, "RepositoryReader: cannot get content.", e);
             }
         }
     }
