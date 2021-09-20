@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -63,26 +62,56 @@ namespace SenseNet.IO.Implementations
             }
         }
 
-        public Task<bool> ReadSubTreeAsync(string relativePath, CancellationToken cancel = default)
+        private class TreeState
         {
-            //UNDONE:SYNC: ReadSubTreeAsync is not implemented
-            throw new NotImplementedException();
+            public string AbsolutePath;
+            public IContent[] CurrentBlock;
+            public int BlockIndex;
+            public int CurrentBlockIndex;
+        }
+        private Dictionary<string, TreeState> _treeStates = new();
+        public async Task<bool> ReadSubTreeAsync(string relativePath, CancellationToken cancel = default)
+        {
+            await InitializeAsync();
+
+            //UNDONE: SYNC: ReadSubTree: /Root/System/Schema/ContentTypes
+            //UNDONE: SYNC: ReadSubTree: /Root/System/Settings
+            //UNDONE: SYNC: ReadSubTree: /Root/System/Schema/Aspects
+
+            if (!_treeStates.TryGetValue(relativePath, out var treeState))
+            {
+                treeState = new TreeState
+                {
+                    AbsolutePath = ContentPath.Combine(RepositoryRootPath, relativePath),
+                };
+                _treeStates.Add(relativePath, treeState);
+            }
+
+            //TODO: Raise performance: read the next block (background)
+            if (treeState.CurrentBlock == null || treeState.CurrentBlockIndex >= treeState.CurrentBlock.Length)
+            {
+                treeState.CurrentBlock = await QueryBlockAsync(treeState.AbsolutePath, Array.Empty<string>(), treeState.BlockIndex * _blockSize, _blockSize);
+                treeState.BlockIndex++;
+                treeState.CurrentBlockIndex = 0;
+                if (treeState.CurrentBlock == null || treeState.CurrentBlock.Length == 0)
+                    return false;
+            }
+
+            Content = treeState.CurrentBlock[treeState.CurrentBlockIndex++];
+            RelativePath = ContentPath.GetRelativePath(Content.Path, RepositoryRootPath);
+            return true;
         }
 
         private IContent[] _currentBlock;
         private int _currentBlockIndex;
         public async Task<bool> ReadAllAsync(string[] contentsWithoutChildren, CancellationToken cancel = default)
         {
-            if (contentsWithoutChildren != null && contentsWithoutChildren.Length != 0)
-                //UNDONE:SYNC: Process "contentsWithoutChildren" parameter
-                throw new NotImplementedException();
-
             await InitializeAsync();
 
             //TODO: Raise performance: read the next block (background)
             if (_currentBlock == null || _currentBlockIndex >= _currentBlock.Length)
             {
-                _currentBlock = await QueryBlockAsync(RepositoryRootPath, _blockIndex * _blockSize, _blockSize, false);
+                _currentBlock = await QueryBlockAsync(RepositoryRootPath, contentsWithoutChildren, _blockIndex * _blockSize, _blockSize);
                 _blockIndex++;
                 _currentBlockIndex = 0;
                 if (_currentBlock == null || _currentBlock.Length == 0)
@@ -105,7 +134,9 @@ namespace SenseNet.IO.Implementations
             throw new NotImplementedException();
         }
 
-        private async Task<int> GetCountAsync()
+        /* =================================================================================== TESTABLE METHODS FOR MOCKS */
+
+        protected virtual async Task<int> GetCountAsync()
         {
             try
             {
@@ -117,19 +148,27 @@ namespace SenseNet.IO.Implementations
                 throw new SnException(0, "RepositoryReader: cannot get count of contents.", e);
             }
         }
-        private async Task<IContent[]> QueryBlockAsync(string rootPath, int skip, int top, bool useTypeRestrictions)
+        protected virtual async Task<IContent[]> QueryBlockAsync(string rootPath, string[] contentsWithoutChildren, int skip, int top)
         {
-            var query = useTypeRestrictions
-                ? $"InTree:'{rootPath}' -TypeIs:'ContentType' -TypeIs:'Settings' -TypeIs:'Aspect' .SORT:Path .TOP:{top} .SKIP:{skip} .AUTOFILTERS:OFF"
-                : $"InTree:'{rootPath}' .SORT:Path .TOP:{top} .SKIP:{skip} .AUTOFILTERS:OFF";
+            string query;
+            if (contentsWithoutChildren.Length == 0)
+            {
+                query = $"InTree:'{rootPath}' .SORT:Path .TOP:{top} .SKIP:{skip} .AUTOFILTERS:OFF";
+            }
+            else if (contentsWithoutChildren.Length == 1 && contentsWithoutChildren[0] == string.Empty)
+            {
+                query = $"Path:'{rootPath}' .AUTOFILTERS:OFF";
+            }
+            else
+            {
+                var paths = $"('{string.Join("' '", contentsWithoutChildren.Select(x => RepositoryRootPath + '/' + x))}')";
+                query = $"Path:{paths} (+InTree:'{rootPath}' -InTree:{paths}) .SORT:Path .TOP:{top} .SKIP:{skip} .AUTOFILTERS:OFF";
+            }
+
             var queryResult = await QueryAsync(query).ConfigureAwait(false);
-
-            var result = queryResult.Select(x => new RepositoryReaderContent(x)).ToArray();
-
-            // ReSharper disable once CoVariantArrayConversion
-            return result;
+            return queryResult;
         }
-        private static async Task<IEnumerable<Content>> QueryAsync(string queryText, ServerContext server = null)
+        protected virtual async Task<IContent[]> QueryAsync(string queryText, ServerContext server = null)
         {
             var oDataRequest = new ODataRequest(server)
             {
@@ -139,7 +178,10 @@ namespace SenseNet.IO.Implementations
             };
             try
             {
-                return await Client.Content.LoadCollectionAsync(oDataRequest, server).ConfigureAwait(false);
+                var result = await Client.Content.LoadCollectionAsync(oDataRequest, server).ConfigureAwait(false);
+                var transformed = result.Select(x => new RepositoryReaderContent(x)).ToArray();
+                // ReSharper disable once CoVariantArrayConversion
+                return transformed;
             }
             catch (Exception e)
             {

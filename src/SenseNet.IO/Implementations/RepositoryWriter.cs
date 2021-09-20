@@ -48,7 +48,7 @@ namespace SenseNet.IO.Implementations
 
         }
 
-        public async Task<WriterState> WriteAsync(string path, IContent content, CancellationToken cancel = default)
+        public virtual async Task<WriterState> WriteAsync(string path, IContent content, CancellationToken cancel = default)
         {
             var repositoryPath = ContentPath.Combine(ContainerPath, path);
             if (content.Type == "ContentType")

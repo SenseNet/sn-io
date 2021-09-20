@@ -3,11 +3,13 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using SenseNet.IO.Implementations;
 
 namespace SenseNet.IO.CLI
@@ -188,6 +190,31 @@ namespace SenseNet.IO.CLI
         }
         */
 
+        //UNDONE =======================================================================================
+        //UNDONE =======================================================================================
+
+        private class RepositoryWriterForRepositoryReaderTests : RepositoryWriter, ISnRepositoryWriter
+        {
+            public RepositoryWriterForRepositoryReaderTests(IOptions<RepositoryWriterArgs> args) : base (args) { }
+
+            public override async Task<WriterState> WriteAsync(string path, IContent content, CancellationToken cancel = default)
+            {
+                await Task.Delay(10);
+                return new WriterState
+                {
+                    WriterPath = "<writerPath>",
+                    RetryPermissions = false,
+                    BrokenReferences = new string[0],
+                    Messages = new string[0],
+                    Action = WriterAction.Updated
+                };
+            }
+        }
+
+        //UNDONE =======================================================================================
+        //UNDONE =======================================================================================
+
+
         private static async Task Main(string[] args)
         {
             //args = new[] { "COPY", "-SOURCE", @"D:\_sn-io-test\source", "-TARGET", @"D:\_sn-io-test", "target" };
@@ -210,6 +237,8 @@ namespace SenseNet.IO.CLI
             //args = new[] { "IMPORT" };
             //args = new[] { "IMPORT", "-SOURCE", @"D:\_sn-io-test\localhost_44362_backup\Settings_backup",
             //              "-TARGET", "-PATH", "/Root/System", "-NAME", "Settings"};
+
+            //args = new[] { "SYNC" };
 
             if (IsHelpRequested(args))
                 return;
@@ -310,7 +339,7 @@ namespace SenseNet.IO.CLI
                             var syncArgs = (SyncArguments) appArguments;
                             serviceCollection
                                 .AddSingleton<IContentReader, RepositoryReader>()
-                                .AddSingleton<IContentWriter, RepositoryWriter>()
+.AddSingleton<IContentWriter, RepositoryWriterForRepositoryReaderTests /*RepositoryWriter*/>() //UNDONE:!!!!!!!!!!! Write back
                                 // settings file
                                 .Configure<RepositoryReaderArgs>(
                                     hostBuilderContext.Configuration.GetSection("repositoryReader"))
