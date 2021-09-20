@@ -74,10 +74,6 @@ namespace SenseNet.IO.Implementations
         {
             await InitializeAsync();
 
-            //UNDONE: SYNC: ReadSubTree: /Root/System/Schema/ContentTypes
-            //UNDONE: SYNC: ReadSubTree: /Root/System/Settings
-            //UNDONE: SYNC: ReadSubTree: /Root/System/Schema/Aspects
-
             if (!_treeStates.TryGetValue(relativePath, out var treeState))
             {
                 treeState = new TreeState
@@ -200,11 +196,10 @@ namespace SenseNet.IO.Implementations
         readonly string[] _idFields = {"Id", "Path"} ;
         protected virtual async Task<IContent> GetContentAsync(string path, string[] fields, ServerContext server = null)
         {
-            var f = _idFields.Union(fields);
             var oDataRequest = new ODataRequest(server)
             {
                 Path = path,
-                Select = fields,
+                Select = _idFields.Union(fields),
                 Parameters = { { "$format", "export" } }
             };
             try
