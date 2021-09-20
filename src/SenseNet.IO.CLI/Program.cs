@@ -190,19 +190,48 @@ namespace SenseNet.IO.CLI
         }
         */
 
+
+
+
+
+
+
+
+
+
+
+
+
+
         //UNDONE =======================================================================================
         //UNDONE =======================================================================================
 
         private class RepositoryWriterForRepositoryReaderTests : RepositoryWriter, ISnRepositoryWriter
         {
+            private Dictionary<string, WriterState> _states = new Dictionary<string, WriterState>
+            {
+                {"/Root/System/Settings/Logging.settings", new WriterState {BrokenReferences = new string[0], RetryPermissions = true}},
+                {"/Root/IMS/Public", new WriterState {BrokenReferences = new[] {"ModifiedBy", "CreatedBy"}, RetryPermissions = true}},
+                {"/Root/Content", new WriterState {BrokenReferences = new[] {"ModifiedBy", "CreatedBy"}, RetryPermissions = false}},
+            };
+
             public RepositoryWriterForRepositoryReaderTests(IOptions<RepositoryWriterArgs> args) : base (args) { }
 
             public override async Task<WriterState> WriteAsync(string path, IContent content, CancellationToken cancel = default)
             {
                 await Task.Delay(10);
+
+                if (_states.TryGetValue(path, out var found))
+                {
+                    _states.Remove(path);
+                    found.Messages = new string[0];
+                    found.Action = WriterAction.Updating;
+                    return found;
+                }
+
                 return new WriterState
                 {
-                    WriterPath = "<writerPath>",
+                    WriterPath = path,
                     RetryPermissions = false,
                     BrokenReferences = new string[0],
                     Messages = new string[0],
@@ -215,6 +244,27 @@ namespace SenseNet.IO.CLI
         //UNDONE =======================================================================================
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         private static async Task Main(string[] args)
         {
             //args = new[] { "COPY", "-SOURCE", @"D:\_sn-io-test\source", "-TARGET", @"D:\_sn-io-test", "target" };
@@ -224,7 +274,7 @@ namespace SenseNet.IO.CLI
 
             //args = new[] { "?" };
             //args = new[] { "-help" };
-            args = new[] { "export", "-help" };
+            //args = new[] { "export", "-help" };
             //args = new[] { "import", "-help" };
             //args = new[] { "copy", "-help" };
             //args = new[] { "sync", "-help" };
@@ -238,7 +288,7 @@ namespace SenseNet.IO.CLI
             //args = new[] { "IMPORT", "-SOURCE", @"D:\_sn-io-test\localhost_44362_backup\Settings_backup",
             //              "-TARGET", "-PATH", "/Root/System", "-NAME", "Settings"};
 
-            //args = new[] { "SYNC" };
+            args = new[] { "SYNC" };
 
             if (IsHelpRequested(args))
                 return;
@@ -519,7 +569,8 @@ Arguments"},
 
             // Progress
             Console.Write($"{state.CurrentBatchAction} {state.Percent,5:F1}%  " +
-                          $"({state.CurrentCount}/{state.TotalCount} errors:{state.ErrorCount})                     \r");
+                          $"({state.CurrentCount}/({state.ContentCount}+{state.UpdateTaskCount}), " +
+                          $"errors:{state.ErrorCount})                     \r");
         }
 
 
