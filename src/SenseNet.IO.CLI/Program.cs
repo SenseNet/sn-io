@@ -212,7 +212,7 @@ namespace SenseNet.IO.CLI
             {
                 {"/Root/System/Settings/Logging.settings", new WriterState {BrokenReferences = new string[0], RetryPermissions = true}},
                 {"/Root/IMS/Public", new WriterState {BrokenReferences = new[] {"ModifiedBy", "CreatedBy"}, RetryPermissions = true}},
-                {"/Root/Content", new WriterState {BrokenReferences = new[] {"ModifiedBy", "CreatedBy"}, RetryPermissions = false}},
+                {"/Root/Content", new WriterState {BrokenReferences = new[] {"Owner"}, RetryPermissions = false}},
             };
 
             public RepositoryWriterForRepositoryReaderTests(IOptions<RepositoryWriterArgs> args) : base (args) { }
@@ -261,9 +261,7 @@ namespace SenseNet.IO.CLI
 
 
 
-
-
-
+        internal static ColoredConsoleSupport Color = new ColoredConsoleSupport();
 
         private static async Task Main(string[] args)
         {
@@ -285,11 +283,11 @@ namespace SenseNet.IO.CLI
             //args = new[] { "COPY", "-SOURCE", @"D:\_sn-io-test\localhost_44362\Root\System\Settings", 
             //                       "-TARGET", @"D:\_sn-io-test\localhost_44362_backup", "Settings_backup" };
             //args = new[] { "IMPORT" };
-            //args = new[] { "IMPORT", "-SOURCE", @"D:\_sn-io-test\localhost_44362_backup\Settings_backup",
-            //              "-TARGET", "-PATH", "/Root/System", "-NAME", "Settings"};
+            args = new[] { "IMPORT", "-SOURCE", @"D:\_sn-io-test\localhost_44362_backup\Settings_backup",
+                          "-TARGET", "-PATH", "/Root/System", "-NAME", "Settings"};
 
-            args = new[] { "SYNC" };
-
+            //args = new[] { "SYNC" };
+            
             if (IsHelpRequested(args))
                 return;
 
@@ -547,7 +545,8 @@ Arguments"},
                 {
                     _lastBatchAction = state.CurrentBatchAction;
                     Console.Write(ClearLine);
-                    Console.WriteLine($"------------ {state.CurrentBatchAction.ToUpper()} ------------");
+                    using(Color.Highlight())
+                        Console.WriteLine($"------------ {state.CurrentBatchAction.ToUpper()} ------------");
                 }
             }
 
@@ -556,15 +555,36 @@ Arguments"},
                 (_displayLevel == DisplayLevel.Errors && state.State.Action == WriterAction.Failed))
             {
                 Console.Write(ClearLine);
-                Console.WriteLine($"{state.State.Action,-8} {state.State.WriterPath}");
+                if (state.State.Action == WriterAction.Failed)
+                {
+                    using(Color.Error())
+                        Console.Write($" {state.State.Action} ");
+                    Console.WriteLine($" {state.State.WriterPath}");
+                }
+                else
+                {
+                    if (state.State.Action == WriterAction.Creating || state.State.Action == WriterAction.Updating)
+                    {
+                        using (Color.Warning())
+                            Console.Write($"{state.State.Action}");
+                        Console.WriteLine($" {state.State.WriterPath}");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"{state.State.Action,-8} {state.State.WriterPath}");
+                    }
+                }
             }
 
             // Error
             if (_displayLevel != DisplayLevel.Progress && state.State.Action == WriterAction.Failed)
             {
-                foreach (var message in state.State.Messages)
-                    Console.WriteLine(
-                        $"         {message.Replace("The server returned an error (HttpStatus: InternalServerError): ", "")}");
+                using (Color.Highlight())
+                {
+                    foreach (var message in state.State.Messages)
+                        Console.WriteLine(
+                            $"         {message.Replace("The server returned an error (HttpStatus: InternalServerError): ", "")}");
+                }
             }
 
             // Progress
