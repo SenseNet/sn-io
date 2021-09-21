@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "SenseNet.IO.CLI": {
+      "commandName": "Project",
+      "commandLineArgs": "EXPORT"
+    }
+  }
+}

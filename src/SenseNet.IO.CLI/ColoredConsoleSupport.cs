@@ -39,7 +39,9 @@ namespace SenseNet.IO.CLI
 
         public IDisposable Highlight()
         {
-            return new ColoredBlock(ConsoleColor.White, _defaultBackgroundColor);
+            return _defaultForegroundColor == ConsoleColor.White || _defaultForegroundColor == ConsoleColor.DarkYellow
+                ? new ColoredBlock(ConsoleColor.Yellow, _defaultBackgroundColor)
+                : new ColoredBlock(ConsoleColor.White, _defaultBackgroundColor);
         }
 
         public IDisposable Warning()
