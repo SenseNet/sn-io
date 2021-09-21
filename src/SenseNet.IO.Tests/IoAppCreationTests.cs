@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Reflection;
 using System.Text;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestPlatform.TestHost;
@@ -239,6 +240,111 @@ namespace SenseNet.IO.Tests
   ""fsWriter"": { ""path"": ""Q:\\_sn-io-test\\target"" }}",
                 typeof(FsReader), "Path: Q:\\_sn-io-test\\source\\content1",
                 typeof(FsWriter), "Path: Q:\\_sn-io-test\\target, Name: content2");
+        }
+
+
+        [TestMethod]
+        public void App_DisplaySettings_DisplayLevel_Default()
+        {
+            var settings = @"{
+  ""repositoryReader"": { ""url"": ""https://localhost"", ""path"": ""/Root/Content"", ""blockSize"": 10 },
+  ""fsWriter"": { ""path"": ""Q:\\_sn-io-test"" },
+  ""display"": { ""level"": null }
+}";
+            var args = new[] {"EXPORT"};
+
+            // ACTION
+            var app = SenseNet.IO.CLI.Program.CreateApp(args, new MemoryStream(Encoding.UTF8.GetBytes(settings)));
+
+            // ASSERT
+            Assert.AreEqual(DisplayLevel.Errors, app.DisplaySettings.DisplayLevel);
+        }
+        [TestMethod]
+        public void App_DisplaySettings_None()
+        {
+            var settings = @"{
+  ""repositoryReader"": { ""url"": ""https://localhost"", ""path"": ""/Root/Content"", ""blockSize"": 10 },
+  ""fsWriter"": { ""path"": ""Q:\\_sn-io-test"" },
+  ""display"": { ""level"": ""none"" }
+}";
+            var args = new[] { "EXPORT" };
+
+            // ACTION
+            var app = SenseNet.IO.CLI.Program.CreateApp(args, new MemoryStream(Encoding.UTF8.GetBytes(settings)));
+
+            // ASSERT
+            Assert.AreEqual(DisplayLevel.None, app.DisplaySettings.DisplayLevel);
+        }
+        [TestMethod]
+        public void App_DisplaySettings_DisplayLevel_Progress()
+        {
+            var settings = @"{
+  ""repositoryReader"": { ""url"": ""https://localhost"", ""path"": ""/Root/Content"", ""blockSize"": 10 },
+  ""fsWriter"": { ""path"": ""Q:\\_sn-io-test"" },
+  ""display"": { ""level"": ""progress"" }
+}";
+            var args = new[] { "EXPORT" };
+
+            // ACTION
+            var app = SenseNet.IO.CLI.Program.CreateApp(args, new MemoryStream(Encoding.UTF8.GetBytes(settings)));
+
+            // ASSERT
+            Assert.AreEqual(DisplayLevel.Progress, app.DisplaySettings.DisplayLevel);
+        }
+        [TestMethod]
+        public void App_DisplaySettings_DisplayLevel_Errors()
+        {
+            var settings = @"{
+  ""repositoryReader"": { ""url"": ""https://localhost"", ""path"": ""/Root/Content"", ""blockSize"": 10 },
+  ""fsWriter"": { ""path"": ""Q:\\_sn-io-test"" },
+  ""display"": { ""level"": null }
+}";
+            var args = new[] { "EXPORT" };
+
+            // ACTION
+            var app = SenseNet.IO.CLI.Program.CreateApp(args, new MemoryStream(Encoding.UTF8.GetBytes(settings)));
+
+            // ASSERT
+            Assert.AreEqual(DisplayLevel.Errors, app.DisplaySettings.DisplayLevel);
+        }
+        [TestMethod]
+        public void App_DisplaySettings_DisplayLevel_Verbose()
+        {
+            var settings = @"{
+  ""repositoryReader"": { ""url"": ""https://localhost"", ""path"": ""/Root/Content"", ""blockSize"": 10 },
+  ""fsWriter"": { ""path"": ""Q:\\_sn-io-test"" },
+  ""display"": { ""level"": ""verbose"" }
+}";
+            var args = new[] { "EXPORT" };
+
+            // ACTION
+            var app = SenseNet.IO.CLI.Program.CreateApp(args, new MemoryStream(Encoding.UTF8.GetBytes(settings)));
+
+            // ASSERT
+            Assert.AreEqual(DisplayLevel.Verbose, app.DisplaySettings.DisplayLevel);
+        }
+        [TestMethod]
+        public void App_DisplaySettings_DisplayLevel_Fake()
+        {
+            var settings = @"{
+  ""repositoryReader"": { ""url"": ""https://localhost"", ""path"": ""/Root/Content"", ""blockSize"": 10 },
+  ""fsWriter"": { ""path"": ""Q:\\_sn-io-test"" },
+  ""display"": { ""level"": ""fake"" }
+}";
+            var args = new[] { "EXPORT" };
+
+            try
+            {
+                // ACTION
+                _ = SenseNet.IO.CLI.Program.CreateApp(args, new MemoryStream(Encoding.UTF8.GetBytes(settings)));
+                // ASSERT
+                Assert.Fail("Missing exception");
+            }
+            catch (TargetInvocationException tie)
+            {
+                if(!(tie.InnerException is ArgumentException ae))
+                    Assert.Fail("Wrong exception type.");
+            }
         }
 
         /* ============================================================ TOOLS */

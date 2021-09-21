@@ -33,6 +33,7 @@ namespace SenseNet.IO.CLI
                 return;
             }
 
+            _displayLevel = app.DisplaySettings.DisplayLevel;
             Console.WriteLine(app.ParamsToDisplay());
             //UNDONE:LOG: Write 'app.ParamsToDisplay()' to log after the final logger integration.
             await app.RunAsync(ShowProgress);
@@ -69,6 +70,7 @@ namespace SenseNet.IO.CLI
                 })
                 .ConfigureServices((hostBuilderContext, serviceCollection) =>
                 {
+                    serviceCollection.Configure<DisplaySettings>(hostBuilderContext.Configuration.GetSection("display"));
                     switch (appArguments.Verb)
                     {
                         case Verb.Export:
@@ -258,9 +260,7 @@ Arguments"},
 
         /* ========================================================================== Display progress */
 
-        private enum DisplayLevel { None, Progress, Errors, Verbose }
-
-        private static DisplayLevel _displayLevel = DisplayLevel.Errors;
+        private static DisplayLevel _displayLevel;
         private static readonly string ClearLine = new string(' ', 70) + '\r';
         private static string _lastBatchAction;
         private static void ShowProgress(TransferState state)

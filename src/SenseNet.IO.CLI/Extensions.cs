@@ -74,7 +74,7 @@ namespace SenseNet.IO.CLI
         }
 
 
-        public static string ParamsToDisplay(this IoApp app)
+        internal static string ParamsToDisplay(this IoApp app)
         {
             Verb verb;
             if (app.Reader is RepositoryReader && app.Writer is FsWriter)
