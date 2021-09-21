@@ -21,12 +21,14 @@ namespace SenseNet.IO
         int EstimatedCount { get; }
 
         /// <summary>
-        /// Gets the current content after calling the <see cref="ReadAsync"/> method.
+        /// Gets the current content after calling any reader method
+        /// (see <see cref="ReadSubTreeAsync"/>, <see cref="ReadAllAsync"/> and <see cref="ReadByReferenceUpdateTasksAsync"/>).
         /// </summary>
         IContent Content { get; }
 
         /// <summary>
-        /// Gets the relative repository path of the current content after calling the <see cref="ReadAsync"/> method.
+        /// Gets the relative repository path of the current content after calling any reader method
+        /// (see <see cref="ReadSubTreeAsync"/>, <see cref="ReadAllAsync"/> and <see cref="ReadByReferenceUpdateTasksAsync"/>).
         /// The path is based on the copied subtree so the relative path of the copied subtree's root is empty string.
         /// The separator should be slash ("/").
         /// </summary>

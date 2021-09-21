@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace SenseNet.IO
+﻿namespace SenseNet.IO
 {
     public enum WriterAction { Unknown, Created, Creating, Updated, Updating, Failed }
 
