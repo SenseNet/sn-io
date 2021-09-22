@@ -12,14 +12,6 @@ namespace SenseNet.IO
 {
     public abstract class ContentFlow : IContentFlow
     {
-        public static IContentFlow Create([NotNull] IContentReader reader, [NotNull] IContentWriter writer)
-        {
-            var flow = writer is ISnRepositoryWriter repoWriter
-                ? (IContentFlow)new Level5ContentFlow(reader, repoWriter)
-                : new Level1ContentFlow(reader, writer);
-            return flow;
-        }
-
         public abstract IContentReader Reader { get; }
         public abstract IContentWriter Writer { get; }
         public abstract Task TransferAsync(IProgress<TransferState> progress, CancellationToken cancel = default);

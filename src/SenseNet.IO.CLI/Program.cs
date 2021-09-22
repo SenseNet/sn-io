@@ -78,8 +78,7 @@ namespace SenseNet.IO.CLI
                             var exportArgs = (ExportArguments) appArguments;
                             serviceCollection
                                 .AddSenseNetClientTokenStore()
-                                .AddSingleton<IContentReader, RepositoryReader>()
-                                .AddSingleton<IContentWriter, FsWriter>()
+                                .AddContentFlow<RepositoryReader, FsWriter>()
                                 // settings file
                                 .Configure<RepositoryReaderArgs>(
                                     hostBuilderContext.Configuration.GetSection("repositoryReader"))
@@ -94,8 +93,7 @@ namespace SenseNet.IO.CLI
                             var importArgs = (ImportArguments) appArguments;
                             serviceCollection
                                 .AddSenseNetClientTokenStore()
-                                .AddSingleton<IContentReader, FsReader>()
-                                .AddSingleton<IContentWriter, RepositoryWriter>()
+                                .AddContentFlowForRepositoryWriter<FsReader, RepositoryWriter>()
                                 // settings file
                                 .Configure<FsReaderArgs>(hostBuilderContext.Configuration.GetSection("fsReader"))
                                 .Configure<RepositoryWriterArgs>(
@@ -109,8 +107,7 @@ namespace SenseNet.IO.CLI
                         case Verb.Copy:
                             var copyArgs = (CopyArguments) appArguments;
                             serviceCollection
-                                .AddSingleton<IContentReader, FsReader>()
-                                .AddSingleton<IContentWriter, FsWriter>()
+                                .AddContentFlow<FsReader, FsWriter>()
                                 // settings file
                                 .Configure<FsReaderArgs>(hostBuilderContext.Configuration.GetSection("fsReader"))
                                 .Configure<FsWriterArgs>(hostBuilderContext.Configuration.GetSection("fsWriter"))
@@ -123,8 +120,7 @@ namespace SenseNet.IO.CLI
                             var syncArgs = (SyncArguments) appArguments;
                             serviceCollection
                                 .AddSenseNetClientTokenStore()
-                                .AddSingleton<IContentReader, RepositoryReader>()
-                                .AddSingleton<IContentWriter, RepositoryWriter>()
+                                .AddContentFlowForRepositoryWriter<RepositoryReader, RepositoryWriter>()
                                 // settings file
                                 .Configure<RepositoryReaderArgs>(
                                     hostBuilderContext.Configuration.GetSection("repositoryReader"))
