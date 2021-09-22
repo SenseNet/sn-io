@@ -123,6 +123,7 @@ namespace SenseNet.IO.Implementations
                 return null;
             var relativePath = fsRootPath.Remove(0, ReaderRootPath.Length).Replace('\\', '/').TrimStart('/');
             var content = CreateFsContent(contentName, relativePath, metaFilePath, contentIsDirectory);
+            var _ = content.GetPreprocessedAttachmentNames();
             content.InitializeMetadata();
             return content;
         }
