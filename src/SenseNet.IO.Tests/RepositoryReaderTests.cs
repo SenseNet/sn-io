@@ -31,7 +31,7 @@ namespace SenseNet.IO.Tests
             public List<string> Queries { get; } = new List<string>();
 
             public RepositoryReaderMock(Dictionary<string, ContentNode> sourceTree,
-                IOptions<RepositoryReaderArgs> args) : base(args)
+                IOptions<RepositoryReaderArgs> args) : base(null, args)
             {
                 _sourceTree = sourceTree;
             }
