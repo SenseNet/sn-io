@@ -68,15 +68,12 @@ namespace SenseNet.IO.Implementations
             foreach (var attachmentItem in _attachmentNames)
             {
                 var attachmentPath = System.IO.Path.Combine(directory, attachmentItem.Value);
-                if (IsFileExists(attachmentPath))
+                attachments.Add(new Attachment
                 {
-                    attachments.Add(new Attachment
-                    {
-                        FieldName = attachmentItem.Key,
-                        FileName = attachmentItem.Value,
-                        Stream = CreateFileStream(attachmentPath, FileMode.Open)
-                    });
-                }
+                    FieldName = attachmentItem.Key,
+                    FileName = attachmentItem.Value,
+                    Stream = IsFileExists(attachmentPath) ? CreateFileStream(attachmentPath, FileMode.Open) : null
+                });
             }
 
             return Task.FromResult(attachments.ToArray());

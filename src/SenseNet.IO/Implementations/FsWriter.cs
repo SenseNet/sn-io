@@ -47,7 +47,8 @@ namespace SenseNet.IO.Implementations
             using (var writer = CreateTextWriter(contentPath, false))
                 await writer.WriteAsync(src);
 
-            foreach (var attachment in await content.GetAttachmentsAsync())
+            var attachments = await content.GetAttachmentsAsync();
+            foreach (var attachment in attachments.Where(a => a.Stream != null))
             {
                 var attachmentPath = Path.Combine(fileDir, attachment.FileName);
 

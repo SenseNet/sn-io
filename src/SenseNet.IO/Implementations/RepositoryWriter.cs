@@ -183,9 +183,9 @@ namespace SenseNet.IO.Implementations
             }
 
             // Upload binaries if there are.
-            foreach (var attachment in attachments)
+            var parentPath = ContentPath.GetParentPath(repositoryPath);
+            foreach (var attachment in attachments.Where(a => a.Stream != null))
             {
-                var parentPath = ContentPath.GetParentPath(repositoryPath);
                 using (var stream = attachment.Stream)
                     uploaded = await Content.UploadAsync(parentPath, content.Name, stream, propertyName: attachment.FieldName);
             }
