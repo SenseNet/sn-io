@@ -1,12 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
-using IdentityModel;
 using Microsoft.Extensions.Options;
 
 namespace SenseNet.IO.Implementations
@@ -125,7 +122,8 @@ namespace SenseNet.IO.Implementations
             if (!contentIsDirectory && metaFilePath == null)
                 return null;
             var relativePath = fsRootPath.Remove(0, ReaderRootPath.Length).Replace('\\', '/').TrimStart('/');
-            var content = CreateFsContent(contentName, relativePath, metaFilePath, contentIsDirectory, null);
+            var content = CreateFsContent(contentName, relativePath, metaFilePath, contentIsDirectory);
+            var _ = content.GetPreprocessedAttachmentNames();
             content.InitializeMetadata();
             return content;
         }

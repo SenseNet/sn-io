@@ -201,7 +201,8 @@ namespace SenseNet.IO.Implementations
             {
                 CurrentBatchAction = _currentBatchAction,
                 CurrentCount = ++count,
-                TotalCount = Reader.EstimatedCount + _referenceUpdateTasksTotalCount,
+                ContentCount = Reader.EstimatedCount,
+                UpdateTaskCount = ReferenceUpdateTasksTotalCount,
                 ErrorCount = _errorCount,
                 UpdatingReferences = updateReferences,
                 State = state,

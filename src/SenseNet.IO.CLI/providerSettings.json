@@ -1,0 +1,22 @@
+{
+  "repositoryReader": {
+    "url": "https://localhost:44362", // Source URL
+    "path": null, // Source path. Default: "/Root",
+    "blockSize": null // Contents per request. Default (null, 0 or less): 10. 
+  },
+  "repositoryWriter": {
+    "url": "https://localhost:44362", // Target URL
+    "path": null, // Target path. Default: "/",
+    "name": null // Target name under the container. Default: name of the reader's root.
+  },
+  "fsReader": {
+    "path": "D:\\_sn-io-test\\localhost_44362\\Root" // Source root
+  },
+  "fsWriter": {
+    "path": "D:\\_sn-io-test\\localhost_44362", // Target container. Will be created if does not exists.
+    "name": null // Target name under the container. Default: name of the reader's root.
+  },
+  "display": { // Can be overridden in the full-path form immediately after the verb e.g: IMPORT --DISPLAY:LEVEL Verbose
+    "level": null // Valid values: None, Progress, Errors, Verbose. Default: Errors
+  } 
+}

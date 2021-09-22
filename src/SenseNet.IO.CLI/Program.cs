@@ -15,203 +15,10 @@ namespace SenseNet.IO.CLI
 {
     public class Program
     {
-        /*
-        private static int[] _source = new int[500];
-        private static ConcurrentQueue<int> _target = new(new List<int>(200));
-        static async Task Produce(ITargetBlock<int> target)
-        {
-            for (int i = 0; i < _source.Length; ++i)
-            {
-                await target.SendAsync(_source[i]);
-                var count = ((BufferBlock<int>)target).Count;
-                Console.Write($" {count}");
-            }
-            target.Complete();
-        }
-        static async Task<int> ConsumeAsync(ISourceBlock<int> source)
-        {
-            try
-            {
-                int processed = 0;
-                while (await source.OutputAvailableAsync())
-                {
-                    var data = await source.ReceiveAsync();
-                    _target.Enqueue(data);
-                    processed += 1;
-                    var count = ((BufferBlock<int>) source).Count;
-                    Console.Write($" {count}");
-                    await Task.Delay(1);
-                }
-
-                return processed;
-            }
-            catch (Exception e)
-            {
-                throw;
-            }
-        }
-        static async Task DataFlowDemo()
-        {
-            var rand = new Random();
-            for (int i = 0; i < _source.Length; i++)
-                _source[i] = rand.Next(100, 1000);
-
-            var options = new DataflowBlockOptions { BoundedCapacity = 10 };
-            var buffer = new BufferBlock<int>(options);
-
-            var consumerTasks = new Task<int>[5];
-            for (int i = 0; i < consumerTasks.Length; i++)
-                consumerTasks[i] = ConsumeAsync(buffer);
-            var producerTasks = new Task[1];
-            for (int i = 0; i < producerTasks.Length; i++)
-                producerTasks[i] = Produce(buffer);
-
-            var allTasks = consumerTasks.Union(producerTasks).ToArray();
-
-            try
-            {
-                await Task.WhenAll(allTasks);
-            }
-            catch (Exception e)
-            {
-                // InvalidOperationException: The source completed without providing data to receive.
-                Console.WriteLine("ERROR");
-            }
-
-            var processed = -1;
-            try
-            {
-                processed = consumerTasks.Sum(x => x.Result);
-            }
-            catch (Exception e)
-            {
-                // InvalidOperationException: The source completed without providing data to receive.
-                Console.WriteLine("ERROR");
-            }
-
-            Console.WriteLine();
-            Console.WriteLine($"Processed {processed:#,#}.");
-            Console.WriteLine($"Source length: {_source.Length:#,#}.");
-            Console.WriteLine($"Target length: {_target.Count:#,#}.");
-            Console.WriteLine($"Source sum: {_source.Sum():#,#}.");
-            Console.WriteLine($"Target sum: {_target.Sum():#,#}.");
-        }
-        */
-
-        /*
-        static async Task Main()
-        {
-            IContentReader reader;
-            IContentWriter writer;
-
-            reader = new RepositoryReader(Options.Create(
-                new RepositoryReaderArgs { Url = "https://localhost:44362", Path = "/Root", BlockSize = 10}));
-            writer = new FsWriter(Options.Create(
-                new FsWriterArgs{ Path = @"D:\dev\_sn-io-test\localhost_44362_(export)" }));
-
-            reader = new FsReader(Options.Create(
-                new FsReaderArgs { Path = @"D:\dev\_sn-io-test\FsReader\Root" }));
-            writer = new FsWriter(Options.Create(
-                new FsWriterArgs { Path = @"D:\dev\_sn-io-test\FsWriter" }));
-
-            reader = new FsReader(Options.Create(
-                new FsReaderArgs { Path = @"D:\dev\_sn-io-test\FsReader\Root\GyebiTesztel" }));
-            writer = new FsWriter(Options.Create(
-                new FsWriterArgs { Path = @"D:\dev\_sn-io-test\FsWriter\Root", Name= "XXX" }));
-
-            // =================================================================================== TEST CASES
-
-            // Export Settings
-            reader = new RepositoryReader(Options.Create(
-                new RepositoryReaderArgs { Url = "https://localhost:44362", Path = "/Root/System/Settings", BlockSize = 10}));
-            writer = new FsWriter(Options.Create(
-                new FsWriterArgs { Path = @"D:\dev\_sn-io-test\localhost_44362_Settings" }));
-
-            // Export Settings to Settings2
-            reader = new RepositoryReader(Options.Create(
-                new RepositoryReaderArgs { Url = "https://localhost:44362", Path = "/Root/System/Settings", BlockSize = 10}));
-            writer = new FsWriter(Options.Create(
-                new FsWriterArgs { Path = @"D:\dev\_sn-io-test\localhost_44362_Settings", Name = "Settings2" }));
-
-            // Export All
-            reader = new RepositoryReader(Options.Create(
-                new RepositoryReaderArgs { Url = "https://localhost:44362", Path = "/Root", BlockSize = 10}));
-            writer = new FsWriter(Options.Create(
-                new FsWriterArgs { Path = @"D:\dev\_sn-io-test\localhost_44362" }));
-
-            // Import Settings
-            reader = new FsReader(Options.Create(
-                new FsReaderArgs { Path = @"D:\dev\_sn-io-test\localhost_44362_Settings\Settings" }));
-            writer = new RepositoryWriter(Options.Create(
-                new RepositoryWriterArgs { Url = "https://localhost:44362", Path = "/Root/System"}));
-
-            // Import \Root\System\Settings
-            reader = new FsReader(Options.Create(
-                new FsReaderArgs { Path = @"D:\dev\_sn-io-test\localhost_44362\Root\System\Settings" }));
-            writer = new RepositoryWriter(Options.Create(
-                new RepositoryWriterArgs { Url = "https://localhost:44362", Path = "/Root/System"}));
-
-            // Import Settings2 to Settings
-            reader = new FsReader(Options.Create(
-                new FsReaderArgs { Path = @"D:\dev\_sn-io-test\localhost_44362_Settings\Settings2" }));
-            writer = new RepositoryWriter(Options.Create(
-                new RepositoryWriterArgs { Url = "https://localhost:44362", Path = "/Root/System", Name = "Settings"}));
-
-            // Import All
-            reader = new FsReader(Options.Create(
-                new FsReaderArgs { Path = @"D:\dev\_sn-io-test\localhost_44362\Root" }));
-            writer = new RepositoryWriter(Options.Create(
-                new RepositoryWriterArgs { Url = "https://localhost:44362" }));
-
-            // Copy Settings to Settings3
-            reader = new FsReader(Options.Create(
-                new FsReaderArgs { Path = @"D:\dev\_sn-io-test\localhost_44362_Settings\Settings" }));
-            writer = new FsWriter(Options.Create(
-                new FsWriterArgs { Path = @"D:\dev\_sn-io-test\localhost_44362_Settings", Name = "Settings3" }));
-
-            // Copy All
-            reader = new FsReader(Options.Create(
-                new FsReaderArgs { Path = @"D:\dev\_sn-io-test\localhost_44362\Root" }));
-            writer = new FsWriter(Options.Create(
-                new FsWriterArgs { Path = @"D:\dev\_sn-io-test\localhost_44362_backup" }));
-
-            // ===================================================================================
-
-            _displayLevel = DisplayLevel.Verbose;
-            var flow = ContentFlow.Create(reader, writer);
-            var progress = new Progress<TransferState>(ShowProgress);
-            await flow.TransferAsync(progress);
-
-            await Task.Delay(1000);
-
-            Console.WriteLine();
-            Console.WriteLine("Done.");
-        }
-        */
+        internal static ColoredConsoleSupport Color = new();
 
         private static async Task Main(string[] args)
         {
-            //args = new[] { "COPY", "-SOURCE", @"D:\_sn-io-test\source", "-TARGET", @"D:\_sn-io-test", "target" };
-            //args = new[] { "EXPORT", "-SOURCE", "https://localhost1", "\"/Root/Content\"", "-TARGET", @"D:\_sn-io-test", "old-contents" };
-            //args = new[] { "EXPORT", "-SOURCE", "-PATH", "\"/Root/Content\"", "-TARGET", @"D:\_sn-io-test", "old-contents" };
-            //args = new[] { "IMPORT", "-SOURCE", @"D:\_sn-io-test\old-contents", "-TARGET", "https://localhost1" };
-
-            //args = new[] { "?" };
-            //args = new[] { "-help" };
-            args = new[] { "export", "-help" };
-            //args = new[] { "import", "-help" };
-            //args = new[] { "copy", "-help" };
-            //args = new[] { "sync", "-help" };
-            //args = new string[0];
-            //args = new[] { "fake" };
-            //args = new[] { "EXPORT" };
-            //args = new[] { "COPY", "-TARGET", @"D:\_sn-io-test\localhost_44362_backup" };
-            //args = new[] { "COPY", "-SOURCE", @"D:\_sn-io-test\localhost_44362\Root\System\Settings", 
-            //                       "-TARGET", @"D:\_sn-io-test\localhost_44362_backup", "Settings_backup" };
-            //args = new[] { "IMPORT" };
-            //args = new[] { "IMPORT", "-SOURCE", @"D:\_sn-io-test\localhost_44362_backup\Settings_backup",
-            //              "-TARGET", "-PATH", "/Root/System", "-NAME", "Settings"};
-
             if (IsHelpRequested(args))
                 return;
 
@@ -227,6 +34,7 @@ namespace SenseNet.IO.CLI
                 return;
             }
 
+            _displayLevel = app.DisplaySettings.DisplayLevel;
             Console.WriteLine(app.ParamsToDisplay());
             //UNDONE:LOG: Write 'app.ParamsToDisplay()' to log after the final logger integration.
             await app.RunAsync(ShowProgress);
@@ -249,19 +57,21 @@ namespace SenseNet.IO.CLI
             var appArguments = new ArgumentParser().Parse(args);
 
             var host = Host.CreateDefaultBuilder()
+                // ReSharper disable once UnusedParameter.Local
                 .ConfigureAppConfiguration((hostBuilderContext, configurationBuilder) =>
                 {
                     configurationBuilder.SetBasePath(Directory.GetCurrentDirectory());
                     if (settingsFile != null)
                         configurationBuilder.AddJsonStream(settingsFile);
                     else
-                        configurationBuilder.AddJsonFile("appsettings(test).json");
+                        configurationBuilder.AddJsonFile("providerSettings.json");
                     configurationBuilder
                         .AddEnvironmentVariables()
                         .AddCommandLine(args);
                 })
                 .ConfigureServices((hostBuilderContext, serviceCollection) =>
                 {
+                    serviceCollection.Configure<DisplaySettings>(hostBuilderContext.Configuration.GetSection("display"));
                     switch (appArguments.Verb)
                     {
                         case Verb.Export:
@@ -345,7 +155,6 @@ namespace SenseNet.IO.CLI
             return host;
         }
 
-
         #region HelpScreen
 
         private static StringComparison SC = StringComparison.OrdinalIgnoreCase;
@@ -373,7 +182,7 @@ namespace SenseNet.IO.CLI
             Console.WriteLine(HelpArguments[key]);
         }
 
-        private static Dictionary<string, string> AtomicArguments = new Dictionary<string, string>
+        private static readonly Dictionary<string, string> AtomicArguments = new()
         {
             {"FsReader", @"    [-PATH] <Fully qualified path of the filesystem entry to read.>"},
             {"FsWriter", @"    [-PATH] <Fully qualified path of a target filesystem directory.>
@@ -386,9 +195,9 @@ namespace SenseNet.IO.CLI
     [-NAME] [Name of the target tree root if it is different from the source name.]"},
         };
 
-        private static Dictionary<string, string> HelpArguments = new Dictionary<string, string>
+        private static readonly Dictionary<string, string> HelpArguments = new()
         {
-            {"General", @$""},
+            {"General", ""},
             {"EXPORT", $@"  -SOURCE
 {AtomicArguments["RepositoryReader"]}
   -TARGET
@@ -411,7 +220,7 @@ namespace SenseNet.IO.CLI
 "},
         };
 
-        private static Dictionary<string, string> HelpHeads = new Dictionary<string, string>
+        private static readonly Dictionary<string, string> HelpHeads = new()
         {
             {"General", @$"Manages content transfer in the sensenet ecosystem.
 USAGE: SnIO <VERB> [-SOURCE [Source arguments]] [-TARGET [Target arguments]]
@@ -433,19 +242,19 @@ COPY arguments
 SYNC arguments
 {HelpArguments["SYNC"]}
 "},
-            {"EXPORT", @$"Transfers content tree from a sensenet repository to a filesystem directory.
+            {"EXPORT", @"Transfers content tree from a sensenet repository to a filesystem directory.
 USAGE: SnIO EXPORT [-SOURCE [Source arguments]] [-TARGET [Target arguments]]
        SnIO EXPORT [?|-help]
 Arguments"},
-            {"IMPORT", @$"Transfers content tree from a filesystem entry to a sensenet repository.
+            {"IMPORT", @"Transfers content tree from a filesystem entry to a sensenet repository.
 USAGE: SnIO IMPORT [-SOURCE [Source arguments]] [-TARGET [Target arguments]]
        SnIO IMPORT [?|-help]
 Arguments"},
-            {"COPY", @$"Transfers content tree from a filesystem entry to another filesystem directory.
+            {"COPY", @"Transfers content tree from a filesystem entry to another filesystem directory.
 USAGE: SnIO COPY [-SOURCE [Source arguments]] [-TARGET [Target arguments]]
        SnIO COPY [?|-help]
 Arguments"},
-            {"SYNC", @$"Transfers content tree from a sensenet repository to another sensenet repository.
+            {"SYNC", @"Transfers content tree from a sensenet repository to another sensenet repository.
 USAGE: SnIO SYNC [-SOURCE [Source arguments]] [-TARGET [Target arguments]]
        SnIO SYNC [?|-help]
 Arguments"},
@@ -455,9 +264,7 @@ Arguments"},
 
         /* ========================================================================== Display progress */
 
-        private enum DisplayLevel { None, Progress, Errors, Verbose }
-
-        private static DisplayLevel _displayLevel = DisplayLevel.Errors;
+        private static DisplayLevel _displayLevel;
         private static readonly string ClearLine = new string(' ', 70) + '\r';
         private static string _lastBatchAction;
         private static void ShowProgress(TransferState state)
@@ -472,7 +279,8 @@ Arguments"},
                 {
                     _lastBatchAction = state.CurrentBatchAction;
                     Console.Write(ClearLine);
-                    Console.WriteLine($"------------ {state.CurrentBatchAction.ToUpper()} ------------");
+                    using(Color.Highlight())
+                        Console.WriteLine($"------------ {state.CurrentBatchAction.ToUpper()} ------------");
                 }
             }
 
@@ -481,22 +289,42 @@ Arguments"},
                 (_displayLevel == DisplayLevel.Errors && state.State.Action == WriterAction.Failed))
             {
                 Console.Write(ClearLine);
-                Console.WriteLine($"{state.State.Action,-8} {state.State.WriterPath}");
+                if (state.State.Action == WriterAction.Failed)
+                {
+                    using(Color.Error())
+                        Console.Write($" {state.State.Action} ");
+                    Console.WriteLine($" {state.State.WriterPath}");
+                }
+                else
+                {
+                    if (state.State.Action == WriterAction.Creating || state.State.Action == WriterAction.Updating)
+                    {
+                        using (Color.Warning())
+                            Console.Write($"{state.State.Action}");
+                        Console.WriteLine($" {state.State.WriterPath}");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"{state.State.Action,-8} {state.State.WriterPath}");
+                    }
+                }
             }
 
             // Error
             if (_displayLevel != DisplayLevel.Progress && state.State.Action == WriterAction.Failed)
             {
-                foreach (var message in state.State.Messages)
-                    Console.WriteLine(
-                        $"         {message.Replace("The server returned an error (HttpStatus: InternalServerError): ", "")}");
+                using (Color.Highlight())
+                {
+                    foreach (var message in state.State.Messages)
+                        Console.WriteLine(
+                            $"         {message.Replace("The server returned an error (HttpStatus: InternalServerError): ", "")}");
+                }
             }
 
             // Progress
             Console.Write($"{state.CurrentBatchAction} {state.Percent,5:F1}%  " +
-                          $"({state.CurrentCount}/{state.TotalCount} errors:{state.ErrorCount})                     \r");
+                          $"({state.CurrentCount}/({state.ContentCount}+{state.UpdateTaskCount}), " +
+                          $"errors:{state.ErrorCount})                     \r");
         }
-
-
     }
 }

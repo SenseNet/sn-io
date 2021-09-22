@@ -48,17 +48,17 @@ namespace SenseNet.IO
 
         /* ========================================================================== LOGGING */
 
-        protected int _referenceUpdateTasksTotalCount = 0;
+        protected int ReferenceUpdateTasksTotalCount;
 
         private string _logFilePath;
         private string _taskFilePath;
         protected void WriteLogAndTask(WriterState state, bool updateReferences)
         {
-            WriteLog(state, updateReferences);
+            WriteLog(state);
             if (!updateReferences && state.UpdateRequired)
                 WriteTask(state);
         }
-        private void WriteLog(WriterState state, bool updateReferences)
+        private void WriteLog(WriterState state)
         {
             using (var writer = new StringWriter())
             {
@@ -112,7 +112,7 @@ namespace SenseNet.IO
                 writer.WriteLine();
             }
 
-            _referenceUpdateTasksTotalCount++;
+            ReferenceUpdateTasksTotalCount++;
         }
         protected virtual int LoadTaskCount()
         {

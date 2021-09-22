@@ -1,5 +1,4 @@
 ﻿using System;
-using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Threading;
@@ -63,7 +62,7 @@ namespace SenseNet.IO.Implementations
             ClientContext.Current.AddServer(server);
         }
 
-        public async Task<WriterState> WriteAsync(string path, IContent content, CancellationToken cancel = default)
+        public virtual async Task<WriterState> WriteAsync(string path, IContent content, CancellationToken cancel = default)
         {
             var repositoryPath = ContentPath.Combine(ContainerPath, path);
             if (content.Type == "ContentType")
@@ -199,9 +198,9 @@ namespace SenseNet.IO.Implementations
             }
 
             // Upload binaries if there are.
-            foreach (var attachment in attachments)
+            var parentPath = ContentPath.GetParentPath(repositoryPath);
+            foreach (var attachment in attachments.Where(a => a.Stream != null))
             {
-                var parentPath = ContentPath.GetParentPath(repositoryPath);
                 using (var stream = attachment.Stream)
                     uploaded = await Content.UploadAsync(parentPath, content.Name, stream, propertyName: attachment.FieldName);
             }

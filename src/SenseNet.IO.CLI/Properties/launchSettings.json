@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "SenseNet.IO.CLI": {
+      "commandName": "Project",
+      "commandLineArgs": "IMPORT -SOURCE \"D:\\_sn-io-test\\localhost_44362\\Root\\IMS\\BuiltIn\\Portal\\Admin\\Admin.png\" -TARGET -PATH \"/Root/IMS/BuiltIn/Portal/Admin\""
+    }
+  }
+}
