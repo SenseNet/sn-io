@@ -3,19 +3,25 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace SenseNet.IO.Implementations
 {
     internal class Level5ContentFlow : ContentFlow, IContentFlow
     {
-        public override IContentReader Reader { get; }
         IContentWriter IContentFlow.Writer => Writer;
-        public override ISnRepositoryWriter Writer { get; }
+        public override ISnRepositoryWriter Writer => (ISnRepositoryWriter)_writer;
 
-        public Level5ContentFlow(IContentReader reader, ISnRepositoryWriter writer)
+        public Level5ContentFlow(IContentReader reader, IContentWriter writer, ILogger<ContentFlow> logger)
+            : base(reader, writer, logger)
         {
-            Reader = reader;
-            Writer = writer;
+            if (reader == null)
+                throw new ArgumentNullException(nameof(reader));
+            if (writer == null)
+                throw new ArgumentNullException(nameof(writer));
+
+            if (!(writer is ISnRepositoryWriter))
+                throw new ArgumentException($"Type mismatch: the writer is {writer.GetType().FullName} but should be ISnRepositoryWriter");
         }
 
         private int _contentCount;

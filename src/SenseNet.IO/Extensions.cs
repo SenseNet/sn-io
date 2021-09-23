@@ -13,17 +13,10 @@ namespace Microsoft.Extensions.DependencyInjection
         {
             services.AddSingleton<IContentReader, TReader>();
             services.AddSingleton<IContentWriter, TWriter>();
-            services.AddSingleton<IContentFlow, Level1ContentFlow>();
-
-            return services;
-        }
-        public static IServiceCollection AddContentFlowForRepositoryWriter<TReader, TWriter>(this IServiceCollection services)
-            where TReader : class, IContentReader
-            where TWriter : class, ISnRepositoryWriter
-        {
-            services.AddSingleton<IContentReader, TReader>();
-            services.AddSingleton<ISnRepositoryWriter, TWriter>();
-            services.AddSingleton<IContentFlow, Level5ContentFlow>();
+            if (typeof(TWriter).GetInterfaces().Any(t => t == typeof(ISnRepositoryWriter)))
+                services.AddSingleton<IContentFlow, Level5ContentFlow>();
+            else
+                services.AddSingleton<IContentFlow, Level1ContentFlow>();
 
             return services;
         }

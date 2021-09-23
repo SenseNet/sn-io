@@ -2,17 +2,15 @@
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace SenseNet.IO.Implementations
 {
     internal class Level1ContentFlow : ContentFlow
     {
-        public override IContentReader Reader { get; }
-        public override IContentWriter Writer { get; }
-        public Level1ContentFlow(IContentReader reader, IContentWriter writer)
+        public Level1ContentFlow(IContentReader reader, IContentWriter writer, ILogger<ContentFlow> logger)
+            : base(reader, writer, logger)
         {
-            Reader = reader;
-            Writer = writer;
         }
 
         private int _contentCount;

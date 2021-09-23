@@ -10,6 +10,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using SenseNet.Extensions.DependencyInjection;
 using SenseNet.IO.Implementations;
+using Serilog;
 
 namespace SenseNet.IO.CLI
 {
@@ -93,7 +94,7 @@ namespace SenseNet.IO.CLI
                             var importArgs = (ImportArguments) appArguments;
                             serviceCollection
                                 .AddSenseNetClientTokenStore()
-                                .AddContentFlowForRepositoryWriter<FsReader, RepositoryWriter>()
+                                .AddContentFlow<FsReader, RepositoryWriter>()
                                 // settings file
                                 .Configure<FsReaderArgs>(hostBuilderContext.Configuration.GetSection("fsReader"))
                                 .Configure<RepositoryWriterArgs>(
@@ -120,7 +121,7 @@ namespace SenseNet.IO.CLI
                             var syncArgs = (SyncArguments) appArguments;
                             serviceCollection
                                 .AddSenseNetClientTokenStore()
-                                .AddContentFlowForRepositoryWriter<RepositoryReader, RepositoryWriter>()
+                                .AddContentFlow<RepositoryReader, RepositoryWriter>()
                                 // settings file
                                 .Configure<RepositoryReaderArgs>(
                                     hostBuilderContext.Configuration.GetSection("repositoryReader"))
@@ -139,12 +140,12 @@ namespace SenseNet.IO.CLI
                             throw new ArgumentOutOfRangeException();
                     }
                 })
-                .ConfigureLogging(loggingBuilder =>
+                .ConfigureLogging((hostBuilder, loggingBuilder) =>
                 {
-                    loggingBuilder
-                        .ClearProviders()
-                        .AddConsole()
-                        .SetMinimumLevel(LogLevel.Information);
+                    loggingBuilder.ClearProviders();
+                    loggingBuilder.AddSerilog(new LoggerConfiguration()
+                        .ReadFrom.Configuration(hostBuilder.Configuration)
+                        .CreateLogger());
                 })
                 .Build();
 

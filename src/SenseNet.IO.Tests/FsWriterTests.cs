@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SenseNet.IO.Implementations;
@@ -12,7 +13,7 @@ using SenseNet.IO.Implementations;
 namespace SenseNet.IO.Tests
 {
     [TestClass]
-    public class FsWriterTests
+    public class FsWriterTests : TestBase
     {
         #region Nested classes
         private class FsWriterMock : FsWriter
@@ -157,7 +158,7 @@ namespace SenseNet.IO.Tests
                 createBinaryStream: (fsPath, fileMode) => throw new NotImplementedException());
 
             // ACTION
-            var contentFlow = new Level1ContentFlow(reader, writer);
+            var contentFlow = new Level1ContentFlow(reader, writer, GetLogger<ContentFlow>());
             await contentFlow.TransferAsync(null);
             
             // ASSERT
@@ -203,7 +204,7 @@ namespace SenseNet.IO.Tests
                 createBinaryStream: (fsPath, fileMode) => throw new NotImplementedException());
 
             // ACTION
-            var contentFlow = new Level1ContentFlow(reader, writer);
+            var contentFlow = new Level1ContentFlow(reader, writer, GetLogger<ContentFlow>());
             await contentFlow.TransferAsync(null);
 
             // ASSERT
@@ -252,7 +253,7 @@ namespace SenseNet.IO.Tests
                 createBinaryStream: (fsPath, fileMode) => throw new NotImplementedException());
 
             // ACTION
-            var contentFlow = new Level1ContentFlow(reader, writer);
+            var contentFlow = new Level1ContentFlow(reader, writer, GetLogger<ContentFlow>());
             await contentFlow.TransferAsync(null);
 
             // ASSERT
@@ -309,7 +310,7 @@ namespace SenseNet.IO.Tests
                 createBinaryStream: (fsPath, fileMode) => throw new NotImplementedException());
 
             // ACTION
-            var contentFlow = new Level1ContentFlow(reader, writer);
+            var contentFlow = new Level1ContentFlow(reader, writer, GetLogger<ContentFlow>());
             await contentFlow.TransferAsync(null);
 
             // ASSERT
@@ -361,7 +362,7 @@ namespace SenseNet.IO.Tests
                 createBinaryStream: (fsPath, fileMode) => throw new NotImplementedException());
 
             // ACTION
-            var contentFlow = new Level1ContentFlow(reader, writer);
+            var contentFlow = new Level1ContentFlow(reader, writer, GetLogger<ContentFlow>());
             await contentFlow.TransferAsync(null);
 
             // ASSERT
@@ -421,7 +422,7 @@ namespace SenseNet.IO.Tests
                 });
 
             // ACTION
-            var contentFlow = new Level1ContentFlow(reader, writer);
+            var contentFlow = new Level1ContentFlow(reader, writer, GetLogger<ContentFlow>());
             await contentFlow.TransferAsync(null);
 
             // ASSERT
@@ -494,7 +495,7 @@ namespace SenseNet.IO.Tests
                 });
 
             // ACTION
-            var contentFlow = new Level1ContentFlow(reader, writer);
+            var contentFlow = new Level1ContentFlow(reader, writer, GetLogger<ContentFlow>());
             await contentFlow.TransferAsync(null);
 
             // ASSERT

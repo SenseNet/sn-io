@@ -6,26 +6,33 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using SenseNet.IO.Implementations;
 
 namespace SenseNet.IO
 {
     public abstract class ContentFlow : IContentFlow
     {
-        public abstract IContentReader Reader { get; }
-        public abstract IContentWriter Writer { get; }
+        private ILogger<ContentFlow> _logger;
+        public IContentReader Reader { get; }
+        // ReSharper disable once InconsistentNaming
+        protected IContentWriter _writer;
+        public virtual IContentWriter Writer => _writer;
+
+        protected ContentFlow(IContentReader reader, IContentWriter writer, ILogger<ContentFlow> logger)
+        {
+            Reader = reader;
+            _writer = writer;
+            _logger = logger;
+        }
+
         public abstract Task TransferAsync(IProgress<TransferState> progress, CancellationToken cancel = default);
 
         /* ========================================================================== LOGGING */
 
-        public void WriteLogHead(string head)
-        {
-            WriteLog(head, true);
-            WriteLog("START");
-        }
-
         protected void WriteSummaryToLog(int estimatedCount, int transferredCount, int errorCount, TimeSpan duration)
         {
+            //UNDONE: write [INF] Steps, Contents, UpdateRefs, errors, duration
             WriteLog($"FINISH: transferred contents: {transferredCount}/{estimatedCount}, errors: {errorCount}, duration: {duration}");
         }
 
@@ -85,11 +92,13 @@ namespace SenseNet.IO
 
         protected virtual void WriteLog(string entry, bool head = false)
         {
-            if (_logFilePath == null)
-                _logFilePath = CreateLogFile(true, "log");
+            _logger.LogTrace(entry);
 
-            using (StreamWriter writer = new StreamWriter(_logFilePath, true))
-                writer.WriteLine(head ? entry : $"{DateTime.Now:yyyy-MM-dd HH:mm:ss.fffff}  {entry}");
+            //if (_logFilePath == null)
+            //    _logFilePath = CreateLogFile(true, "log");
+
+            //using (StreamWriter writer = new StreamWriter(_logFilePath, true))
+            //    writer.WriteLine(head ? entry : $"{DateTime.Now:yyyy-MM-dd HH:mm:ss.fffff}  {entry}");
         }
         protected virtual void WriteTask(WriterState state)
         {
