@@ -25,6 +25,7 @@ namespace SenseNet.IO.Implementations
         }
 
         private int _contentCount;
+        private int _referenceUpdatesCount;
         private string _currentBatchAction;
         private int _errorCount;
         private string _rootName;
@@ -77,7 +78,7 @@ namespace SenseNet.IO.Implementations
             await UpdateReferencesAsync(progress, cancel);
 
             timer.Stop();
-            WriteSummaryToLog(Reader.EstimatedCount, _contentCount, _errorCount, timer.Elapsed);
+            WriteSummaryToLog(_contentCount, Reader.EstimatedCount, _referenceUpdatesCount, _errorCount, timer.Elapsed);
         }
         private async Task CopyContentTypesAsync(string relativePath, IProgress<TransferState> progress, CancellationToken cancel)
         {
@@ -173,15 +174,15 @@ namespace SenseNet.IO.Implementations
         private async Task UpdateReferencesAsync(IProgress<TransferState> progress = null,
             CancellationToken cancel = default)
         {
-            var taskCount = LoadTaskCount();
-            if (taskCount == 0)
+            _referenceUpdatesCount = LoadTaskCount();
+            if (_referenceUpdatesCount == 0)
                 return;
 
             _currentBatchAction = "Update references";
             WriteLog($"------------ {_currentBatchAction.ToUpper()} ------------");
 
             var tasks = LoadTasks();
-            Reader.SetReferenceUpdateTasks(tasks, taskCount);
+            Reader.SetReferenceUpdateTasks(tasks, _referenceUpdatesCount);
 
             while (await Reader.ReadByReferenceUpdateTasksAsync(cancel))
                 await WriteAsync(progress, true, cancel);

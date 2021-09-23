@@ -46,7 +46,7 @@ namespace SenseNet.IO.Implementations
             }
 
             timer.Stop();
-            WriteSummaryToLog(Reader.EstimatedCount, _contentCount, _errorCount, timer.Elapsed);
+            WriteSummaryToLog(_contentCount, Reader.EstimatedCount, 0, _errorCount, timer.Elapsed);
         }
 
         private async Task WriteAsync(IProgress<TransferState> progress, bool updateReferences, CancellationToken cancel = default)

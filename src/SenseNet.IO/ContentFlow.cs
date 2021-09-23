@@ -30,10 +30,13 @@ namespace SenseNet.IO
 
         /* ========================================================================== LOGGING */
 
-        protected void WriteSummaryToLog(int estimatedCount, int transferredCount, int errorCount, TimeSpan duration)
+        protected void WriteSummaryToLog(int transferredCount, int contentCount, int updatedTaskCount, int errorCount, TimeSpan duration)
         {
-            //UNDONE: write [INF] Steps, Contents, UpdateRefs, errors, duration
-            WriteLog($"FINISH: transferred contents: {transferredCount}/{estimatedCount}, errors: {errorCount}, duration: {duration}");
+            WriteLog($"FINISH: transfer steps = {transferredCount}," +
+                     $" contents = {contentCount}, " +
+                     $"reference updates = {updatedTaskCount}, " +
+                     $"errors = {errorCount}, " +
+                     $"duration = {duration}", LogLevel.Information);
         }
 
         /* ========================================================================== TOOLS */
@@ -48,8 +51,6 @@ namespace SenseNet.IO
         /* ========================================================================== LOGGING */
 
         protected int ReferenceUpdateTasksTotalCount;
-
-        private string _logFilePath;
         private string _taskFilePath;
         protected void WriteLogAndTask(WriterState state, bool updateReferences)
         {
@@ -69,7 +70,7 @@ namespace SenseNet.IO
         }
         protected void WriteLog(Exception e)
         {
-            WriteLog(e.ToString());
+            WriteLog(e.ToString(), LogLevel.Error);
         }
         private string CreateLogFile(bool createNew, string extension)
         {
@@ -90,15 +91,9 @@ namespace SenseNet.IO
 
         /* -------------------------------------------------------------------------- TESTABILITY */
 
-        protected virtual void WriteLog(string entry, bool head = false)
+        protected virtual void WriteLog(string entry, LogLevel level = LogLevel.Trace)
         {
-            _logger.LogTrace(entry);
-
-            //if (_logFilePath == null)
-            //    _logFilePath = CreateLogFile(true, "log");
-
-            //using (StreamWriter writer = new StreamWriter(_logFilePath, true))
-            //    writer.WriteLine(head ? entry : $"{DateTime.Now:yyyy-MM-dd HH:mm:ss.fffff}  {entry}");
+            _logger.Log(level, entry);
         }
         protected virtual void WriteTask(WriterState state)
         {

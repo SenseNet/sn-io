@@ -15,7 +15,8 @@ namespace SenseNet.IO.Tests
         private class SimpleContentFlowMock : SimpleContentFlow
         {
             public SimpleContentFlowMock(IContentReader reader, IContentWriter writer) : base(reader, writer, GetLogger<ContentFlow>()) { }
-            protected override void WriteLog(string entry, bool head = false) { }
+            protected override void WriteLog(string entry, LogLevel level = LogLevel.Trace) { }
+
             protected override void WriteTask(WriterState state) { }
             protected override int LoadTaskCount() { return 0; }
             protected override IEnumerable<TransferTask> LoadTasks() { return new TransferTask[0]; }

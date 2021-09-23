@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SenseNet.IO.Implementations;
 using SenseNet.IO.Tests.Implementations;
@@ -17,7 +18,7 @@ namespace SenseNet.IO.Tests
             public List<TransferTask> TransferTasks { get; } = new List<TransferTask>();
 
             public SemanticContentFlowMock(IContentReader reader, ISnRepositoryWriter writer) : base(reader, writer, GetLogger<ContentFlow>()) { }
-            protected override void WriteLog(string entry, bool head = false) { Log.Add(entry); }
+            protected override void WriteLog(string entry, LogLevel level = LogLevel.Trace) { Log.Add(entry); }
 
             protected override void WriteTask(WriterState state)
             {
