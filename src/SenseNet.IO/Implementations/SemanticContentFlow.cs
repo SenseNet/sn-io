@@ -7,12 +7,12 @@ using Microsoft.Extensions.Logging;
 
 namespace SenseNet.IO.Implementations
 {
-    internal class Level5ContentFlow : ContentFlow, IContentFlow
+    internal class SemanticContentFlow : ContentFlow, IContentFlow
     {
         IContentWriter IContentFlow.Writer => Writer;
         public override ISnRepositoryWriter Writer => (ISnRepositoryWriter)_writer;
 
-        public Level5ContentFlow(IContentReader reader, IContentWriter writer, ILogger<ContentFlow> logger)
+        public SemanticContentFlow(IContentReader reader, IContentWriter writer, ILogger<ContentFlow> logger)
             : base(reader, writer, logger)
         {
             if (reader == null)

@@ -10,11 +10,11 @@ using SenseNet.IO.Tests.Implementations;
 namespace SenseNet.IO.Tests
 {
     [TestClass]
-    public class Level1ContentFlowTests : TestBase
+    public class SimpleContentFlowTests : TestBase
     {
-        private class ContentFlowMock : Level1ContentFlow
+        private class SimpleContentFlowMock : SimpleContentFlow
         {
-            public ContentFlowMock(IContentReader reader, IContentWriter writer) : base(reader, writer, GetLogger<ContentFlow>()) { }
+            public SimpleContentFlowMock(IContentReader reader, IContentWriter writer) : base(reader, writer, GetLogger<ContentFlow>()) { }
             protected override void WriteLog(string entry, bool head = false) { }
             protected override void WriteTask(WriterState state) { }
             protected override int LoadTaskCount() { return 0; }
@@ -41,7 +41,7 @@ namespace SenseNet.IO.Tests
             var targetTree = new Dictionary<string, ContentNode>();
 
             // ACTION
-            var flow = new ContentFlowMock(
+            var flow = new SimpleContentFlowMock(
                 new TestContentReader("/Root", sourceTree),
                 new TestContentWriter(targetTree));
             var progress = new TestProgress();
@@ -62,7 +62,7 @@ namespace SenseNet.IO.Tests
             });
 
             // ACTION
-            var flow = new ContentFlowMock(
+            var flow = new SimpleContentFlowMock(
                 new TestCQReader("/Root/Node-01/Node-08", 4, sourceTree),
                 new TestContentWriter(targetTree));
             var progress = new TestProgress();
@@ -79,7 +79,7 @@ namespace SenseNet.IO.Tests
             var targetTree = new Dictionary<string, ContentNode>();
 
             // ACTION
-            var flow = new ContentFlowMock(
+            var flow = new SimpleContentFlowMock(
                 new TestCQReader("/Root", 4, sourceTree),
                 new TestContentWriter(targetTree));
             var progress = new TestProgress();
@@ -106,7 +106,7 @@ namespace SenseNet.IO.Tests
             });
 
             // ACTION
-            var flow = new ContentFlowMock(
+            var flow = new SimpleContentFlowMock(
                 new TestCQReader("/Root/aa", 5, sourceTree),
                 new TestContentWriter(targetTree));
             var progress = new TestProgress();
@@ -128,7 +128,7 @@ namespace SenseNet.IO.Tests
             });
 
             // ACTION
-            var flow = new ContentFlowMock(
+            var flow = new SimpleContentFlowMock(
                 new TestCQReader("/Root/Node-01/Node-02/Node-03", 4, sourceTree),
                 new TestContentWriter(targetTree, "/Root/Node-99"));
             await flow.TransferAsync(new TestProgress());
@@ -153,7 +153,7 @@ namespace SenseNet.IO.Tests
             });
 
             // ACTION
-            var flow = new ContentFlowMock(
+            var flow = new SimpleContentFlowMock(
                 new TestCQReader("/Root/Node-01/Node-02/Node-03", 4, sourceTree),
                 new TestContentWriter(targetTree, "/Root/Node-99", "Renamed"));
             await flow.TransferAsync(new TestProgress());
@@ -177,7 +177,7 @@ namespace SenseNet.IO.Tests
             var targetTree = new Dictionary<string, ContentNode>();
 
             // ACTION
-            var flow = new ContentFlowMock(
+            var flow = new SimpleContentFlowMock(
                 new TestCQReader("/Root", 4, sourceTree),
                 new TestContentWriter(targetTree));
             var progress = new TestProgress();
@@ -223,7 +223,7 @@ System/Settings/Settings-3.settings
             var targetTree = new Dictionary<string, ContentNode>();
 
             // ACTION
-            var flow = new ContentFlowMock(
+            var flow = new SimpleContentFlowMock(
                 new TestCQReader("/Root/Content", 4, sourceTree),
                 new TestContentWriter(targetTree));
             var progress = new TestProgress();
@@ -250,7 +250,7 @@ Workspace-2
             var targetTree = new Dictionary<string, ContentNode>();
 
             // ACTION
-            var flow = new ContentFlowMock(
+            var flow = new SimpleContentFlowMock(
                 new TestCQReader("/Root/System", 4, sourceTree),
                 new TestContentWriter(targetTree));
             var progress = new TestProgress();
@@ -285,7 +285,7 @@ Settings/Settings-3.settings
             var targetTree = new Dictionary<string, ContentNode>();
 
             // ACTION
-            var flow = new ContentFlowMock(
+            var flow = new SimpleContentFlowMock(
                 new TestCQReader("/Root/System/Schema", 4, sourceTree),
                 new TestContentWriter(targetTree));
             var progress = new TestProgress();
@@ -315,7 +315,7 @@ ContentTypes/ContentType-2
             var targetTree = new Dictionary<string, ContentNode>();
 
             // ACTION
-            var flow = new ContentFlowMock(
+            var flow = new SimpleContentFlowMock(
                 new TestCQReader("/Root/System/Settings", 4, sourceTree),
                 new TestContentWriter(targetTree));
             var progress = new TestProgress();

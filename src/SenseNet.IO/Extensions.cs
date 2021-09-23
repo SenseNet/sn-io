@@ -14,9 +14,9 @@ namespace Microsoft.Extensions.DependencyInjection
             services.AddSingleton<IContentReader, TReader>();
             services.AddSingleton<IContentWriter, TWriter>();
             if (typeof(TWriter).GetInterfaces().Any(t => t == typeof(ISnRepositoryWriter)))
-                services.AddSingleton<IContentFlow, Level5ContentFlow>();
+                services.AddSingleton<IContentFlow, SemanticContentFlow>();
             else
-                services.AddSingleton<IContentFlow, Level1ContentFlow>();
+                services.AddSingleton<IContentFlow, SimpleContentFlow>();
 
             return services;
         }

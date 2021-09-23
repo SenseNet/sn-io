@@ -6,9 +6,9 @@ using Microsoft.Extensions.Logging;
 
 namespace SenseNet.IO.Implementations
 {
-    internal class Level1ContentFlow : ContentFlow
+    internal class SimpleContentFlow : ContentFlow
     {
-        public Level1ContentFlow(IContentReader reader, IContentWriter writer, ILogger<ContentFlow> logger)
+        public SimpleContentFlow(IContentReader reader, IContentWriter writer, ILogger<ContentFlow> logger)
             : base(reader, writer, logger)
         {
         }

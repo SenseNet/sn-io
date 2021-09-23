@@ -129,7 +129,7 @@ namespace SenseNet.IO.Tests
             // ACTION
             var reader = RepositoryReaderMock.Create(sourceTree, "/Root", 99999);
             var writer = new TestRepositoryWriter(targetTree, targetStates);
-            var flow = new Level5ContentFlow(reader, writer, GetLogger<ContentFlow>());
+            var flow = new SemanticContentFlow(reader, writer, GetLogger<ContentFlow>());
             var progress = new TestProgress();
             await flow.TransferAsync(progress);
 
@@ -167,7 +167,7 @@ namespace SenseNet.IO.Tests
             // ACTION
             var reader = RepositoryReaderMock.Create(sourceTree, "/Root/System", 99999);
             var writer = new TestRepositoryWriter(targetTree, targetStates, "/Root");
-            var flow = new Level5ContentFlow(reader, writer, GetLogger<ContentFlow>());
+            var flow = new SemanticContentFlow(reader, writer, GetLogger<ContentFlow>());
             var progress = new TestProgress();
             await flow.TransferAsync(progress);
 
@@ -207,7 +207,7 @@ namespace SenseNet.IO.Tests
             // ACTION
             var reader = RepositoryReaderMock.Create(sourceTree, "/Root/System/Schema", 99999);
             var writer = new TestRepositoryWriter(targetTree, targetStates, "/Root/System");
-            var flow = new Level5ContentFlow(reader, writer, GetLogger<ContentFlow>());
+            var flow = new SemanticContentFlow(reader, writer, GetLogger<ContentFlow>());
             var progress = new TestProgress();
             await flow.TransferAsync(progress);
 
@@ -246,7 +246,7 @@ namespace SenseNet.IO.Tests
             // ACTION
             var reader = RepositoryReaderMock.Create(sourceTree, "/Root/System/Schema/ContentTypes", 99999);
             var writer = new TestRepositoryWriter(targetTree, targetStates, "/Root/System/Schema");
-            var flow = new Level5ContentFlow(reader, writer, GetLogger<ContentFlow>());
+            var flow = new SemanticContentFlow(reader, writer, GetLogger<ContentFlow>());
             var progress = new TestProgress();
             await flow.TransferAsync(progress);
 
@@ -283,7 +283,7 @@ namespace SenseNet.IO.Tests
             // ACTION
             var reader = RepositoryReaderMock.Create(sourceTree, "/Root/System/Schema/Aspects", 99999);
             var writer = new TestRepositoryWriter(targetTree, targetStates, "/Root/System/Schema");
-            var flow = new Level5ContentFlow(reader, writer, GetLogger<ContentFlow>());
+            var flow = new SemanticContentFlow(reader, writer, GetLogger<ContentFlow>());
             var progress = new TestProgress();
             await flow.TransferAsync(progress);
 
@@ -320,7 +320,7 @@ namespace SenseNet.IO.Tests
             // ACTION
             var reader = RepositoryReaderMock.Create(sourceTree, "/Root/System/Settings", 99999);
             var writer = new TestRepositoryWriter(targetTree, targetStates, "/Root/System");
-            var flow = new Level5ContentFlow(reader, writer, GetLogger<ContentFlow>());
+            var flow = new SemanticContentFlow(reader, writer, GetLogger<ContentFlow>());
             var progress = new TestProgress();
             await flow.TransferAsync(progress);
 
@@ -356,7 +356,7 @@ namespace SenseNet.IO.Tests
             // ACTION
             var reader = RepositoryReaderMock.Create(sourceTree, "/Root/Content", 99999);
             var writer = new TestRepositoryWriter(targetTree, targetStates, "/Root");
-            var flow = new Level5ContentFlow(reader, writer, GetLogger<ContentFlow>());
+            var flow = new SemanticContentFlow(reader, writer, GetLogger<ContentFlow>());
             var progress = new TestProgress();
             await flow.TransferAsync(progress);
 
@@ -415,7 +415,7 @@ namespace SenseNet.IO.Tests
             // ACTION
             var reader = RepositoryReaderMock.Create(sourceTree, "/Root", 99999);
             var writer = new TestRepositoryWriter(targetTree, targetStates);
-            var flow = new Level5ContentFlow(reader, writer, GetLogger<ContentFlow>());
+            var flow = new SemanticContentFlow(reader, writer, GetLogger<ContentFlow>());
             var progress = new TestProgress();
             await flow.TransferAsync(progress);
 
