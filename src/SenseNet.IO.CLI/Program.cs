@@ -36,8 +36,8 @@ namespace SenseNet.IO.CLI
             }
 
             _displayLevel = app.DisplaySettings.DisplayLevel;
-            Console.WriteLine(app.ParamsToDisplay());
-            //UNDONE:LOG: Write 'app.ParamsToDisplay()' to log after the final logger integration.
+            Console.WriteLine(app.HeadToDisplay());
+
             await app.RunAsync(ShowProgress);
 
             await Task.Delay(1000);
@@ -45,14 +45,12 @@ namespace SenseNet.IO.CLI
             Console.WriteLine();
             Console.WriteLine("Done.");
         }
-
         public static IoApp CreateApp(string[] args, Stream settingsFile = null)
         {
             var host = CreateHost(args, settingsFile);
             var app = ActivatorUtilities.CreateInstance<IoApp>(host.Services);
             return app;
         }
-
         private static IHost CreateHost(string[] args, Stream settingsFile = null)
         {
             var appArguments = new ArgumentParser().Parse(args);

@@ -74,26 +74,6 @@ namespace SenseNet.IO.CLI
         }
 
 
-        internal static string ParamsToDisplay(this IoApp app)
-        {
-            Verb verb;
-            if (app.Reader is RepositoryReader && app.Writer is FsWriter)
-                verb = Verb.Export;
-            else if (app.Reader is FsReader && app.Writer is RepositoryWriter)
-                verb = Verb.Import;
-            else if (app.Reader is FsReader && app.Writer is FsWriter)
-                verb = Verb.Copy;
-            else if (app.Reader is RepositoryReader && app.Writer is RepositoryWriter)
-                verb = Verb.Sync;
-            else
-                verb = Verb.Transfer;
-
-            return $"{verb.ToString().ToUpper()}\r\n" +
-                   $"  from\r\n" +
-                   $"    {app.Reader.ParamsToDisplay()}\r\n" +
-                   $"  to\r\n" +
-                   $"    {app.Writer.ParamsToDisplay()}\r\n";
-        }
         public static string ParamsToDisplay(this IContentReader reader)
         {
             if (reader is FsReader fsReader)
