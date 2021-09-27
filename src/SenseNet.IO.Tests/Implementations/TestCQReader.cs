@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace SenseNet.IO.Tests.Implementations
 {
     /// <summary>
-    /// Simulates ContentQuery-based block reader for Level1ContentFlowTests
+    /// Simulates ContentQuery-based block reader for SimpleContentFlowTests
     /// </summary>
     // ReSharper disable once InconsistentNaming
     internal class TestCQReader : IContentReader

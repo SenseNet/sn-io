@@ -10,6 +10,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using SenseNet.Extensions.DependencyInjection;
 using SenseNet.IO.Implementations;
+using Serilog;
 
 namespace SenseNet.IO.CLI
 {
@@ -35,8 +36,8 @@ namespace SenseNet.IO.CLI
             }
 
             _displayLevel = app.DisplaySettings.DisplayLevel;
-            Console.WriteLine(app.ParamsToDisplay());
-            //UNDONE:LOG: Write 'app.ParamsToDisplay()' to log after the final logger integration.
+            Console.WriteLine(app.HeadToDisplay());
+
             await app.RunAsync(ShowProgress);
 
             await Task.Delay(1000);
@@ -44,14 +45,12 @@ namespace SenseNet.IO.CLI
             Console.WriteLine();
             Console.WriteLine("Done.");
         }
-
         public static IoApp CreateApp(string[] args, Stream settingsFile = null)
         {
             var host = CreateHost(args, settingsFile);
             var app = ActivatorUtilities.CreateInstance<IoApp>(host.Services);
             return app;
         }
-
         private static IHost CreateHost(string[] args, Stream settingsFile = null)
         {
             var appArguments = new ArgumentParser().Parse(args);
@@ -78,8 +77,7 @@ namespace SenseNet.IO.CLI
                             var exportArgs = (ExportArguments) appArguments;
                             serviceCollection
                                 .AddSenseNetClientTokenStore()
-                                .AddSingleton<IContentReader, RepositoryReader>()
-                                .AddSingleton<IContentWriter, FsWriter>()
+                                .AddContentFlow<RepositoryReader, FsWriter>()
                                 // settings file
                                 .Configure<RepositoryReaderArgs>(
                                     hostBuilderContext.Configuration.GetSection("repositoryReader"))
@@ -94,8 +92,7 @@ namespace SenseNet.IO.CLI
                             var importArgs = (ImportArguments) appArguments;
                             serviceCollection
                                 .AddSenseNetClientTokenStore()
-                                .AddSingleton<IContentReader, FsReader>()
-                                .AddSingleton<IContentWriter, RepositoryWriter>()
+                                .AddContentFlow<FsReader, RepositoryWriter>()
                                 // settings file
                                 .Configure<FsReaderArgs>(hostBuilderContext.Configuration.GetSection("fsReader"))
                                 .Configure<RepositoryWriterArgs>(
@@ -109,8 +106,7 @@ namespace SenseNet.IO.CLI
                         case Verb.Copy:
                             var copyArgs = (CopyArguments) appArguments;
                             serviceCollection
-                                .AddSingleton<IContentReader, FsReader>()
-                                .AddSingleton<IContentWriter, FsWriter>()
+                                .AddContentFlow<FsReader, FsWriter>()
                                 // settings file
                                 .Configure<FsReaderArgs>(hostBuilderContext.Configuration.GetSection("fsReader"))
                                 .Configure<FsWriterArgs>(hostBuilderContext.Configuration.GetSection("fsWriter"))
@@ -123,8 +119,7 @@ namespace SenseNet.IO.CLI
                             var syncArgs = (SyncArguments) appArguments;
                             serviceCollection
                                 .AddSenseNetClientTokenStore()
-                                .AddSingleton<IContentReader, RepositoryReader>()
-                                .AddSingleton<IContentWriter, RepositoryWriter>()
+                                .AddContentFlow<RepositoryReader, RepositoryWriter>()
                                 // settings file
                                 .Configure<RepositoryReaderArgs>(
                                     hostBuilderContext.Configuration.GetSection("repositoryReader"))
@@ -143,12 +138,12 @@ namespace SenseNet.IO.CLI
                             throw new ArgumentOutOfRangeException();
                     }
                 })
-                .ConfigureLogging(loggingBuilder =>
+                .ConfigureLogging((hostBuilder, loggingBuilder) =>
                 {
-                    loggingBuilder
-                        .ClearProviders()
-                        .AddConsole()
-                        .SetMinimumLevel(LogLevel.Information);
+                    loggingBuilder.ClearProviders();
+                    loggingBuilder.AddSerilog(new LoggerConfiguration()
+                        .ReadFrom.Configuration(hostBuilder.Configuration)
+                        .CreateLogger());
                 })
                 .Build();
 
@@ -167,7 +162,7 @@ namespace SenseNet.IO.CLI
                           args[0].Equals("IMPORT", SC) ||
                           args[0].Equals("COPY", SC) ||
                           args[0].Equals("SYNC", SC);
-            if (!args.Any(x => x.Equals("-HELP", SC) || x == "?"))
+            if (!args.Any(x => x.Equals("-HELP", SC) || x == "-?" || x == "?"))
                 return false;
 
             WriteHelpScreen(hasVerb ? args[0].ToUpper() : null);
@@ -187,10 +182,10 @@ namespace SenseNet.IO.CLI
             {"FsReader", @"    [-PATH] <Fully qualified path of the filesystem entry to read.>"},
             {"FsWriter", @"    [-PATH] <Fully qualified path of a target filesystem directory.>
     [-NAME] [Name of the target tree root if it is different from the source name.]"},
-            {"RepositoryReader", @"    [-URL] <Url of the source sensenet repository e.g. 'https:example.sensenet.cloud'.>
+            {"RepositoryReader", @"    [-URL] <Url of the source sensenet repository e.g. 'https://example.sensenet.cloud'.>
     [-PATH] [Repository path of the root content of the tree to transfer. Default: '/Root'.]
     [-BLOCKSIZE] [Count of items in one request. Default: 10.]"},
-            {"RepositoryWriter", @"    [-URL] <Url of the target sensenet repository e.g. 'https:example.sensenet.cloud'.>
+            {"RepositoryWriter", @"    [-URL] <Url of the target sensenet repository e.g. 'https://example.sensenet.cloud'.>
     [-PATH] [Repository path of the target container. Default: '/'.]
     [-NAME] [Name of the target tree root if it is different from the source name.]"},
         };
@@ -224,8 +219,8 @@ namespace SenseNet.IO.CLI
         {
             {"General", @$"Manages content transfer in the sensenet ecosystem.
 USAGE: SnIO <VERB> [-SOURCE [Source arguments]] [-TARGET [Target arguments]]
-       SnIO <VERB> [?|-help]
-       SnIO [?|-help]
+       SnIO <VERB> [?|-?|-help]
+       SnIO [?|-?|-help]
 
 VERBS and operations
   EXPORT  Transfer from a sensenet repository to a filesystem directory.
@@ -244,19 +239,19 @@ SYNC arguments
 "},
             {"EXPORT", @"Transfers content tree from a sensenet repository to a filesystem directory.
 USAGE: SnIO EXPORT [-SOURCE [Source arguments]] [-TARGET [Target arguments]]
-       SnIO EXPORT [?|-help]
+       SnIO EXPORT [?|-?|-help]
 Arguments"},
             {"IMPORT", @"Transfers content tree from a filesystem entry to a sensenet repository.
 USAGE: SnIO IMPORT [-SOURCE [Source arguments]] [-TARGET [Target arguments]]
-       SnIO IMPORT [?|-help]
+       SnIO IMPORT [?|-?|-help]
 Arguments"},
             {"COPY", @"Transfers content tree from a filesystem entry to another filesystem directory.
 USAGE: SnIO COPY [-SOURCE [Source arguments]] [-TARGET [Target arguments]]
-       SnIO COPY [?|-help]
+       SnIO COPY [?|-?|-help]
 Arguments"},
             {"SYNC", @"Transfers content tree from a sensenet repository to another sensenet repository.
 USAGE: SnIO SYNC [-SOURCE [Source arguments]] [-TARGET [Target arguments]]
-       SnIO SYNC [?|-help]
+       SnIO SYNC [?|-?|-help]
 Arguments"},
         };
 

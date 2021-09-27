@@ -2,17 +2,15 @@
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace SenseNet.IO.Implementations
 {
-    internal class Level1ContentFlow : ContentFlow
+    internal class SimpleContentFlow : ContentFlow
     {
-        public override IContentReader Reader { get; }
-        public override IContentWriter Writer { get; }
-        public Level1ContentFlow(IContentReader reader, IContentWriter writer)
+        public SimpleContentFlow(IContentReader reader, IContentWriter writer, ILogger<ContentFlow> logger)
+            : base(reader, writer, logger)
         {
-            Reader = reader;
-            Writer = writer;
         }
 
         private int _contentCount;
@@ -48,7 +46,7 @@ namespace SenseNet.IO.Implementations
             }
 
             timer.Stop();
-            WriteSummaryToLog(Reader.EstimatedCount, _contentCount, _errorCount, timer.Elapsed);
+            WriteSummaryToLog(_contentCount, Reader.EstimatedCount, 0, _errorCount, timer.Elapsed);
         }
 
         private async Task WriteAsync(IProgress<TransferState> progress, bool updateReferences, CancellationToken cancel = default)

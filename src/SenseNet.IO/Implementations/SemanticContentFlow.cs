@@ -3,22 +3,29 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace SenseNet.IO.Implementations
 {
-    internal class Level5ContentFlow : ContentFlow, IContentFlow
+    internal class SemanticContentFlow : ContentFlow, IContentFlow
     {
-        public override IContentReader Reader { get; }
         IContentWriter IContentFlow.Writer => Writer;
-        public override ISnRepositoryWriter Writer { get; }
+        public override ISnRepositoryWriter Writer => (ISnRepositoryWriter)_writer;
 
-        public Level5ContentFlow(IContentReader reader, ISnRepositoryWriter writer)
+        public SemanticContentFlow(IContentReader reader, IContentWriter writer, ILogger<ContentFlow> logger)
+            : base(reader, writer, logger)
         {
-            Reader = reader;
-            Writer = writer;
+            if (reader == null)
+                throw new ArgumentNullException(nameof(reader));
+            if (writer == null)
+                throw new ArgumentNullException(nameof(writer));
+
+            if (!(writer is ISnRepositoryWriter))
+                throw new ArgumentException($"Type mismatch: the writer is {writer.GetType().FullName} but should be ISnRepositoryWriter");
         }
 
         private int _contentCount;
+        private int _referenceUpdatesCount;
         private string _currentBatchAction;
         private int _errorCount;
         private string _rootName;
@@ -71,7 +78,7 @@ namespace SenseNet.IO.Implementations
             await UpdateReferencesAsync(progress, cancel);
 
             timer.Stop();
-            WriteSummaryToLog(Reader.EstimatedCount, _contentCount, _errorCount, timer.Elapsed);
+            WriteSummaryToLog(_contentCount, Reader.EstimatedCount, _referenceUpdatesCount, _errorCount, timer.Elapsed);
         }
         private async Task CopyContentTypesAsync(string relativePath, IProgress<TransferState> progress, CancellationToken cancel)
         {
@@ -167,15 +174,15 @@ namespace SenseNet.IO.Implementations
         private async Task UpdateReferencesAsync(IProgress<TransferState> progress = null,
             CancellationToken cancel = default)
         {
-            var taskCount = LoadTaskCount();
-            if (taskCount == 0)
+            _referenceUpdatesCount = LoadTaskCount();
+            if (_referenceUpdatesCount == 0)
                 return;
 
             _currentBatchAction = "Update references";
             WriteLog($"------------ {_currentBatchAction.ToUpper()} ------------");
 
             var tasks = LoadTasks();
-            Reader.SetReferenceUpdateTasks(tasks, taskCount);
+            Reader.SetReferenceUpdateTasks(tasks, _referenceUpdatesCount);
 
             while (await Reader.ReadByReferenceUpdateTasksAsync(cancel))
                 await WriteAsync(progress, true, cancel);

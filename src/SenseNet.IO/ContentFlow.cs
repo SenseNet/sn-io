@@ -6,35 +6,37 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using SenseNet.IO.Implementations;
 
 namespace SenseNet.IO
 {
     public abstract class ContentFlow : IContentFlow
     {
-        public static IContentFlow Create([NotNull] IContentReader reader, [NotNull] IContentWriter writer)
+        private ILogger<ContentFlow> _logger;
+        public IContentReader Reader { get; }
+        // ReSharper disable once InconsistentNaming
+        protected IContentWriter _writer;
+        public virtual IContentWriter Writer => _writer;
+
+        protected ContentFlow(IContentReader reader, IContentWriter writer, ILogger<ContentFlow> logger)
         {
-            var flow = writer is ISnRepositoryWriter repoWriter
-                ? (IContentFlow)new Level5ContentFlow(reader, repoWriter)
-                : new Level1ContentFlow(reader, writer);
-            return flow;
+            Reader = reader;
+            _writer = writer;
+            _logger = logger;
         }
 
-        public abstract IContentReader Reader { get; }
-        public abstract IContentWriter Writer { get; }
         public abstract Task TransferAsync(IProgress<TransferState> progress, CancellationToken cancel = default);
 
         /* ========================================================================== LOGGING */
 
-        public void WriteLogHead(string head)
+        protected void WriteSummaryToLog(int transferredCount, int contentCount, int updatedTaskCount, int errorCount, TimeSpan duration)
         {
-            WriteLog(head, true);
-            WriteLog("START");
-        }
-
-        protected void WriteSummaryToLog(int estimatedCount, int transferredCount, int errorCount, TimeSpan duration)
-        {
-            WriteLog($"FINISH: transferred contents: {transferredCount}/{estimatedCount}, errors: {errorCount}, duration: {duration}");
+            WriteLog($"FINISH: transfer steps = {transferredCount}," +
+                     $" contents = {contentCount}, " +
+                     $"reference updates = {updatedTaskCount}, " +
+                     $"errors = {errorCount}, " +
+                     $"duration = {duration}", LogLevel.Information);
         }
 
         /* ========================================================================== TOOLS */
@@ -49,8 +51,6 @@ namespace SenseNet.IO
         /* ========================================================================== LOGGING */
 
         protected int ReferenceUpdateTasksTotalCount;
-
-        private string _logFilePath;
         private string _taskFilePath;
         protected void WriteLogAndTask(WriterState state, bool updateReferences)
         {
@@ -70,7 +70,7 @@ namespace SenseNet.IO
         }
         protected void WriteLog(Exception e)
         {
-            WriteLog(e.ToString());
+            WriteLog(e.ToString(), LogLevel.Error);
         }
         private string CreateLogFile(bool createNew, string extension)
         {
@@ -91,13 +91,9 @@ namespace SenseNet.IO
 
         /* -------------------------------------------------------------------------- TESTABILITY */
 
-        protected virtual void WriteLog(string entry, bool head = false)
+        protected virtual void WriteLog(string entry, LogLevel level = LogLevel.Trace)
         {
-            if (_logFilePath == null)
-                _logFilePath = CreateLogFile(true, "log");
-
-            using (StreamWriter writer = new StreamWriter(_logFilePath, true))
-                writer.WriteLine(head ? entry : $"{DateTime.Now:yyyy-MM-dd HH:mm:ss.fffff}  {entry}");
+            _logger.Log(level, entry);
         }
         protected virtual void WriteTask(WriterState state)
         {

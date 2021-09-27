@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SenseNet.IO.Tests.Implementations;
 
@@ -8,6 +9,8 @@ namespace SenseNet.IO.Tests
 {
     public class TestBase
     {
+        public static ILogger<T> GetLogger<T>() => new Logger<T>(new LoggerFactory());
+
         public Dictionary<string, ContentNode> CreateTree(string[] paths)
         {
             var separator = paths[0].Contains('\\') ? '\\' : '/';
