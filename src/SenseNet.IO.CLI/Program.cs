@@ -162,7 +162,7 @@ namespace SenseNet.IO.CLI
                           args[0].Equals("IMPORT", SC) ||
                           args[0].Equals("COPY", SC) ||
                           args[0].Equals("SYNC", SC);
-            if (!args.Any(x => x.Equals("-HELP", SC) || x == "?"))
+            if (!args.Any(x => x.Equals("-HELP", SC) || x == "-?" || x == "?"))
                 return false;
 
             WriteHelpScreen(hasVerb ? args[0].ToUpper() : null);
@@ -219,8 +219,8 @@ namespace SenseNet.IO.CLI
         {
             {"General", @$"Manages content transfer in the sensenet ecosystem.
 USAGE: SnIO <VERB> [-SOURCE [Source arguments]] [-TARGET [Target arguments]]
-       SnIO <VERB> [?|-help]
-       SnIO [?|-help]
+       SnIO <VERB> [?|-?|-help]
+       SnIO [?|-?|-help]
 
 VERBS and operations
   EXPORT  Transfer from a sensenet repository to a filesystem directory.
@@ -239,19 +239,19 @@ SYNC arguments
 "},
             {"EXPORT", @"Transfers content tree from a sensenet repository to a filesystem directory.
 USAGE: SnIO EXPORT [-SOURCE [Source arguments]] [-TARGET [Target arguments]]
-       SnIO EXPORT [?|-help]
+       SnIO EXPORT [?|-?|-help]
 Arguments"},
             {"IMPORT", @"Transfers content tree from a filesystem entry to a sensenet repository.
 USAGE: SnIO IMPORT [-SOURCE [Source arguments]] [-TARGET [Target arguments]]
-       SnIO IMPORT [?|-help]
+       SnIO IMPORT [?|-?|-help]
 Arguments"},
             {"COPY", @"Transfers content tree from a filesystem entry to another filesystem directory.
 USAGE: SnIO COPY [-SOURCE [Source arguments]] [-TARGET [Target arguments]]
-       SnIO COPY [?|-help]
+       SnIO COPY [?|-?|-help]
 Arguments"},
             {"SYNC", @"Transfers content tree from a sensenet repository to another sensenet repository.
 USAGE: SnIO SYNC [-SOURCE [Source arguments]] [-TARGET [Target arguments]]
-       SnIO SYNC [?|-help]
+       SnIO SYNC [?|-?|-help]
 Arguments"},
         };
 
