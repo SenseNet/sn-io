@@ -182,10 +182,10 @@ namespace SenseNet.IO.CLI
             {"FsReader", @"    [-PATH] <Fully qualified path of the filesystem entry to read.>"},
             {"FsWriter", @"    [-PATH] <Fully qualified path of a target filesystem directory.>
     [-NAME] [Name of the target tree root if it is different from the source name.]"},
-            {"RepositoryReader", @"    [-URL] <Url of the source sensenet repository e.g. 'https:example.sensenet.cloud'.>
+            {"RepositoryReader", @"    [-URL] <Url of the source sensenet repository e.g. 'https://example.sensenet.cloud'.>
     [-PATH] [Repository path of the root content of the tree to transfer. Default: '/Root'.]
     [-BLOCKSIZE] [Count of items in one request. Default: 10.]"},
-            {"RepositoryWriter", @"    [-URL] <Url of the target sensenet repository e.g. 'https:example.sensenet.cloud'.>
+            {"RepositoryWriter", @"    [-URL] <Url of the target sensenet repository e.g. 'https://example.sensenet.cloud'.>
     [-PATH] [Repository path of the target container. Default: '/'.]
     [-NAME] [Name of the target tree root if it is different from the source name.]"},
         };
