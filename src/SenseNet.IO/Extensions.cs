@@ -1,9 +1,10 @@
 ﻿using System.Linq;
+using Microsoft.Extensions.DependencyInjection;
 using SenseNet.IO;
 using SenseNet.IO.Implementations;
 
 // ReSharper disable once CheckNamespace
-namespace Microsoft.Extensions.DependencyInjection
+namespace SenseNet.Extensions.DependencyInjection
 {
     public static class Extensions
     {
