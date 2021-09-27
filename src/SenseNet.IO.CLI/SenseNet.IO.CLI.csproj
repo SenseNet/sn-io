@@ -4,9 +4,11 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>net5.0</TargetFramework>
     <AssemblyName>SnIO</AssemblyName>
+    <UserSecretsId>d4014fe1-34a8-4ce0-a3dc-3cc00491a07c</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="5.0.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="5.0.0" />
     <PackageReference Include="SenseNet.Client" Version="2.0.11" />
     <PackageReference Include="Serilog.Extensions.Logging" Version="3.0.1" />

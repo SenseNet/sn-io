@@ -65,6 +65,7 @@ namespace SenseNet.IO.CLI
                     else
                         configurationBuilder.AddJsonFile("providerSettings.json");
                     configurationBuilder
+                        .AddUserSecrets<Program>()
                         .AddEnvironmentVariables()
                         .AddCommandLine(args);
                 })
