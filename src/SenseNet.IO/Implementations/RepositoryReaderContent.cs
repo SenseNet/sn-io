@@ -21,6 +21,7 @@ namespace SenseNet.IO.Implementations
         };
 
         private readonly Dictionary<string, object> _fields;
+        private readonly ServerContext _server;
 
         public string[] FieldNames { get; }
         public string Name { get; set; }
@@ -36,6 +37,8 @@ namespace SenseNet.IO.Implementations
 
         public RepositoryReaderContent(Content content)
         {
+            _server = content.Server;
+
             Name = ((JToken)content["ContentName"]).Value<string>();
             Type = ((JToken)content["ContentType"]).Value<string>();
 
@@ -107,12 +110,11 @@ namespace SenseNet.IO.Implementations
 
         public async Task<Stream> GetStream(string url)
         {
-            var server = ClientContext.Current.Server; //UNDONE:AUTH: do not use static servers
-            var absoluteUrl = server.Url + url;
+            var absoluteUrl = _server.Url + url;
             Stream result = null;
             try
             {
-                await RESTCaller.ProcessWebResponseAsync(absoluteUrl, HttpMethod.Get, ClientContext.Current.Server, async response =>
+                await RESTCaller.ProcessWebResponseAsync(absoluteUrl, HttpMethod.Get, _server, async response =>
                 {
                     result = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
                 }, CancellationToken.None);

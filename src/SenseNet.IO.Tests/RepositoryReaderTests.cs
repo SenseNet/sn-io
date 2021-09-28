@@ -40,7 +40,7 @@ namespace SenseNet.IO.Tests
             {
                 return Task.FromResult(_sourceTree.Count);
             }
-            protected override Task<IContent[]> QueryAsync(string queryText, SenseNet.Client.ServerContext server = null)
+            protected override Task<IContent[]> QueryAsync(string queryText)
             {
                 Queries.Add(queryText);
 
@@ -110,7 +110,7 @@ namespace SenseNet.IO.Tests
 
                 return Task.FromResult((IContent[])items);
             }
-            protected override Task<IContent> GetContentAsync(string path, string[] fields, ServerContext server = null)
+            protected override Task<IContent> GetContentAsync(string path, string[] fields)
             {
                 Queries.Add(path);
                 return Task.FromResult((IContent)_sourceTree[path]);
