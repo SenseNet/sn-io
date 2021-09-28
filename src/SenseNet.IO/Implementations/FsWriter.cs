@@ -12,6 +12,7 @@ namespace SenseNet.IO.Implementations
     {
         public string Path { get; set; }
         public string Name { get; set; }
+        public bool? Flatten { get; set; }
     }
 
     public class FsWriter : IContentWriter

@@ -85,11 +85,11 @@ namespace SenseNet.IO.CLI
         }
         protected virtual FsWriterArgs ParseFsWriterArgs(string[] args)
         {
-            // [[-PATH] Path] [[-NAME ]Name]
+            // [[-PATH] Path] [[-NAME ]Name] [-FLATTEN]
             var result = new FsWriterArgs();
             var parsedArgs = ParseSequence(args);
 
-            if (parsedArgs.Length > 2)
+            if (parsedArgs.Length > 3)
                 throw new ArgumentParserException("Too many FsWriter arguments.");
 
             foreach (var arg in parsedArgs)
@@ -105,6 +105,12 @@ namespace SenseNet.IO.CLI
                     if (result.Name != null)
                         throw new ArgumentParserException("Invalid FsWriter arguments.");
                     result.Name = arg.Value?.Trim('\'', '"');
+                }
+                else if (arg.Key.Equals("FLATTEN", Cmp))
+                {
+                    if (result.Flatten != null)
+                        throw new ArgumentParserException("Invalid FsWriter arguments.");
+                    result.Flatten = true;
                 }
                 else
                     throw new ArgumentParserException("Unknown FsWriter argument: " + arg.Key);

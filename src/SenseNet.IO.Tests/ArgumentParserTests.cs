@@ -257,10 +257,12 @@ namespace SenseNet.IO.Tests
             fsWriterArgs = parser.ParseFsWriterArgsTest(new string[0]);
             Assert.AreEqual(null, fsWriterArgs.Path);
             Assert.AreEqual(null, fsWriterArgs.Name);
+            Assert.AreEqual(null, fsWriterArgs.Flatten);
 
             fsWriterArgs = parser.ParseFsWriterArgsTest(new[] { "q:\\writerPath" });
             Assert.AreEqual("q:\\writerPath", fsWriterArgs.Path);
             Assert.AreEqual(null, fsWriterArgs.Name);
+            Assert.AreEqual(null, fsWriterArgs.Flatten);
 
             try { parser.ParseFsWriterArgsTest(new[] { "-fake" }); Assert.Fail(); }
             catch (ArgumentParserException e) { Assert.IsTrue(e.Message.Contains("Unknown", Cmp)); }
@@ -268,10 +270,12 @@ namespace SenseNet.IO.Tests
             fsWriterArgs = parser.ParseFsWriterArgsTest(new[] { "-PATH", "q:\\writerPath" });
             Assert.AreEqual("q:\\writerPath", fsWriterArgs.Path);
             Assert.AreEqual(null, fsWriterArgs.Name);
+            Assert.AreEqual(null, fsWriterArgs.Flatten);
 
             fsWriterArgs = parser.ParseFsWriterArgsTest(new[] { "q:\\writerPath", "newName" });
             Assert.AreEqual("q:\\writerPath", fsWriterArgs.Path);
             Assert.AreEqual("newName", fsWriterArgs.Name);
+            Assert.AreEqual(null, fsWriterArgs.Flatten);
 
             try { parser.ParseFsWriterArgsTest(new[] { "-PATH", "q:\\writerPath", "newName" }); Assert.Fail(); }
             catch (ArgumentParserException e) { Assert.IsTrue(e.Message.Contains("Invalid", Cmp)); }
@@ -279,21 +283,65 @@ namespace SenseNet.IO.Tests
             fsWriterArgs = parser.ParseFsWriterArgsTest(new[] { "q:\\writerPath", "-NAME", "newName" });
             Assert.AreEqual("q:\\writerPath", fsWriterArgs.Path);
             Assert.AreEqual("newName", fsWriterArgs.Name);
+            Assert.AreEqual(null, fsWriterArgs.Flatten);
 
             fsWriterArgs = parser.ParseFsWriterArgsTest(new[] { "-PATH", "q:\\writerPath", "-NAME", "newName" });
             Assert.AreEqual("q:\\writerPath", fsWriterArgs.Path);
             Assert.AreEqual("newName", fsWriterArgs.Name);
+            Assert.AreEqual(null, fsWriterArgs.Flatten);
 
             fsWriterArgs = parser.ParseFsWriterArgsTest(new[] { "-NAME", "newName", "-PATH", "q:\\writerPath" });
             Assert.AreEqual("q:\\writerPath", fsWriterArgs.Path);
             Assert.AreEqual("newName", fsWriterArgs.Name);
+            Assert.AreEqual(null, fsWriterArgs.Flatten);
 
             fsWriterArgs = parser.ParseFsWriterArgsTest(new[] { "-NAME", "newName", "q:\\writerPath" });
             Assert.AreEqual("q:\\writerPath", fsWriterArgs.Path);
             Assert.AreEqual("newName", fsWriterArgs.Name);
+            Assert.AreEqual(null, fsWriterArgs.Flatten);
 
             try { parser.ParseFsWriterArgsTest(new[] { "newName", "-PATH", "q:\\readerPath" }); Assert.Fail(); }
             catch (ArgumentParserException e) { Assert.IsTrue(e.Message.Contains("Invalid", Cmp)); }
+
+            fsWriterArgs = parser.ParseFsWriterArgsTest(new[] { "q:\\writerPath", "newName", "-FLATTEN" });
+            Assert.AreEqual("q:\\writerPath", fsWriterArgs.Path);
+            Assert.AreEqual("newName", fsWriterArgs.Name);
+            Assert.AreEqual(true, fsWriterArgs.Flatten);
+
+            fsWriterArgs = parser.ParseFsWriterArgsTest(new[] { "q:\\writerPath", "-NAME", "newName", "-FLATTEN" });
+            Assert.AreEqual("q:\\writerPath", fsWriterArgs.Path);
+            Assert.AreEqual("newName", fsWriterArgs.Name);
+            Assert.AreEqual(true, fsWriterArgs.Flatten);
+
+            fsWriterArgs = parser.ParseFsWriterArgsTest(new[] { "-NAME", "newName", "-FLATTEN" });
+            Assert.AreEqual(null, fsWriterArgs.Path);
+            Assert.AreEqual("newName", fsWriterArgs.Name);
+            Assert.AreEqual(true, fsWriterArgs.Flatten);
+
+            fsWriterArgs = parser.ParseFsWriterArgsTest(new[] { "-PATH", "q:\\writerPath", "-NAME", "newName", "-FLATTEN" });
+            Assert.AreEqual("q:\\writerPath", fsWriterArgs.Path);
+            Assert.AreEqual("newName", fsWriterArgs.Name);
+            Assert.AreEqual(true, fsWriterArgs.Flatten);
+
+            fsWriterArgs = parser.ParseFsWriterArgsTest(new[] { "q:\\writerPath", "-FLATTEN" });
+            Assert.AreEqual("q:\\writerPath", fsWriterArgs.Path);
+            Assert.AreEqual(null, fsWriterArgs.Name);
+            Assert.AreEqual(true, fsWriterArgs.Flatten);
+
+            fsWriterArgs = parser.ParseFsWriterArgsTest(new[] { "-PATH", "q:\\writerPath", "-FLATTEN" });
+            Assert.AreEqual("q:\\writerPath", fsWriterArgs.Path);
+            Assert.AreEqual(null, fsWriterArgs.Name);
+            Assert.AreEqual(true, fsWriterArgs.Flatten);
+
+            fsWriterArgs = parser.ParseFsWriterArgsTest(new[] { "q:\\writerPath", "-FLATTEN", "newName" });
+            Assert.AreEqual("q:\\writerPath", fsWriterArgs.Path);
+            Assert.AreEqual("newName", fsWriterArgs.Name);
+            Assert.AreEqual(true, fsWriterArgs.Flatten);
+
+            fsWriterArgs = parser.ParseFsWriterArgsTest(new[] { "-FLATTEN", "q:\\writerPath", "newName" });
+            Assert.AreEqual("q:\\writerPath", fsWriterArgs.Path);
+            Assert.AreEqual("newName", fsWriterArgs.Name);
+            Assert.AreEqual(true, fsWriterArgs.Flatten);
         }
         [TestMethod]
         public void ArgParser_RepositoryReaderArgs()
