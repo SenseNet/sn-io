@@ -304,52 +304,74 @@ namespace SenseNet.IO.Tests
             repoReaderArgs = parser.ParseRepositoryReaderArgsTest(new string[0]);
             Assert.AreEqual(null, repoReaderArgs.Url);
             Assert.AreEqual(null, repoReaderArgs.Path);
+            Assert.AreEqual(null, repoReaderArgs.Query);
             Assert.AreEqual(null, repoReaderArgs.BlockSize);
 
             repoReaderArgs = parser.ParseRepositoryReaderArgsTest(new[] { "https://localhost" });
             Assert.AreEqual("https://localhost", repoReaderArgs.Url);
             Assert.AreEqual(null, repoReaderArgs.Path);
+            Assert.AreEqual(null, repoReaderArgs.Query);
             Assert.AreEqual(null, repoReaderArgs.BlockSize);
 
             repoReaderArgs = parser.ParseRepositoryReaderArgsTest(new[] { "https://localhost", "'/Root'" });
             Assert.AreEqual("https://localhost", repoReaderArgs.Url);
             Assert.AreEqual("/Root", repoReaderArgs.Path);
+            Assert.AreEqual(null, repoReaderArgs.Query);
             Assert.AreEqual(null, repoReaderArgs.BlockSize);
 
-            repoReaderArgs = parser.ParseRepositoryReaderArgsTest(new[] { "https://localhost", "'/Root'", "42" });
+            repoReaderArgs = parser.ParseRepositoryReaderArgsTest(new[] { "https://localhost", "'/Root'", "<Query>" });
             Assert.AreEqual("https://localhost", repoReaderArgs.Url);
             Assert.AreEqual("/Root", repoReaderArgs.Path);
+            Assert.AreEqual("<Query>", repoReaderArgs.Query);
+            Assert.AreEqual(null, repoReaderArgs.BlockSize);
+
+            repoReaderArgs = parser.ParseRepositoryReaderArgsTest(new[] { "https://localhost", "'/Root'", "<Query>", "42" });
+            Assert.AreEqual("https://localhost", repoReaderArgs.Url);
+            Assert.AreEqual("/Root", repoReaderArgs.Path);
+            Assert.AreEqual("<Query>", repoReaderArgs.Query);
             Assert.AreEqual(42, repoReaderArgs.BlockSize);
 
             repoReaderArgs = parser.ParseRepositoryReaderArgsTest(new[] { "https://localhost", "-BLOCKSIZE", "42" });
             Assert.AreEqual("https://localhost", repoReaderArgs.Url);
             Assert.AreEqual(null, repoReaderArgs.Path);
+            Assert.AreEqual(null, repoReaderArgs.Query);
             Assert.AreEqual(42, repoReaderArgs.BlockSize);
 
             repoReaderArgs = parser.ParseRepositoryReaderArgsTest(new[] { "https://localhost", "-BLOCKSIZE", "42", "-PATH", "'/Root'" });
             Assert.AreEqual("https://localhost", repoReaderArgs.Url);
             Assert.AreEqual("/Root", repoReaderArgs.Path);
+            Assert.AreEqual(null, repoReaderArgs.Query);
             Assert.AreEqual(42, repoReaderArgs.BlockSize);
 
             repoReaderArgs = parser.ParseRepositoryReaderArgsTest(new[] { "-URL", "https://localhost", "-BLOCKSIZE", "42", "-PATH", "'/Root'" });
             Assert.AreEqual("https://localhost", repoReaderArgs.Url);
             Assert.AreEqual("/Root", repoReaderArgs.Path);
+            Assert.AreEqual(null, repoReaderArgs.Query);
             Assert.AreEqual(42, repoReaderArgs.BlockSize);
 
             repoReaderArgs = parser.ParseRepositoryReaderArgsTest(new[] { "-BLOCKSIZE", "42", "-PATH", "'/Root'", "-URL", "https://localhost" });
             Assert.AreEqual("https://localhost", repoReaderArgs.Url);
             Assert.AreEqual("/Root", repoReaderArgs.Path);
+            Assert.AreEqual(null, repoReaderArgs.Query);
             Assert.AreEqual(42, repoReaderArgs.BlockSize);
 
             repoReaderArgs = parser.ParseRepositoryReaderArgsTest(new[] { "-BLOCKSIZE", "42", "-URL", "https://localhost" });
             Assert.AreEqual("https://localhost", repoReaderArgs.Url);
             Assert.AreEqual(null, repoReaderArgs.Path);
+            Assert.AreEqual(null, repoReaderArgs.Query);
             Assert.AreEqual(42, repoReaderArgs.BlockSize);
 
             repoReaderArgs = parser.ParseRepositoryReaderArgsTest(new[] { "-BLOCKSIZE", "42" });
             Assert.AreEqual(null, repoReaderArgs.Url);
             Assert.AreEqual(null, repoReaderArgs.Path);
+            Assert.AreEqual(null, repoReaderArgs.Query);
             Assert.AreEqual(42, repoReaderArgs.BlockSize);
+
+            repoReaderArgs = parser.ParseRepositoryReaderArgsTest(new[] { "-PATH", "'/Root/Content'", "-QUERY", "<QUERY>" });
+            Assert.AreEqual(null, repoReaderArgs.Url);
+            Assert.AreEqual("/Root/Content", repoReaderArgs.Path);
+            Assert.AreEqual(null, repoReaderArgs.BlockSize);
+            Assert.AreEqual("<QUERY>", repoReaderArgs.Query);
 
             try { parser.ParseRepositoryReaderArgsTest(new[] { "-fake" }); Assert.Fail(); }
             catch (ArgumentParserException e) { Assert.IsTrue(e.Message.Contains("Unknown", Cmp)); }
@@ -362,7 +384,6 @@ namespace SenseNet.IO.Tests
 
             try { parser.ParseRepositoryReaderArgsTest(new[] { "-URL", "https://localhost", "'/Root'", "42" }); Assert.Fail(); }
             catch (ArgumentParserException e) { Assert.IsTrue(e.Message.Contains("Invalid", Cmp)); }
-
         }
         [TestMethod]
         public void ArgParser_RepositoryWriterArgs()
