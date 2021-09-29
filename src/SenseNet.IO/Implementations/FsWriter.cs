@@ -21,6 +21,7 @@ namespace SenseNet.IO.Implementations
         public string OutputDirectory { get; }
         public string ContainerPath => "/";
         public string RootName { get; }
+        public bool Flatten { get; }
 
         public FsWriter(IOptions<FsWriterArgs> args)
         {
@@ -30,12 +31,15 @@ namespace SenseNet.IO.Implementations
 
             OutputDirectory = Args.Path ?? throw new ArgumentException("FsWriter: Invalid target container path.");
             RootName = Args.Name;
+            Flatten = Args.Flatten == true;
         }
 
         public async Task<WriterState> WriteAsync(string path, IContent content, CancellationToken cancel = default)
         {
-            var name = content.Name;
-            var src = ToJson(content);
+            if (Flatten)
+                return await WriteFlattenedAsync(path, content, cancel);
+
+            //var name = content.Name;
             var containerPath = (ContainerPath ?? "").TrimStart('/');
             var contentPath = Path.Combine(OutputDirectory, containerPath, path) + ".Content";
             var fileDir = Path.GetDirectoryName(contentPath);
@@ -45,25 +49,67 @@ namespace SenseNet.IO.Implementations
             if (!IsDirectoryExists(fileDir))
                 CreateDirectory(fileDir);
             var action = File.Exists(contentPath) ? WriterAction.Updated : WriterAction.Created;
+
+            var src = ToJson(content);
             using (var writer = CreateTextWriter(contentPath, false))
                 await writer.WriteAsync(src);
 
-            var attachments = await content.GetAttachmentsAsync();
-            foreach (var attachment in attachments.Where(a => a.Stream != null))
-            {
-                var attachmentPath = Path.Combine(fileDir, attachment.FileName);
-
-                var inStream = attachment.Stream;
-                if (inStream.Length > 0)
-                    using (var outStream = CreateBinaryStream(attachmentPath, FileMode.OpenOrCreate))
-                        await inStream.CopyToAsync(outStream, cancel);
-            }
+            await WriteAttachmentsAsync(fileDir, content, cancel);
 
             return new WriterState
             {
                 WriterPath = contentPath,
                 Action = action,
             };
+        }
+        public async Task<WriterState> WriteFlattenedAsync(string path, IContent content, CancellationToken cancel = default)
+        {
+            if (!IsDirectoryExists(OutputDirectory))
+                CreateDirectory(OutputDirectory);
+
+            var contentName = ContentPath.GetName(path);
+            var fileName = Path.GetFileNameWithoutExtension(contentName);
+            var ext = Path.GetExtension(contentName);
+
+            var index = 0;
+            string contentPath = null;
+            string newContentName = null;
+            do
+            {
+                var suffix = index == 0 ? string.Empty : $"({index})";
+                newContentName = fileName + suffix + ext;
+                index++;
+                contentPath = Path.Combine(OutputDirectory, newContentName) + ".Content";
+            } while (IsFileExists(contentPath));
+
+            if (contentName != newContentName)
+                content.Name = newContentName;
+
+            var src = ToJson(content);
+            using (var writer = CreateTextWriter(contentPath, false))
+                await writer.WriteAsync(src);
+
+            await WriteAttachmentsAsync(OutputDirectory, content, cancel);
+
+            return new WriterState
+            {
+                WriterPath = contentPath,
+                Action = WriterAction.Created,
+            };
+        }
+
+        private async Task WriteAttachmentsAsync(string metaFileDir, IContent content, CancellationToken cancel)
+        {
+            var attachments = await content.GetAttachmentsAsync();
+            foreach (var attachment in attachments.Where(a => a.Stream != null))
+            {
+                var attachmentPath = Path.Combine(metaFileDir, attachment.FileName);
+
+                var inStream = attachment.Stream;
+                if (inStream.Length > 0)
+                    using (var outStream = CreateBinaryStream(attachmentPath, FileMode.OpenOrCreate))
+                        await inStream.CopyToAsync(outStream, cancel);
+            }
         }
 
         private string ToJson(IContent content)
@@ -95,6 +141,10 @@ namespace SenseNet.IO.Implementations
         protected virtual bool IsDirectoryExists(string fsPath)
         {
             return Directory.Exists(fsPath);
+        }
+        protected virtual bool IsFileExists(string fsPath)
+        {
+            return File.Exists(fsPath);
         }
         protected virtual void CreateDirectory(string fsPath)
         {

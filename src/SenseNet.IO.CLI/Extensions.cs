@@ -35,6 +35,8 @@ namespace SenseNet.IO.CLI
                 settings.Path = args.Path;
             if (args.Name != null)
                 settings.Name = args.Name;
+            if (args.Flatten != null)
+                settings.Flatten = args.Flatten;
         }
         public static void RewriteSettings(this RepositoryReaderArgs args, RepositoryReaderArgs settings)
         {

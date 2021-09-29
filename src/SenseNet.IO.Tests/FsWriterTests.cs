@@ -18,20 +18,23 @@ namespace SenseNet.IO.Tests
         #region Nested classes
         private class FsWriterMock : FsWriter
         {
-            public FsWriterMock(string outputDirectory, string rootName,
+            public FsWriterMock(string outputDirectory, string rootName, bool flatten,
                 Func<string, bool> isDirectoryExists,
+                Func<string, bool> isFileExists,
                 Action<string> createDirectory,
                 Func<string, bool, TextWriter> createTextWriter,
                 Func<string, FileMode, Stream> createBinaryStream) : base(Options.Create(
-                new FsWriterArgs { Path = outputDirectory, Name = rootName}))
+                new FsWriterArgs { Path = outputDirectory, Name = rootName, Flatten = flatten}))
             {
                 _isDirectoryExists = isDirectoryExists;
+                _isFileExists = isFileExists;
                 _createDirectory = createDirectory;
                 _createTextWriter = createTextWriter;
                 _createBinaryStream = createBinaryStream;
             }
 
             private readonly Func<string, bool> _isDirectoryExists;
+            private readonly Func<string, bool> _isFileExists;
             private readonly Action<string> _createDirectory;
             private readonly Func<string, bool, TextWriter> _createTextWriter;
             private readonly Func<string, FileMode, Stream> _createBinaryStream;
@@ -39,6 +42,10 @@ namespace SenseNet.IO.Tests
             protected override bool IsDirectoryExists(string fileDir)
             {
                 return _isDirectoryExists(fileDir);
+            }
+            protected override bool IsFileExists(string fsPath)
+            {
+                return _isFileExists(fsPath);
             }
             protected override void CreateDirectory(string fileDir)
             {
@@ -82,6 +89,14 @@ namespace SenseNet.IO.Tests
 
             public Task<Attachment[]> GetAttachmentsAsync()
             {
+                foreach (var attachment in _attachments)
+                {
+                    var ext = System.IO.Path.GetExtension(attachment.FileName);
+                    var fileName = this.Name;
+                    if (!attachment.FieldName.Equals("Binary", StringComparison.OrdinalIgnoreCase))
+                        fileName += "." + attachment.FieldName;
+                    attachment.FileName = fileName;
+                }
                 return Task.FromResult(_attachments);
             }
         }
@@ -144,7 +159,9 @@ namespace SenseNet.IO.Tests
             var writer = new FsWriterMock(
                 outputDirectory: @"Q:\FsRoot",
                 rootName: null,
+                flatten: false,
                 isDirectoryExists: fsPath => { checkedPaths.Add(fsPath); return false; },
+                isFileExists: fsPath => createdMetaFiles.Contains(fsPath),
                 createDirectory: fsPath => { createdPaths.Add(fsPath); },
                 createTextWriter: (fsPath, append) =>
                 {
@@ -190,7 +207,9 @@ namespace SenseNet.IO.Tests
             var writer = new FsWriterMock(
                 outputDirectory: @"Q:\FsRoot",
                 rootName: null,
+                flatten: false,
                 isDirectoryExists: fsPath => { checkedPaths.Add(fsPath); return false; },
+                isFileExists: fsPath => createdMetaFiles.Contains(fsPath),
                 createDirectory: fsPath => { createdPaths.Add(fsPath); },
                 createTextWriter: (fsPath, append) =>
                 {
@@ -239,7 +258,9 @@ namespace SenseNet.IO.Tests
             var writer = new FsWriterMock(
                 outputDirectory: @"Q:\FsRoot",
                 rootName: null,
+                flatten: false,
                 isDirectoryExists: fsPath => { checkedPaths.Add(fsPath); return false; },
+                isFileExists: fsPath => createdMetaFiles.Contains(fsPath),
                 createDirectory: fsPath => { createdPaths.Add(fsPath); },
                 createTextWriter: (fsPath, append) =>
                 {
@@ -293,10 +314,12 @@ namespace SenseNet.IO.Tests
             var writer = new FsWriterMock(
                 outputDirectory: @"Q:\FsRoot\Root",
                 rootName: "Fx",
+                flatten: false,
                 isDirectoryExists: fsPath =>
                 {
                     checkedPaths.Add(fsPath); return false;
                 },
+                isFileExists: fsPath => createdMetaFiles.Contains(fsPath),
                 createDirectory: fsPath => { createdPaths.Add(fsPath); },
                 createTextWriter: (fsPath, append) =>
                 {
@@ -349,7 +372,9 @@ namespace SenseNet.IO.Tests
             var writer = new FsWriterMock(
                 outputDirectory: @"Q:\FsRoot",
                 rootName: null,
+                flatten: false,
                 isDirectoryExists: fsPath => false,
+                isFileExists: fsPath => false,
                 createDirectory: fsPath => { },
                 createTextWriter: (fsPath, append) =>
                 {
@@ -400,7 +425,9 @@ namespace SenseNet.IO.Tests
             var writer = new FsWriterMock(
                 outputDirectory: @"Q:\FsRoot",
                 rootName: null,
+                flatten: false,
                 isDirectoryExists: fsPath => { checkedPaths.Add(fsPath); return false; },
+                isFileExists: fsPath => createdMetaFiles.Contains(fsPath),
                 createDirectory: fsPath => { createdPaths.Add(fsPath); },
                 createTextWriter: (fsPath, append) =>
                 {
@@ -473,7 +500,9 @@ namespace SenseNet.IO.Tests
             var writer = new FsWriterMock(
                 outputDirectory: @"Q:\FsRoot",
                 rootName: null,
+                flatten: false,
                 isDirectoryExists: fsPath => { checkedPaths.Add(fsPath); return false; },
+                isFileExists: fsPath => createdMetaFiles.Contains(fsPath),
                 createDirectory: fsPath => { createdPaths.Add(fsPath); },
                 createTextWriter: (fsPath, append) =>
                 {
@@ -524,6 +553,312 @@ namespace SenseNet.IO.Tests
             Assert.AreEqual("Text content 1", createdBinaries[0].ReadAsString());
             Assert.AreEqual("Text content 2", createdBinaries[1].ReadAsString());
             Assert.AreEqual("Text content 3", createdBinaries[2].ReadAsString());
+        }
+
+        [TestMethod]
+        public async Task FsWriter_QueryResult()
+        {
+            TestContent CreateFile(string name, string path)
+            {
+                return new TestContent(name, path, "File", new Dictionary<string, object>(),
+                    new[]
+                    {
+                        new Attachment {FieldName = "Binary", FileName = name, Stream = $"{name} content".ToStream()}
+                    });
+            }
+            // ALIGN
+            var checkedPaths = new List<string>();
+            var createdPaths = new List<string>();
+            var createdMetaFiles = new List<string>();
+            var textBuilders = new List<StringBuilder>();
+            var createdBinaryFiles = new List<string>();
+            var createdBinaries = new List<MemoryStream>();
+
+            var reader = new TestReader("/Root/Content", new[]
+            {
+                CreateFile("File-1.txt", "Docs/F1/F2/file-1.txt"),
+                CreateFile("File-2.txt", "Docs/F1/F2/file-2.txt"),
+                CreateFile("File-3.txt", "Docs/F1/F2/file-3.txt"),
+                CreateFile("File-4.txt", "Docs/F1/F3/file-4.txt"),
+                CreateFile("File-5.txt", "Docs/F1/F3/file-5.txt"),
+                CreateFile("File-6.txt", "Docs/F1/F3/file-6.txt"),
+            });
+            var writer = new FsWriterMock(
+                outputDirectory: @"Q:\FsRoot",
+                rootName: null,
+                flatten: false,
+                isDirectoryExists: fsPath =>
+                {
+                    if (checkedPaths.Contains(fsPath))
+                        return true;
+                    checkedPaths.Add(fsPath);
+                    return false;
+                },
+                isFileExists: fsPath => createdMetaFiles.Contains(fsPath),
+                createDirectory: fsPath =>
+                {
+                    if (!createdPaths.Contains(fsPath))
+                        createdPaths.Add(fsPath);
+                },
+                createTextWriter: (fsPath, append) =>
+                {
+                    if (append)
+                        throw new NotSupportedException("Invalid 'append', expected: false.");
+                    createdMetaFiles.Add(fsPath.Replace('/', '\\'));
+                    var sb = new StringBuilder();
+                    textBuilders.Add(sb);
+                    return new StringWriter(sb);
+                },
+                createBinaryStream: (fsPath, fileMode) =>
+                {
+                    if (fileMode != FileMode.OpenOrCreate)
+                        throw new NotSupportedException("Invalid 'fileMode', expected: OpenOrCreate.");
+                    createdBinaryFiles.Add(fsPath.Replace('/', '\\'));
+                    var stream = new MemoryStream();
+                    createdBinaries.Add(stream);
+                    return stream;
+                });
+
+            // ACTION
+            var contentFlow = new SimpleContentFlow(reader, writer, GetLogger<ContentFlow>());
+            await contentFlow.TransferAsync(null);
+
+            // ASSERT
+            Assert.AreEqual(2, checkedPaths.Count);
+            Assert.AreEqual(@"Q:\FsRoot\Content\Docs\F1\F2", checkedPaths[0]);
+            Assert.AreEqual(@"Q:\FsRoot\Content\Docs\F1\F3", checkedPaths[1]);
+            Assert.AreEqual(2, createdPaths.Count);
+            Assert.AreEqual(@"Q:\FsRoot\Content\Docs\F1\F2", createdPaths[0]);
+            Assert.AreEqual(@"Q:\FsRoot\Content\Docs\F1\F3", createdPaths[1]);
+            Assert.AreEqual(6, createdMetaFiles.Count);
+            Assert.AreEqual(@"Q:\FsRoot\Content\Docs\F1\F2\file-1.txt.Content", createdMetaFiles[0]);
+            Assert.AreEqual(@"Q:\FsRoot\Content\Docs\F1\F2\file-2.txt.Content", createdMetaFiles[1]);
+            Assert.AreEqual(@"Q:\FsRoot\Content\Docs\F1\F2\file-3.txt.Content", createdMetaFiles[2]);
+            Assert.AreEqual(@"Q:\FsRoot\Content\Docs\F1\F3\file-4.txt.Content", createdMetaFiles[3]);
+            Assert.AreEqual(@"Q:\FsRoot\Content\Docs\F1\F3\file-5.txt.Content", createdMetaFiles[4]);
+            Assert.AreEqual(@"Q:\FsRoot\Content\Docs\F1\F3\file-6.txt.Content", createdMetaFiles[5]);
+            Assert.AreEqual(6, textBuilders.Count);
+            Assert.AreEqual("{\"ContentType\":\"File\",\"ContentName\":\"File-1.txt\",\"Fields\":{}}", textBuilders[0].ToString().RemoveWhitespaces());
+            Assert.AreEqual("{\"ContentType\":\"File\",\"ContentName\":\"File-2.txt\",\"Fields\":{}}", textBuilders[1].ToString().RemoveWhitespaces());
+            Assert.AreEqual("{\"ContentType\":\"File\",\"ContentName\":\"File-3.txt\",\"Fields\":{}}", textBuilders[2].ToString().RemoveWhitespaces());
+            Assert.AreEqual("{\"ContentType\":\"File\",\"ContentName\":\"File-4.txt\",\"Fields\":{}}", textBuilders[3].ToString().RemoveWhitespaces());
+            Assert.AreEqual("{\"ContentType\":\"File\",\"ContentName\":\"File-5.txt\",\"Fields\":{}}", textBuilders[4].ToString().RemoveWhitespaces());
+            Assert.AreEqual("{\"ContentType\":\"File\",\"ContentName\":\"File-6.txt\",\"Fields\":{}}", textBuilders[5].ToString().RemoveWhitespaces());
+            Assert.AreEqual(6, createdBinaryFiles.Count);
+            Assert.AreEqual(@"Q:\FsRoot\Content\Docs\F1\F2\File-1.txt", createdBinaryFiles[0]);
+            Assert.AreEqual(@"Q:\FsRoot\Content\Docs\F1\F2\File-2.txt", createdBinaryFiles[1]);
+            Assert.AreEqual(@"Q:\FsRoot\Content\Docs\F1\F2\File-3.txt", createdBinaryFiles[2]);
+            Assert.AreEqual(@"Q:\FsRoot\Content\Docs\F1\F3\File-4.txt", createdBinaryFiles[3]);
+            Assert.AreEqual(@"Q:\FsRoot\Content\Docs\F1\F3\File-5.txt", createdBinaryFiles[4]);
+            Assert.AreEqual(@"Q:\FsRoot\Content\Docs\F1\F3\File-6.txt", createdBinaryFiles[5]);
+            Assert.AreEqual(6, createdBinaries.Count);
+            Assert.AreEqual("File-1.txt content", createdBinaries[0].ReadAsString());
+            Assert.AreEqual("File-2.txt content", createdBinaries[1].ReadAsString());
+            Assert.AreEqual("File-3.txt content", createdBinaries[2].ReadAsString());
+            Assert.AreEqual("File-4.txt content", createdBinaries[3].ReadAsString());
+            Assert.AreEqual("File-5.txt content", createdBinaries[4].ReadAsString());
+            Assert.AreEqual("File-6.txt content", createdBinaries[5].ReadAsString());
+        }
+        [TestMethod]
+        public async Task FsWriter_QueryResult_Flatten()
+        {
+            TestContent CreateFile(string name, string path)
+            {
+                return new TestContent(name, path, "File", new Dictionary<string, object>(),
+                    new[] {new Attachment {FieldName = "Binary", FileName = name, Stream = $"{name} content".ToStream()}});
+            }
+            // ALIGN
+            var checkedPaths = new List<string>();
+            var createdPaths = new List<string>();
+            var createdMetaFiles = new List<string>();
+            var textBuilders = new List<StringBuilder>();
+            var createdBinaryFiles = new List<string>();
+            var createdBinaries = new List<MemoryStream>();
+
+            var reader = new TestReader("/Root/Content", new[]
+            {
+                CreateFile("File-1.txt", "Docs/F1/F2/file-1.txt"),
+                CreateFile("File-2.txt", "Docs/F1/F2/file-2.txt"),
+                CreateFile("File-3.txt", "Docs/F1/F2/file-3.txt"),
+                CreateFile("File-4.txt", "Docs/F1/F3/file-4.txt"),
+                CreateFile("File-5.txt", "Docs/F1/F3/file-5.txt"),
+                CreateFile("File-6.txt", "Docs/F1/F3/file-6.txt"),
+            });
+            var writer = new FsWriterMock(
+                outputDirectory: @"Q:\FsRoot",
+                rootName: null,
+                flatten: true,
+                isDirectoryExists: fsPath =>
+                {
+                    if (checkedPaths.Contains(fsPath))
+                        return true;
+                    checkedPaths.Add(fsPath);
+                    return false;
+                },
+                isFileExists: fsPath => createdMetaFiles.Contains(fsPath),
+                createDirectory: fsPath =>
+                {
+                    if (!createdPaths.Contains(fsPath))
+                        createdPaths.Add(fsPath);
+                },
+                createTextWriter: (fsPath, append) =>
+                {
+                    if (append)
+                        throw new NotSupportedException("Invalid 'append', expected: false.");
+                    createdMetaFiles.Add(fsPath.Replace('/', '\\'));
+                    var sb = new StringBuilder();
+                    textBuilders.Add(sb);
+                    return new StringWriter(sb);
+                },
+                createBinaryStream: (fsPath, fileMode) =>
+                {
+                    if (fileMode != FileMode.OpenOrCreate)
+                        throw new NotSupportedException("Invalid 'fileMode', expected: OpenOrCreate.");
+                    createdBinaryFiles.Add(fsPath.Replace('/', '\\'));
+                    var stream = new MemoryStream();
+                    createdBinaries.Add(stream);
+                    return stream;
+                });
+
+            // ACTION
+            var contentFlow = new SimpleContentFlow(reader, writer, GetLogger<ContentFlow>());
+            await contentFlow.TransferAsync(null);
+
+            // ASSERT
+            Assert.AreEqual(1, checkedPaths.Count);
+            Assert.AreEqual(@"Q:\FsRoot", checkedPaths[0]);
+            Assert.AreEqual(1, createdPaths.Count);
+            Assert.AreEqual(@"Q:\FsRoot", createdPaths[0]);
+            Assert.AreEqual(6, createdMetaFiles.Count);
+            Assert.AreEqual(@"Q:\FsRoot\file-1.txt.Content", createdMetaFiles[0]);
+            Assert.AreEqual(@"Q:\FsRoot\file-2.txt.Content", createdMetaFiles[1]);
+            Assert.AreEqual(@"Q:\FsRoot\file-3.txt.Content", createdMetaFiles[2]);
+            Assert.AreEqual(@"Q:\FsRoot\file-4.txt.Content", createdMetaFiles[3]);
+            Assert.AreEqual(@"Q:\FsRoot\file-5.txt.Content", createdMetaFiles[4]);
+            Assert.AreEqual(@"Q:\FsRoot\file-6.txt.Content", createdMetaFiles[5]);
+            Assert.AreEqual(6, textBuilders.Count);
+            Assert.AreEqual("{\"ContentType\":\"File\",\"ContentName\":\"File-1.txt\",\"Fields\":{}}", textBuilders[0].ToString().RemoveWhitespaces());
+            Assert.AreEqual("{\"ContentType\":\"File\",\"ContentName\":\"File-2.txt\",\"Fields\":{}}", textBuilders[1].ToString().RemoveWhitespaces());
+            Assert.AreEqual("{\"ContentType\":\"File\",\"ContentName\":\"File-3.txt\",\"Fields\":{}}", textBuilders[2].ToString().RemoveWhitespaces());
+            Assert.AreEqual("{\"ContentType\":\"File\",\"ContentName\":\"File-4.txt\",\"Fields\":{}}", textBuilders[3].ToString().RemoveWhitespaces());
+            Assert.AreEqual("{\"ContentType\":\"File\",\"ContentName\":\"File-5.txt\",\"Fields\":{}}", textBuilders[4].ToString().RemoveWhitespaces());
+            Assert.AreEqual("{\"ContentType\":\"File\",\"ContentName\":\"File-6.txt\",\"Fields\":{}}", textBuilders[5].ToString().RemoveWhitespaces());
+            Assert.AreEqual(6, createdBinaryFiles.Count);
+            Assert.AreEqual(@"Q:\FsRoot\File-1.txt", createdBinaryFiles[0]);
+            Assert.AreEqual(@"Q:\FsRoot\File-2.txt", createdBinaryFiles[1]);
+            Assert.AreEqual(@"Q:\FsRoot\File-3.txt", createdBinaryFiles[2]);
+            Assert.AreEqual(@"Q:\FsRoot\File-4.txt", createdBinaryFiles[3]);
+            Assert.AreEqual(@"Q:\FsRoot\File-5.txt", createdBinaryFiles[4]);
+            Assert.AreEqual(@"Q:\FsRoot\File-6.txt", createdBinaryFiles[5]);
+            Assert.AreEqual(6, createdBinaries.Count);
+            Assert.AreEqual("File-1.txt content", createdBinaries[0].ReadAsString());
+            Assert.AreEqual("File-2.txt content", createdBinaries[1].ReadAsString());
+            Assert.AreEqual("File-3.txt content", createdBinaries[2].ReadAsString());
+            Assert.AreEqual("File-4.txt content", createdBinaries[3].ReadAsString());
+            Assert.AreEqual("File-5.txt content", createdBinaries[4].ReadAsString());
+            Assert.AreEqual("File-6.txt content", createdBinaries[5].ReadAsString());
+        }
+        [TestMethod]
+        public async Task FsWriter_QueryResult_Flatten_Suffixes()
+        {
+            TestContent CreateFile(string name, string path)
+            {
+                return new TestContent(name, path, "File", new Dictionary<string, object>(),
+                    new[] { new Attachment { FieldName = "Binary", FileName = name, Stream = $"{name} content".ToStream() } });
+            }
+            // ALIGN
+            var checkedPaths = new List<string>();
+            var createdPaths = new List<string>();
+            var createdMetaFiles = new List<string>();
+            var textBuilders = new List<StringBuilder>();
+            var createdBinaryFiles = new List<string>();
+            var createdBinaries = new List<MemoryStream>();
+
+            var reader = new TestReader("/Root/Content", new[]
+            {
+                CreateFile("File-1.txt", "Docs/F1/F2/File-1.txt"),
+                CreateFile("File-2.txt", "Docs/F1/F2/File-2.txt"),
+                CreateFile("File-3.txt", "Docs/F1/F2/File-3.txt"),
+                CreateFile("File-1.txt", "Docs/F1/F3/File-1.txt"),
+                CreateFile("File-3.txt", "Docs/F1/F3/File-3.txt"),
+                CreateFile("File-4.txt", "Docs/F1/F3/File-4.txt"),
+            });
+            var writer = new FsWriterMock(
+                outputDirectory: @"Q:\FsRoot",
+                rootName: null,
+                flatten: true,
+                isDirectoryExists: fsPath =>
+                {
+                    if (checkedPaths.Contains(fsPath))
+                        return true;
+                    checkedPaths.Add(fsPath);
+                    return false;
+                },
+                isFileExists: fsPath =>
+                {
+                    return createdMetaFiles.Contains(fsPath);
+                },
+                createDirectory: fsPath =>
+                {
+                    if (!createdPaths.Contains(fsPath))
+                        createdPaths.Add(fsPath);
+                },
+                createTextWriter: (fsPath, append) =>
+                {
+                    if (append)
+                        throw new NotSupportedException("Invalid 'append', expected: false.");
+                    createdMetaFiles.Add(fsPath.Replace('/', '\\'));
+                    var sb = new StringBuilder();
+                    textBuilders.Add(sb);
+                    return new StringWriter(sb);
+                },
+                createBinaryStream: (fsPath, fileMode) =>
+                {
+                    if (fileMode != FileMode.OpenOrCreate)
+                        throw new NotSupportedException("Invalid 'fileMode', expected: OpenOrCreate.");
+                    createdBinaryFiles.Add(fsPath.Replace('/', '\\'));
+                    var stream = new MemoryStream();
+                    createdBinaries.Add(stream);
+                    return stream;
+                });
+
+            // ACTION
+            var contentFlow = new SimpleContentFlow(reader, writer, GetLogger<ContentFlow>());
+            await contentFlow.TransferAsync(null);
+
+            // ASSERT
+            Assert.AreEqual(1, checkedPaths.Count);
+            Assert.AreEqual(@"Q:\FsRoot", checkedPaths[0]);
+            Assert.AreEqual(1, createdPaths.Count);
+            Assert.AreEqual(@"Q:\FsRoot", createdPaths[0]);
+            Assert.AreEqual(6, createdMetaFiles.Count);
+            Assert.AreEqual(@"Q:\FsRoot\File-1.txt.Content", createdMetaFiles[0]);
+            Assert.AreEqual(@"Q:\FsRoot\File-2.txt.Content", createdMetaFiles[1]);
+            Assert.AreEqual(@"Q:\FsRoot\File-3.txt.Content", createdMetaFiles[2]);
+            Assert.AreEqual(@"Q:\FsRoot\File-1(1).txt.Content", createdMetaFiles[3]);
+            Assert.AreEqual(@"Q:\FsRoot\File-3(1).txt.Content", createdMetaFiles[4]);
+            Assert.AreEqual(@"Q:\FsRoot\File-4.txt.Content", createdMetaFiles[5]);
+            Assert.AreEqual(6, textBuilders.Count);
+            Assert.AreEqual("{\"ContentType\":\"File\",\"ContentName\":\"File-1.txt\",\"Fields\":{}}", textBuilders[0].ToString().RemoveWhitespaces());
+            Assert.AreEqual("{\"ContentType\":\"File\",\"ContentName\":\"File-2.txt\",\"Fields\":{}}", textBuilders[1].ToString().RemoveWhitespaces());
+            Assert.AreEqual("{\"ContentType\":\"File\",\"ContentName\":\"File-3.txt\",\"Fields\":{}}", textBuilders[2].ToString().RemoveWhitespaces());
+            Assert.AreEqual("{\"ContentType\":\"File\",\"ContentName\":\"File-1(1).txt\",\"Fields\":{}}", textBuilders[3].ToString().RemoveWhitespaces());
+            Assert.AreEqual("{\"ContentType\":\"File\",\"ContentName\":\"File-3(1).txt\",\"Fields\":{}}", textBuilders[4].ToString().RemoveWhitespaces());
+            Assert.AreEqual("{\"ContentType\":\"File\",\"ContentName\":\"File-4.txt\",\"Fields\":{}}", textBuilders[5].ToString().RemoveWhitespaces());
+            Assert.AreEqual(6, createdBinaryFiles.Count);
+            Assert.AreEqual(@"Q:\FsRoot\File-1.txt", createdBinaryFiles[0]);
+            Assert.AreEqual(@"Q:\FsRoot\File-2.txt", createdBinaryFiles[1]);
+            Assert.AreEqual(@"Q:\FsRoot\File-3.txt", createdBinaryFiles[2]);
+            Assert.AreEqual(@"Q:\FsRoot\File-1(1).txt", createdBinaryFiles[3]);
+            Assert.AreEqual(@"Q:\FsRoot\File-3(1).txt", createdBinaryFiles[4]);
+            Assert.AreEqual(@"Q:\FsRoot\File-4.txt", createdBinaryFiles[5]);
+            Assert.AreEqual(6, createdBinaries.Count);
+            Assert.AreEqual("File-1.txt content", createdBinaries[0].ReadAsString());
+            Assert.AreEqual("File-2.txt content", createdBinaries[1].ReadAsString());
+            Assert.AreEqual("File-3.txt content", createdBinaries[2].ReadAsString());
+            Assert.AreEqual("File-1.txt content", createdBinaries[3].ReadAsString());
+            Assert.AreEqual("File-3.txt content", createdBinaries[4].ReadAsString());
+            Assert.AreEqual("File-4.txt content", createdBinaries[5].ReadAsString());
         }
     }
 }
