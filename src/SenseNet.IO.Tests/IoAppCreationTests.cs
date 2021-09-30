@@ -119,6 +119,14 @@ namespace SenseNet.IO.Tests
                 typeof(FsWriter), "Path: Q:\\_sn-io-test");
         }
         [TestMethod]
+        public void App_Export_DefaultSource_OverriddenTarget_1()
+        {
+            Test(new[] { "EXPORT", "-TARGET", "-FLATTEN" },
+                DefaultSettings,
+                typeof(RepositoryReader), "Url: https://localhost, Path: /Root/Content, BlockSize: 10",
+                typeof(FsWriter), "Path: Q:\\_sn-io-test, Flatten");
+        }
+        [TestMethod]
         public void App_Export_OverriddenSource_DefaultTarget_1()
         {
             Test(new[] { "EXPORT", "-SOURCE", "https://localhost:4242" },
@@ -156,6 +164,14 @@ namespace SenseNet.IO.Tests
             Test(new[] { "EXPORT", "-SOURCE", "-BLOCKSIZE", "42" },
                 DefaultSettings,
                 typeof(RepositoryReader), "Url: https://localhost, Path: /Root/Content, BlockSize: 42",
+                typeof(FsWriter), "Path: Q:\\_sn-io-test");
+        }
+        [TestMethod]
+        public void App_Export_OverriddenSource_DefaultTarget_6()
+        {
+            Test(new[] { "EXPORT", "-SOURCE", "-QUERY", "+TypeIs:File" },
+                DefaultSettings,
+                typeof(RepositoryReader), "Url: https://localhost, Path: /Root/Content, Filter: +TypeIs:File, BlockSize: 10",
                 typeof(FsWriter), "Path: Q:\\_sn-io-test");
         }
         [TestMethod]
