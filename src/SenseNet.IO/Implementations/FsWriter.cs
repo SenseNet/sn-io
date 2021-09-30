@@ -107,7 +107,7 @@ namespace SenseNet.IO.Implementations
 
                 var inStream = attachment.Stream;
                 if (inStream.Length > 0)
-                    using (var outStream = CreateBinaryStream(attachmentPath, FileMode.OpenOrCreate))
+                    using (var outStream = CreateBinaryStream(attachmentPath, FileMode.Create))
                         await inStream.CopyToAsync(outStream, cancel);
             }
         }
