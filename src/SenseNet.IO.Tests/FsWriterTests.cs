@@ -126,7 +126,6 @@ namespace SenseNet.IO.Tests
             public Task<bool> ReadAllAsync(string[] contentsWithoutChildren, CancellationToken cancel = default)
             {
                 if (contentsWithoutChildren != null && contentsWithoutChildren.Length != 0)
-                    //TODO Process "contentsWithoutChildren" parameter
                     throw new NotImplementedException();
 
                 if (_contentIndex < _contentsToRead.Length)
