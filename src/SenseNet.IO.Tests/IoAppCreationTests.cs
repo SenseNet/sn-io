@@ -169,7 +169,7 @@ namespace SenseNet.IO.Tests
         [TestMethod]
         public void App_Export_OverriddenSource_DefaultTarget_6()
         {
-            Test(new[] { "EXPORT", "-SOURCE", "-QUERY", "+TypeIs:File" },
+            Test(new[] { "EXPORT", "-SOURCE", "-FILTER", "+TypeIs:File" },
                 DefaultSettings,
                 typeof(RepositoryReader), "Url: https://localhost, Path: /Root/Content, Filter: +TypeIs:File, BlockSize: 10",
                 typeof(FsWriter), "Path: Q:\\_sn-io-test");

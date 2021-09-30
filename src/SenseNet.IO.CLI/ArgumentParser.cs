@@ -119,7 +119,7 @@ namespace SenseNet.IO.CLI
         }
         protected virtual RepositoryReaderArgs ParseRepositoryReaderArgs(string[] args)
         {
-            // [[-URL] Url]] [[-PATH ]Path]] [[-QUERY ]Query]] [[-BLOCKSIZE ]BlockSize]]
+            // [[-URL] Url]] [[-PATH ]Path]] [[-FILTER ]Filter]] [[-BLOCKSIZE ]BlockSize]]
             var result = new RepositoryReaderArgs();
             var parsedArgs = ParseSequence(args);
 
@@ -140,11 +140,11 @@ namespace SenseNet.IO.CLI
                         throw new ArgumentParserException("Invalid RepositoryReader arguments.");
                     result.Path = arg.Value?.Trim('\'', '"');
                 }
-                else if (arg.Key == "2" || arg.Key.Equals("QUERY", Cmp))
+                else if (arg.Key == "2" || arg.Key.Equals("FILTER", Cmp))
                 {
-                    if (result.Query != null)
+                    if (result.Filter != null)
                         throw new ArgumentParserException("Invalid RepositoryReader arguments.");
-                    result.Query = arg.Value?.Trim('\'', '"');
+                    result.Filter = arg.Value?.Trim('\'', '"');
                 }
                 else if (arg.Key == "3" || arg.Key.Equals("BLOCKSIZE", Cmp))
                 {

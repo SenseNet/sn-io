@@ -19,7 +19,7 @@ namespace SenseNet.IO.Implementations
         public string Url { get; set; }
         public string Path { get; set; }
         public int? BlockSize { get; set; }
-        public string Query { get; set; }
+        public string Filter { get; set; }
         public RepositoryAuthenticationOptions Authentication { get; set; } = new RepositoryAuthenticationOptions();
     }
 
@@ -54,7 +54,7 @@ namespace SenseNet.IO.Implementations
             Url = Args.Url ?? throw new ArgumentException("RepositoryReader: Invalid URL.");
             RepositoryRootPath = Args.Path;
             RootName = ContentPath.GetName(Args.Path);
-            Filter = InitializeFilter(args.Value.Query);
+            Filter = InitializeFilter(args.Value.Filter);
             _blockSize = Args.BlockSize.Value;
             _tokenStore = tokenStore;
         }
@@ -175,26 +175,26 @@ namespace SenseNet.IO.Implementations
             ".QUICK",
             ".ALLVERSIONS",
         };
-        private string InitializeFilter(string query)
+        private string InitializeFilter(string filter)
         {
-            if (query == null)
+            if (filter == null)
                 return null;
             foreach (var keyword in _keywords)
-                query = RemoveKeyword(keyword, query);
-            return query;
+                filter = RemoveKeyword(keyword, filter);
+            return filter;
         }
-        private string RemoveKeyword(string keyword, string query)
+        private string RemoveKeyword(string keyword, string filter)
         {
             while (true)
             {
-                var p0 = query.IndexOf(keyword, StringComparison.OrdinalIgnoreCase);
+                var p0 = filter.IndexOf(keyword, StringComparison.OrdinalIgnoreCase);
                 if (p0 < 0)
-                    return query.Trim();
-                var p1 = query.IndexOf(' ', p0 + keyword.Length);
+                    return filter.Trim();
+                var p1 = filter.IndexOf(' ', p0 + keyword.Length);
 
-                query = p1 < 0
-                    ? query.Remove(p0)
-                    : query.Remove(p0, p1 - p0 +1);
+                filter = p1 < 0
+                    ? filter.Remove(p0)
+                    : filter.Remove(p0, p1 - p0 +1);
             }
         }
 

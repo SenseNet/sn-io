@@ -45,8 +45,8 @@ namespace SenseNet.IO.CLI
                 settings.Url = null;
             if (string.IsNullOrEmpty(settings.Path))
                 settings.Path = null;
-            if (string.IsNullOrEmpty(settings.Query))
-                settings.Query = null;
+            if (string.IsNullOrEmpty(settings.Filter))
+                settings.Filter = null;
             if (settings.BlockSize < 1)
                 settings.BlockSize = null;
 
@@ -55,8 +55,8 @@ namespace SenseNet.IO.CLI
                 settings.Url = args.Url;
             if (args.Path != null)
                 settings.Path = args.Path;
-            if (args.Query != null)
-                settings.Query = args.Query;
+            if (args.Filter != null)
+                settings.Filter = args.Filter;
             if (args.BlockSize != null)
                 settings.BlockSize = args.BlockSize;
         }
@@ -109,9 +109,9 @@ namespace SenseNet.IO.CLI
         }
         public static string ParamsToDisplay(this RepositoryReaderArgs args)
         {
-            if(args.Query == null)
+            if(args.Filter == null)
                 return $"Url: {args.Url}, Path: {args.Path}, BlockSize: {args.BlockSize}";
-            return $"Url: {args.Url}, Path: {args.Path}, Filter: {args.Query}, BlockSize: {args.BlockSize}";
+            return $"Url: {args.Url}, Path: {args.Path}, Filter: {args.Filter}, BlockSize: {args.BlockSize}";
         }
         public static string ParamsToDisplay(this RepositoryWriterArgs args)
         {
