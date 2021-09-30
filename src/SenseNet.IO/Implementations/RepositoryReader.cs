@@ -32,6 +32,7 @@ namespace SenseNet.IO.Implementations
         private readonly int _blockSize;
         private int _blockIndex;
         private readonly ITokenStore _tokenStore;
+        private ServerContext _server;
 
         public string Url { get; }
         public string RootName { get; }
@@ -76,7 +77,8 @@ namespace SenseNet.IO.Implementations
                         .GetTokenAsync(server, Args.Authentication.ClientId, Args.Authentication.ClientSecret);
                 }
 
-                ClientContext.Current.AddServer(server);
+                //ClientContext.Current.AddServer(server);
+                _server = server;
 
                 // Get tree size before first read
                 EstimatedCount = await GetCountAsync();
@@ -202,7 +204,7 @@ namespace SenseNet.IO.Implementations
         {
             try
             {
-                var result = await RESTCaller.GetResponseStringAsync(RepositoryRootPath, "GetContentCountInTree");
+                var result = await RESTCaller.GetResponseStringAsync(RepositoryRootPath, "GetContentCountInTree", server: _server);
                 return int.TryParse(result, out var count) ? count : default;
             }
             catch (Exception e)
@@ -231,9 +233,9 @@ namespace SenseNet.IO.Implementations
             var queryResult = await QueryAsync(query).ConfigureAwait(false);
             return queryResult;
         }
-        protected virtual async Task<IContent[]> QueryAsync(string queryText, ServerContext server = null)
+        protected virtual async Task<IContent[]> QueryAsync(string queryText)
         {
-            var oDataRequest = new ODataRequest(server)
+            var oDataRequest = new ODataRequest(_server)
             {
                 Path = "/Root",
                 ContentQuery = queryText,
@@ -241,7 +243,7 @@ namespace SenseNet.IO.Implementations
             };
             try
             {
-                var result = await Client.Content.LoadCollectionAsync(oDataRequest, server).ConfigureAwait(false);
+                var result = await Client.Content.LoadCollectionAsync(oDataRequest, _server).ConfigureAwait(false);
                 var transformed = result.Select(x => new RepositoryReaderContent(x)).ToArray();
                 // ReSharper disable once CoVariantArrayConversion
                 return transformed;
@@ -253,9 +255,9 @@ namespace SenseNet.IO.Implementations
         }
 
         readonly string[] _idFields = {"Id", "Path"} ;
-        protected virtual async Task<IContent> GetContentAsync(string path, string[] fields, ServerContext server = null)
+        protected virtual async Task<IContent> GetContentAsync(string path, string[] fields)
         {
-            var oDataRequest = new ODataRequest(server)
+            var oDataRequest = new ODataRequest(_server)
             {
                 Path = path,
                 Select = _idFields.Union(fields),
@@ -263,7 +265,7 @@ namespace SenseNet.IO.Implementations
             };
             try
             {
-                var result = await Client.Content.LoadAsync(oDataRequest, server).ConfigureAwait(false);
+                var result = await Client.Content.LoadAsync(oDataRequest, _server).ConfigureAwait(false);
                 var transformed = new RepositoryReaderContent(result);
                 return transformed;
             }

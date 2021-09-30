@@ -2,12 +2,20 @@
   "repositoryReader": {
     "url": "https://localhost:44362", // Source URL
     "path": null, // Source path. Default: "/Root",
-    "blockSize": null // Contents per request. Default (null, 0 or less): 10. 
+    "blockSize": null, // Contents per request. Default (null, 0 or less): 10.
+    "Authentication": {
+      "ClientId": "",
+      "ClientSecret": "" 
+    } 
   },
   "repositoryWriter": {
     "url": "https://localhost:44362", // Target URL
     "path": null, // Target path. Default: "/",
-    "name": null // Target name under the container. Default: name of the reader's root.
+    "name": null, // Target name under the container. Default: name of the reader's root.
+    "Authentication": {
+      "ClientId": "",
+      "ClientSecret": ""
+    }
   },
   "fsReader": {
     "path": "D:\\_sn-io-test\\localhost_44362\\Root" // Source root

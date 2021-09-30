@@ -22,6 +22,7 @@ namespace SenseNet.IO.Implementations
     public class RepositoryWriter : ISnRepositoryWriter
     {
         private readonly ITokenStore _tokenStore;
+        private ServerContext _server;
 
         public RepositoryWriterArgs Args { get; }
         public string Url { get; }
@@ -59,7 +60,8 @@ namespace SenseNet.IO.Implementations
                     .GetAwaiter().GetResult();
             }
 
-            ClientContext.Current.AddServer(server);
+            //ClientContext.Current.AddServer(server);
+            _server = server;
         }
 
         public virtual async Task<WriterState> WriteAsync(string path, IContent content, CancellationToken cancel = default)
@@ -80,7 +82,7 @@ namespace SenseNet.IO.Implementations
             if (binary != null)
             {
                 using (var stream = binary.Stream)
-                    uploaded = await Content.UploadAsync("/Root/System/Schema/ContentTypes", content.Name, stream, "ContentType");
+                    uploaded = await Content.UploadAsync("/Root/System/Schema/ContentTypes", content.Name, stream, "ContentType", server: _server);
             }
 
             // Upload other binaries if there are.
@@ -89,7 +91,7 @@ namespace SenseNet.IO.Implementations
                 if (attachment.FieldName != "Binary")
                 {
                     using (var stream = attachment.Stream)
-                        uploaded = await Content.UploadAsync("/Root/System/Schema/ContentTypes", content.Name, stream, "ContentType", attachment.FieldName);
+                        uploaded = await Content.UploadAsync("/Root/System/Schema/ContentTypes", content.Name, stream, "ContentType", attachment.FieldName, server: _server);
                 }
             }
 
@@ -121,7 +123,7 @@ namespace SenseNet.IO.Implementations
             try
             {
                 resultString = await RESTCaller.GetResponseStringAsync(
-                    new ODataRequest {IsCollectionRequest = false, Path = "/Root", ActionName = "Import"}, HttpMethod.Post, body);
+                    new ODataRequest(_server) {IsCollectionRequest = false, Path = "/Root", ActionName = "Import"}, HttpMethod.Post, body, _server);
             }
             catch (Exception e)
             {
@@ -185,7 +187,7 @@ namespace SenseNet.IO.Implementations
             try
             {
                 resultString = await RESTCaller.GetResponseStringAsync(
-                    new ODataRequest { IsCollectionRequest = false, Path = "/Root", ActionName = "Import" }, HttpMethod.Post, body);
+                    new ODataRequest(_server) { IsCollectionRequest = false, Path = "/Root", ActionName = "Import" }, HttpMethod.Post, body, _server);
             }
             catch (Exception e)
             {
@@ -202,7 +204,7 @@ namespace SenseNet.IO.Implementations
             foreach (var attachment in attachments.Where(a => a.Stream != null))
             {
                 using (var stream = attachment.Stream)
-                    uploaded = await Content.UploadAsync(parentPath, content.Name, stream, propertyName: attachment.FieldName);
+                    uploaded = await Content.UploadAsync(parentPath, content.Name, stream, propertyName: attachment.FieldName, server: _server);
             }
 
             // Process result
