@@ -46,7 +46,7 @@ namespace SenseNet.IO.Tests
         [TestMethod]
         public void App_Import_DefaultSource_OverriddenTarget_2()
         {
-            Test(new[] { "IMPORT", "-TARGET", "https://localhost:4242", "\"/Root/Backup\"" },
+            Test(new[] { "IMPORT", "-TARGET", "https://localhost:4242", "/Root/Backup" },
                 DefaultSettings,
                 typeof(FsReader), "Path: Q:\\_sn-io-test\\content",
                 typeof(RepositoryWriter), "Url: https://localhost:4242, Path: /Root/Backup, Name: Content");
@@ -54,7 +54,7 @@ namespace SenseNet.IO.Tests
         [TestMethod]
         public void App_Import_DefaultSource_OverriddenTarget_3()
         {
-            Test(new[] { "IMPORT", "-TARGET", "https://localhost:4242", "\"/Root/Backup\"", "Content2" },
+            Test(new[] { "IMPORT", "-TARGET", "https://localhost:4242", "/Root/Backup", "Content2" },
                 DefaultSettings,
                 typeof(FsReader), "Path: Q:\\_sn-io-test\\content",
                 typeof(RepositoryWriter), "Url: https://localhost:4242, Path: /Root/Backup, Name: Content2");
@@ -78,7 +78,7 @@ namespace SenseNet.IO.Tests
         [TestMethod]
         public void App_Import_OverriddenSource_OverriddenTarget()
         {
-            Test(new[] { "IMPORT", "-SOURCE", @"Q:\_sn-io-test\content1", "-TARGET", "https://localhost:4242", "\"/Root/Backup\"", "Content2" },
+            Test(new[] { "IMPORT", "-SOURCE", @"Q:\_sn-io-test\content1", "-TARGET", "https://localhost:4242", "/Root/Backup", "Content2" },
                 DefaultSettings,
                 typeof(FsReader), "Path: Q:\\_sn-io-test\\content1",
                 typeof(RepositoryWriter), "Url: https://localhost:4242, Path: /Root/Backup, Name: Content2");
@@ -139,13 +139,21 @@ namespace SenseNet.IO.Tests
         {
             Test(new[] { "EXPORT", "-SOURCE", "https://localhost:4242", "\"/Root/Backup\"" },
                 DefaultSettings,
+                typeof(RepositoryReader), "Url: https://localhost:4242, Path: \"/Root/Backup\", BlockSize: 10",
+                typeof(FsWriter), "Path: Q:\\_sn-io-test");
+        }
+        [TestMethod]
+        public void App_Export_OverriddenSource_DefaultTarget_2a()
+        {
+            Test(new[] { "EXPORT", "-SOURCE", "https://localhost:4242", "/Root/Backup" },
+                DefaultSettings,
                 typeof(RepositoryReader), "Url: https://localhost:4242, Path: /Root/Backup, BlockSize: 10",
                 typeof(FsWriter), "Path: Q:\\_sn-io-test");
         }
         [TestMethod]
         public void App_Export_OverriddenSource_DefaultTarget_3()
         {
-            Test(new[] { "EXPORT", "-SOURCE", "https://localhost:4242", "\"/Root/Backup\"", "-BLOCKSIZE", "42" },
+            Test(new[] { "EXPORT", "-SOURCE", "https://localhost:4242", "/Root/Backup", "-BLOCKSIZE", "42" },
                 DefaultSettings,
                 typeof(RepositoryReader), "Url: https://localhost:4242, Path: /Root/Backup, BlockSize: 42",
                 typeof(FsWriter), "Path: Q:\\_sn-io-test");
@@ -185,7 +193,7 @@ namespace SenseNet.IO.Tests
         [TestMethod]
         public void App_Export_OverriddenSource_OverriddenTarget()
         {
-            Test(new[] { "EXPORT", "-SOURCE", "https://localhost:4242", "\"/Root/Backup\"", "-BLOCKSIZE", "42", "-TARGET", @"Q:\_sn-io-test\content1" },
+            Test(new[] { "EXPORT", "-SOURCE", "https://localhost:4242", "/Root/Backup", "-BLOCKSIZE", "42", "-TARGET", @"Q:\_sn-io-test\content1" },
                 DefaultSettings,
                 typeof(RepositoryReader), "Url: https://localhost:4242, Path: /Root/Backup, BlockSize: 42",
                 typeof(FsWriter), "Path: Q:\\_sn-io-test\\content1");
