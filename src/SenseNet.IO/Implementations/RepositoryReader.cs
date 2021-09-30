@@ -202,10 +202,31 @@ namespace SenseNet.IO.Implementations
 
         protected virtual async Task<int> GetCountAsync()
         {
+            string result;
+            if (string.IsNullOrEmpty(Filter))
+            {
+                try
+                {
+                    result = await RESTCaller.GetResponseStringAsync(RepositoryRootPath, "GetContentCountInTree",
+                        server: _server);
+                    return int.TryParse(result, out var count1) ? count1 : default;
+                }
+                catch (Exception e)
+                {
+                    throw new SnException(0, "RepositoryReader: cannot get count of contents.", e);
+                }
+            }
+
             try
             {
-                var result = await RESTCaller.GetResponseStringAsync(RepositoryRootPath, "GetContentCountInTree", server: _server);
-                return int.TryParse(result, out var count) ? count : default;
+                var req = new ODataRequest(_server)
+                {
+                    Path = RepositoryRootPath,
+                    ActionName = "GetContentCountInTree",
+                    ContentQuery = Filter
+                };
+                result = await RESTCaller.GetResponseStringAsync(req, server: _server);
+                return int.TryParse(result, out var count2) ? count2 : default;
             }
             catch (Exception e)
             {
