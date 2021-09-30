@@ -439,8 +439,8 @@ namespace SenseNet.IO.Tests
                 },
                 createBinaryStream: (fsPath, fileMode) =>
                 {
-                    if(fileMode != FileMode.OpenOrCreate)
-                        throw new NotSupportedException("Invalid 'fileMode', expected: OpenOrCreate.");
+                    if(fileMode != FileMode.Create)
+                        throw new NotSupportedException("Invalid 'fileMode', expected: Create.");
                     createdBinaryFiles.Add(fsPath.Replace('/', '\\'));
                     var stream = new MemoryStream();
                     createdBinaries.Add(stream);
@@ -514,8 +514,8 @@ namespace SenseNet.IO.Tests
                 },
                 createBinaryStream: (fsPath, fileMode) =>
                 {
-                    if (fileMode != FileMode.OpenOrCreate)
-                        throw new NotSupportedException("Invalid 'fileMode', expected: OpenOrCreate.");
+                    if (fileMode != FileMode.Create)
+                        throw new NotSupportedException("Invalid 'fileMode', expected: Create.");
                     createdBinaryFiles.Add(fsPath.Replace('/', '\\'));
                     var stream = new MemoryStream();
                     createdBinaries.Add(stream);
@@ -610,8 +610,8 @@ namespace SenseNet.IO.Tests
                 },
                 createBinaryStream: (fsPath, fileMode) =>
                 {
-                    if (fileMode != FileMode.OpenOrCreate)
-                        throw new NotSupportedException("Invalid 'fileMode', expected: OpenOrCreate.");
+                    if (fileMode != FileMode.Create)
+                        throw new NotSupportedException("Invalid 'fileMode', expected: Create.");
                     createdBinaryFiles.Add(fsPath.Replace('/', '\\'));
                     var stream = new MemoryStream();
                     createdBinaries.Add(stream);
@@ -711,8 +711,8 @@ namespace SenseNet.IO.Tests
                 },
                 createBinaryStream: (fsPath, fileMode) =>
                 {
-                    if (fileMode != FileMode.OpenOrCreate)
-                        throw new NotSupportedException("Invalid 'fileMode', expected: OpenOrCreate.");
+                    if (fileMode != FileMode.Create)
+                        throw new NotSupportedException("Invalid 'fileMode', expected: Create.");
                     createdBinaryFiles.Add(fsPath.Replace('/', '\\'));
                     var stream = new MemoryStream();
                     createdBinaries.Add(stream);
@@ -813,8 +813,8 @@ namespace SenseNet.IO.Tests
                 },
                 createBinaryStream: (fsPath, fileMode) =>
                 {
-                    if (fileMode != FileMode.OpenOrCreate)
-                        throw new NotSupportedException("Invalid 'fileMode', expected: OpenOrCreate.");
+                    if (fileMode != FileMode.Create)
+                        throw new NotSupportedException("Invalid 'fileMode', expected: Create.");
                     createdBinaryFiles.Add(fsPath.Replace('/', '\\'));
                     var stream = new MemoryStream();
                     createdBinaries.Add(stream);
