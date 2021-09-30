@@ -38,12 +38,20 @@ namespace SenseNet.IO.CLI
             _displayLevel = app.DisplaySettings.DisplayLevel;
             Console.WriteLine(app.HeadToDisplay());
 
-            await app.RunAsync(ShowProgress);
-
-            await Task.Delay(1000);
-
-            Console.WriteLine();
-            Console.WriteLine("Done.");
+            try
+            {
+                await app.RunAsync(ShowProgress);
+                await Task.Delay(1000);
+                Console.WriteLine();
+                Console.WriteLine("Done.");
+            }
+            catch (Exception e)
+            {
+                using (Color.Error())
+                    Console.Write($" ERROR ");
+                Console.WriteLine();
+                Console.WriteLine(e.GetAllMessages());
+            }
         }
         public static IoApp CreateApp(string[] args, Stream settingsFile = null)
         {

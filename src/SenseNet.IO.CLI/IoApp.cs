@@ -37,6 +37,7 @@ namespace SenseNet.IO.CLI
             catch (Exception e)
             {
                 _logger.LogError(e, e.Message);
+                throw;
             }
         }
 
