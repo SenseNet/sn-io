@@ -77,7 +77,7 @@ namespace SenseNet.IO.CLI
             {
                 var arg = parsedArgs[0];
                 if ((arg.Key.Equals("PATH", Cmp) || arg.Key == "0") && arg.Value != null)
-                    return new FsReaderArgs { Path = arg.Value?.Trim('\'', '"') };
+                    return new FsReaderArgs { Path = arg.Value };
                 throw new ArgumentParserException("Invalid FsReader args.");
             }
 
@@ -85,11 +85,11 @@ namespace SenseNet.IO.CLI
         }
         protected virtual FsWriterArgs ParseFsWriterArgs(string[] args)
         {
-            // [[-PATH] Path] [[-NAME ]Name]
+            // [[-PATH] Path] [[-NAME ]Name] [-FLATTEN]
             var result = new FsWriterArgs();
             var parsedArgs = ParseSequence(args);
 
-            if (parsedArgs.Length > 2)
+            if (parsedArgs.Length > 3)
                 throw new ArgumentParserException("Too many FsWriter arguments.");
 
             foreach (var arg in parsedArgs)
@@ -98,13 +98,19 @@ namespace SenseNet.IO.CLI
                 {
                     if (result.Path != null)
                         throw new ArgumentParserException("Invalid FsWriter arguments.");
-                    result.Path = arg.Value?.Trim('\'', '"');
+                    result.Path = arg.Value;
                 }
                 else if (arg.Key == "1" || arg.Key.Equals("NAME", Cmp))
                 {
                     if (result.Name != null)
                         throw new ArgumentParserException("Invalid FsWriter arguments.");
-                    result.Name = arg.Value?.Trim('\'', '"');
+                    result.Name = arg.Value;
+                }
+                else if (arg.Key.Equals("FLATTEN", Cmp))
+                {
+                    if (result.Flatten != null)
+                        throw new ArgumentParserException("Invalid FsWriter arguments.");
+                    result.Flatten = true;
                 }
                 else
                     throw new ArgumentParserException("Unknown FsWriter argument: " + arg.Key);
@@ -113,11 +119,11 @@ namespace SenseNet.IO.CLI
         }
         protected virtual RepositoryReaderArgs ParseRepositoryReaderArgs(string[] args)
         {
-            // [[-URL] Url]] [[-PATH ]Path]] [[-BLOCKSIZE ]BlockSite]]
+            // [[-URL] Url]] [[-PATH ]Path]] [[-FILTER ]Filter]] [[-BLOCKSIZE ]BlockSize]]
             var result = new RepositoryReaderArgs();
             var parsedArgs = ParseSequence(args);
 
-            if (parsedArgs.Length > 3)
+            if (parsedArgs.Length > 5)
                 throw new ArgumentParserException("Too many RepositoryReader arguments.");
 
             foreach (var arg in parsedArgs)
@@ -126,15 +132,21 @@ namespace SenseNet.IO.CLI
                 {
                     if (result.Url != null)
                         throw new ArgumentParserException("Invalid RepositoryReader arguments.");
-                    result.Url = arg.Value?.Trim('\'', '"');
+                    result.Url = arg.Value;
                 }
                 else if (arg.Key == "1" || arg.Key.Equals("PATH", Cmp))
                 {
                     if (result.Path != null)
                         throw new ArgumentParserException("Invalid RepositoryReader arguments.");
-                    result.Path = arg.Value?.Trim('\'', '"');
+                    result.Path = arg.Value;
                 }
-                else if (arg.Key == "2" || arg.Key.Equals("BLOCKSIZE", Cmp))
+                else if (arg.Key == "2" || arg.Key.Equals("FILTER", Cmp))
+                {
+                    if (result.Filter != null)
+                        throw new ArgumentParserException("Invalid RepositoryReader arguments.");
+                    result.Filter = arg.Value;
+                }
+                else if (arg.Key == "3" || arg.Key.Equals("BLOCKSIZE", Cmp))
                 {
                     if (result.BlockSize != null)
                         throw new ArgumentParserException("Invalid RepositoryReader arguments.");
@@ -162,19 +174,19 @@ namespace SenseNet.IO.CLI
                 {
                     if (result.Url != null)
                         throw new ArgumentParserException("Invalid RepositoryWriter arguments.");
-                    result.Url = arg.Value?.Trim('\'', '"');
+                    result.Url = arg.Value;
                 }
                 else if (arg.Key == "1" || arg.Key.Equals("PATH", Cmp))
                 {
                     if (result.Path != null)
                         throw new ArgumentParserException("Invalid RepositoryWriter arguments.");
-                    result.Path = arg.Value?.Trim('\'', '"');
+                    result.Path = arg.Value;
                 }
                 else if (arg.Key == "2" || arg.Key.Equals("NAME", Cmp))
                 {
                     if (result.Name != null)
                         throw new ArgumentParserException("Invalid RepositoryWriter arguments.");
-                    result.Name = arg.Value?.Trim('\'', '"');
+                    result.Name = arg.Value;
                 }
                 else
                     throw new ArgumentParserException("Unknown RepositoryWriter argument: " + arg.Key);
@@ -182,7 +194,7 @@ namespace SenseNet.IO.CLI
             return result;
         }
 
-
+        private string[] _boolSwitches = new[] {"FLATTEN"};
         private KeyValuePair<string, string>[] ParseSequence(string[] args)
         {
             var result = new Dictionary<string, string>();
@@ -195,6 +207,11 @@ namespace SenseNet.IO.CLI
                     if (name != null)
                         result.Add(name, null);
                     name = arg.Substring(1);
+                    if (_boolSwitches.Contains(name, StringComparer.OrdinalIgnoreCase))
+                    {
+                        result.Add(name, "true");
+                        name = null;
+                    }
                 }
                 else
                 {

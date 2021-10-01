@@ -257,10 +257,12 @@ namespace SenseNet.IO.Tests
             fsWriterArgs = parser.ParseFsWriterArgsTest(new string[0]);
             Assert.AreEqual(null, fsWriterArgs.Path);
             Assert.AreEqual(null, fsWriterArgs.Name);
+            Assert.AreEqual(null, fsWriterArgs.Flatten);
 
             fsWriterArgs = parser.ParseFsWriterArgsTest(new[] { "q:\\writerPath" });
             Assert.AreEqual("q:\\writerPath", fsWriterArgs.Path);
             Assert.AreEqual(null, fsWriterArgs.Name);
+            Assert.AreEqual(null, fsWriterArgs.Flatten);
 
             try { parser.ParseFsWriterArgsTest(new[] { "-fake" }); Assert.Fail(); }
             catch (ArgumentParserException e) { Assert.IsTrue(e.Message.Contains("Unknown", Cmp)); }
@@ -268,10 +270,12 @@ namespace SenseNet.IO.Tests
             fsWriterArgs = parser.ParseFsWriterArgsTest(new[] { "-PATH", "q:\\writerPath" });
             Assert.AreEqual("q:\\writerPath", fsWriterArgs.Path);
             Assert.AreEqual(null, fsWriterArgs.Name);
+            Assert.AreEqual(null, fsWriterArgs.Flatten);
 
             fsWriterArgs = parser.ParseFsWriterArgsTest(new[] { "q:\\writerPath", "newName" });
             Assert.AreEqual("q:\\writerPath", fsWriterArgs.Path);
             Assert.AreEqual("newName", fsWriterArgs.Name);
+            Assert.AreEqual(null, fsWriterArgs.Flatten);
 
             try { parser.ParseFsWriterArgsTest(new[] { "-PATH", "q:\\writerPath", "newName" }); Assert.Fail(); }
             catch (ArgumentParserException e) { Assert.IsTrue(e.Message.Contains("Invalid", Cmp)); }
@@ -279,21 +283,65 @@ namespace SenseNet.IO.Tests
             fsWriterArgs = parser.ParseFsWriterArgsTest(new[] { "q:\\writerPath", "-NAME", "newName" });
             Assert.AreEqual("q:\\writerPath", fsWriterArgs.Path);
             Assert.AreEqual("newName", fsWriterArgs.Name);
+            Assert.AreEqual(null, fsWriterArgs.Flatten);
 
             fsWriterArgs = parser.ParseFsWriterArgsTest(new[] { "-PATH", "q:\\writerPath", "-NAME", "newName" });
             Assert.AreEqual("q:\\writerPath", fsWriterArgs.Path);
             Assert.AreEqual("newName", fsWriterArgs.Name);
+            Assert.AreEqual(null, fsWriterArgs.Flatten);
 
             fsWriterArgs = parser.ParseFsWriterArgsTest(new[] { "-NAME", "newName", "-PATH", "q:\\writerPath" });
             Assert.AreEqual("q:\\writerPath", fsWriterArgs.Path);
             Assert.AreEqual("newName", fsWriterArgs.Name);
+            Assert.AreEqual(null, fsWriterArgs.Flatten);
 
             fsWriterArgs = parser.ParseFsWriterArgsTest(new[] { "-NAME", "newName", "q:\\writerPath" });
             Assert.AreEqual("q:\\writerPath", fsWriterArgs.Path);
             Assert.AreEqual("newName", fsWriterArgs.Name);
+            Assert.AreEqual(null, fsWriterArgs.Flatten);
 
             try { parser.ParseFsWriterArgsTest(new[] { "newName", "-PATH", "q:\\readerPath" }); Assert.Fail(); }
             catch (ArgumentParserException e) { Assert.IsTrue(e.Message.Contains("Invalid", Cmp)); }
+
+            fsWriterArgs = parser.ParseFsWriterArgsTest(new[] { "q:\\writerPath", "newName", "-FLATTEN" });
+            Assert.AreEqual("q:\\writerPath", fsWriterArgs.Path);
+            Assert.AreEqual("newName", fsWriterArgs.Name);
+            Assert.AreEqual(true, fsWriterArgs.Flatten);
+
+            fsWriterArgs = parser.ParseFsWriterArgsTest(new[] { "q:\\writerPath", "-NAME", "newName", "-FLATTEN" });
+            Assert.AreEqual("q:\\writerPath", fsWriterArgs.Path);
+            Assert.AreEqual("newName", fsWriterArgs.Name);
+            Assert.AreEqual(true, fsWriterArgs.Flatten);
+
+            fsWriterArgs = parser.ParseFsWriterArgsTest(new[] { "-NAME", "newName", "-FLATTEN" });
+            Assert.AreEqual(null, fsWriterArgs.Path);
+            Assert.AreEqual("newName", fsWriterArgs.Name);
+            Assert.AreEqual(true, fsWriterArgs.Flatten);
+
+            fsWriterArgs = parser.ParseFsWriterArgsTest(new[] { "-PATH", "q:\\writerPath", "-NAME", "newName", "-FLATTEN" });
+            Assert.AreEqual("q:\\writerPath", fsWriterArgs.Path);
+            Assert.AreEqual("newName", fsWriterArgs.Name);
+            Assert.AreEqual(true, fsWriterArgs.Flatten);
+
+            fsWriterArgs = parser.ParseFsWriterArgsTest(new[] { "q:\\writerPath", "-FLATTEN" });
+            Assert.AreEqual("q:\\writerPath", fsWriterArgs.Path);
+            Assert.AreEqual(null, fsWriterArgs.Name);
+            Assert.AreEqual(true, fsWriterArgs.Flatten);
+
+            fsWriterArgs = parser.ParseFsWriterArgsTest(new[] { "-PATH", "q:\\writerPath", "-FLATTEN" });
+            Assert.AreEqual("q:\\writerPath", fsWriterArgs.Path);
+            Assert.AreEqual(null, fsWriterArgs.Name);
+            Assert.AreEqual(true, fsWriterArgs.Flatten);
+
+            fsWriterArgs = parser.ParseFsWriterArgsTest(new[] { "q:\\writerPath", "-FLATTEN", "newName" });
+            Assert.AreEqual("q:\\writerPath", fsWriterArgs.Path);
+            Assert.AreEqual("newName", fsWriterArgs.Name);
+            Assert.AreEqual(true, fsWriterArgs.Flatten);
+
+            fsWriterArgs = parser.ParseFsWriterArgsTest(new[] { "-FLATTEN", "q:\\writerPath", "newName" });
+            Assert.AreEqual("q:\\writerPath", fsWriterArgs.Path);
+            Assert.AreEqual("newName", fsWriterArgs.Name);
+            Assert.AreEqual(true, fsWriterArgs.Flatten);
         }
         [TestMethod]
         public void ArgParser_RepositoryReaderArgs()
@@ -304,52 +352,80 @@ namespace SenseNet.IO.Tests
             repoReaderArgs = parser.ParseRepositoryReaderArgsTest(new string[0]);
             Assert.AreEqual(null, repoReaderArgs.Url);
             Assert.AreEqual(null, repoReaderArgs.Path);
+            Assert.AreEqual(null, repoReaderArgs.Filter);
             Assert.AreEqual(null, repoReaderArgs.BlockSize);
 
             repoReaderArgs = parser.ParseRepositoryReaderArgsTest(new[] { "https://localhost" });
             Assert.AreEqual("https://localhost", repoReaderArgs.Url);
             Assert.AreEqual(null, repoReaderArgs.Path);
+            Assert.AreEqual(null, repoReaderArgs.Filter);
+            Assert.AreEqual(null, repoReaderArgs.BlockSize);
+
+            repoReaderArgs = parser.ParseRepositoryReaderArgsTest(new[] { "https://localhost", "/Root" });
+            Assert.AreEqual("https://localhost", repoReaderArgs.Url);
+            Assert.AreEqual("/Root", repoReaderArgs.Path);
+            Assert.AreEqual(null, repoReaderArgs.Filter);
             Assert.AreEqual(null, repoReaderArgs.BlockSize);
 
             repoReaderArgs = parser.ParseRepositoryReaderArgsTest(new[] { "https://localhost", "'/Root'" });
             Assert.AreEqual("https://localhost", repoReaderArgs.Url);
-            Assert.AreEqual("/Root", repoReaderArgs.Path);
+            Assert.AreEqual("'/Root'", repoReaderArgs.Path);
+            Assert.AreEqual(null, repoReaderArgs.Filter);
             Assert.AreEqual(null, repoReaderArgs.BlockSize);
 
-            repoReaderArgs = parser.ParseRepositoryReaderArgsTest(new[] { "https://localhost", "'/Root'", "42" });
+            repoReaderArgs = parser.ParseRepositoryReaderArgsTest(new[] { "https://localhost", "/Root", "<Filter>" });
             Assert.AreEqual("https://localhost", repoReaderArgs.Url);
             Assert.AreEqual("/Root", repoReaderArgs.Path);
+            Assert.AreEqual("<Filter>", repoReaderArgs.Filter);
+            Assert.AreEqual(null, repoReaderArgs.BlockSize);
+
+            repoReaderArgs = parser.ParseRepositoryReaderArgsTest(new[] { "https://localhost", "/Root", "<Filter>", "42" });
+            Assert.AreEqual("https://localhost", repoReaderArgs.Url);
+            Assert.AreEqual("/Root", repoReaderArgs.Path);
+            Assert.AreEqual("<Filter>", repoReaderArgs.Filter);
             Assert.AreEqual(42, repoReaderArgs.BlockSize);
 
             repoReaderArgs = parser.ParseRepositoryReaderArgsTest(new[] { "https://localhost", "-BLOCKSIZE", "42" });
             Assert.AreEqual("https://localhost", repoReaderArgs.Url);
             Assert.AreEqual(null, repoReaderArgs.Path);
+            Assert.AreEqual(null, repoReaderArgs.Filter);
             Assert.AreEqual(42, repoReaderArgs.BlockSize);
 
-            repoReaderArgs = parser.ParseRepositoryReaderArgsTest(new[] { "https://localhost", "-BLOCKSIZE", "42", "-PATH", "'/Root'" });
+            repoReaderArgs = parser.ParseRepositoryReaderArgsTest(new[] { "https://localhost", "-BLOCKSIZE", "42", "-PATH", "/Root" });
             Assert.AreEqual("https://localhost", repoReaderArgs.Url);
             Assert.AreEqual("/Root", repoReaderArgs.Path);
+            Assert.AreEqual(null, repoReaderArgs.Filter);
             Assert.AreEqual(42, repoReaderArgs.BlockSize);
 
-            repoReaderArgs = parser.ParseRepositoryReaderArgsTest(new[] { "-URL", "https://localhost", "-BLOCKSIZE", "42", "-PATH", "'/Root'" });
+            repoReaderArgs = parser.ParseRepositoryReaderArgsTest(new[] { "-URL", "https://localhost", "-BLOCKSIZE", "42", "-PATH", "/Root" });
             Assert.AreEqual("https://localhost", repoReaderArgs.Url);
             Assert.AreEqual("/Root", repoReaderArgs.Path);
+            Assert.AreEqual(null, repoReaderArgs.Filter);
             Assert.AreEqual(42, repoReaderArgs.BlockSize);
 
-            repoReaderArgs = parser.ParseRepositoryReaderArgsTest(new[] { "-BLOCKSIZE", "42", "-PATH", "'/Root'", "-URL", "https://localhost" });
+            repoReaderArgs = parser.ParseRepositoryReaderArgsTest(new[] { "-BLOCKSIZE", "42", "-PATH", "/Root", "-URL", "https://localhost" });
             Assert.AreEqual("https://localhost", repoReaderArgs.Url);
             Assert.AreEqual("/Root", repoReaderArgs.Path);
+            Assert.AreEqual(null, repoReaderArgs.Filter);
             Assert.AreEqual(42, repoReaderArgs.BlockSize);
 
             repoReaderArgs = parser.ParseRepositoryReaderArgsTest(new[] { "-BLOCKSIZE", "42", "-URL", "https://localhost" });
             Assert.AreEqual("https://localhost", repoReaderArgs.Url);
             Assert.AreEqual(null, repoReaderArgs.Path);
+            Assert.AreEqual(null, repoReaderArgs.Filter);
             Assert.AreEqual(42, repoReaderArgs.BlockSize);
 
             repoReaderArgs = parser.ParseRepositoryReaderArgsTest(new[] { "-BLOCKSIZE", "42" });
             Assert.AreEqual(null, repoReaderArgs.Url);
             Assert.AreEqual(null, repoReaderArgs.Path);
+            Assert.AreEqual(null, repoReaderArgs.Filter);
             Assert.AreEqual(42, repoReaderArgs.BlockSize);
+
+            repoReaderArgs = parser.ParseRepositoryReaderArgsTest(new[] { "-PATH", "/Root/Content", "-FILTER", "+ModificationDate:>'2001-01-01'" });
+            Assert.AreEqual(null, repoReaderArgs.Url);
+            Assert.AreEqual("/Root/Content", repoReaderArgs.Path);
+            Assert.AreEqual(null, repoReaderArgs.BlockSize);
+            Assert.AreEqual("+ModificationDate:>'2001-01-01'", repoReaderArgs.Filter);
 
             try { parser.ParseRepositoryReaderArgsTest(new[] { "-fake" }); Assert.Fail(); }
             catch (ArgumentParserException e) { Assert.IsTrue(e.Message.Contains("Unknown", Cmp)); }
@@ -362,7 +438,6 @@ namespace SenseNet.IO.Tests
 
             try { parser.ParseRepositoryReaderArgsTest(new[] { "-URL", "https://localhost", "'/Root'", "42" }); Assert.Fail(); }
             catch (ArgumentParserException e) { Assert.IsTrue(e.Message.Contains("Invalid", Cmp)); }
-
         }
         [TestMethod]
         public void ArgParser_RepositoryWriterArgs()
@@ -380,12 +455,17 @@ namespace SenseNet.IO.Tests
             Assert.AreEqual(null, repoWriterArgs.Path);
             Assert.AreEqual(null, repoWriterArgs.Name);
 
-            repoWriterArgs = parser.ParseRepositoryWriterArgsTest(new[] { "https://localhost", "'/Root'" });
+            repoWriterArgs = parser.ParseRepositoryWriterArgsTest(new[] { "https://localhost", "/Root" });
             Assert.AreEqual("https://localhost", repoWriterArgs.Url);
             Assert.AreEqual("/Root", repoWriterArgs.Path);
             Assert.AreEqual(null, repoWriterArgs.Name);
 
-            repoWriterArgs = parser.ParseRepositoryWriterArgsTest(new[] { "https://localhost", "'/Root'", "NewName" });
+            repoWriterArgs = parser.ParseRepositoryWriterArgsTest(new[] { "https://localhost", "'/Root'" });
+            Assert.AreEqual("https://localhost", repoWriterArgs.Url);
+            Assert.AreEqual("'/Root'", repoWriterArgs.Path);
+            Assert.AreEqual(null, repoWriterArgs.Name);
+
+            repoWriterArgs = parser.ParseRepositoryWriterArgsTest(new[] { "https://localhost", "/Root", "NewName" });
             Assert.AreEqual("https://localhost", repoWriterArgs.Url);
             Assert.AreEqual("/Root", repoWriterArgs.Path);
             Assert.AreEqual("NewName", repoWriterArgs.Name);
@@ -395,17 +475,17 @@ namespace SenseNet.IO.Tests
             Assert.AreEqual(null, repoWriterArgs.Path);
             Assert.AreEqual("NewName", repoWriterArgs.Name);
 
-            repoWriterArgs = parser.ParseRepositoryWriterArgsTest(new[] { "https://localhost", "-NAME", "NewName", "-PATH", "'/Root'" });
+            repoWriterArgs = parser.ParseRepositoryWriterArgsTest(new[] { "https://localhost", "-NAME", "NewName", "-PATH", "/Root" });
             Assert.AreEqual("https://localhost", repoWriterArgs.Url);
             Assert.AreEqual("/Root", repoWriterArgs.Path);
             Assert.AreEqual("NewName", repoWriterArgs.Name);
 
-            repoWriterArgs = parser.ParseRepositoryWriterArgsTest(new[] { "-URL", "https://localhost", "-NAME", "NewName", "-PATH", "'/Root'" });
+            repoWriterArgs = parser.ParseRepositoryWriterArgsTest(new[] { "-URL", "https://localhost", "-NAME", "NewName", "-PATH", "/Root" });
             Assert.AreEqual("https://localhost", repoWriterArgs.Url);
             Assert.AreEqual("/Root", repoWriterArgs.Path);
             Assert.AreEqual("NewName", repoWriterArgs.Name);
 
-            repoWriterArgs = parser.ParseRepositoryWriterArgsTest(new[] { "-NAME", "NewName", "-PATH", "'/Root'", "-URL", "https://localhost" });
+            repoWriterArgs = parser.ParseRepositoryWriterArgsTest(new[] { "-NAME", "NewName", "-PATH", "/Root", "-URL", "https://localhost" });
             Assert.AreEqual("https://localhost", repoWriterArgs.Url);
             Assert.AreEqual("/Root", repoWriterArgs.Path);
             Assert.AreEqual("NewName", repoWriterArgs.Name);

@@ -19,6 +19,7 @@ namespace SenseNet.IO.Implementations
         public string Url { get; set; }
         public string Path { get; set; }
         public int? BlockSize { get; set; }
+        public string Filter { get; set; }
         public RepositoryAuthenticationOptions Authentication { get; set; } = new RepositoryAuthenticationOptions();
     }
 
@@ -36,6 +37,7 @@ namespace SenseNet.IO.Implementations
         public string Url { get; }
         public string RootName { get; }
         public string RepositoryRootPath { get; }
+        public string Filter { get; }
         public int EstimatedCount { get; private set; }
         public IContent Content { get; private set; }
         public string RelativePath { get; private set; }
@@ -52,6 +54,7 @@ namespace SenseNet.IO.Implementations
             Url = Args.Url ?? throw new ArgumentException("RepositoryReader: Invalid URL.");
             RepositoryRootPath = Args.Path;
             RootName = ContentPath.GetName(Args.Path);
+            Filter = InitializeFilter(args.Value.Filter);
             _blockSize = Args.BlockSize.Value;
             _tokenStore = tokenStore;
         }
@@ -158,14 +161,72 @@ namespace SenseNet.IO.Implementations
             return true;
         }
 
+
+        private static readonly string[] _keywords = new[]
+        {
+            ".SELECT",
+            ".SKIP",
+            ".TOP",
+            ".SORT",
+            ".REVERSESORT",
+            ".AUTOFILTERS",
+            ".LIFESPAN",
+            ".COUNTONLY",
+            ".QUICK",
+            ".ALLVERSIONS",
+        };
+        private string InitializeFilter(string filter)
+        {
+            if (filter == null)
+                return null;
+            foreach (var keyword in _keywords)
+                filter = RemoveKeyword(keyword, filter);
+            return filter;
+        }
+        private string RemoveKeyword(string keyword, string filter)
+        {
+            while (true)
+            {
+                var p0 = filter.IndexOf(keyword, StringComparison.OrdinalIgnoreCase);
+                if (p0 < 0)
+                    return filter.Trim();
+                var p1 = filter.IndexOf(' ', p0 + keyword.Length);
+
+                filter = p1 < 0
+                    ? filter.Remove(p0)
+                    : filter.Remove(p0, p1 - p0 +1);
+            }
+        }
+
         /* =================================================================================== TESTABLE METHODS FOR MOCKS */
 
         protected virtual async Task<int> GetCountAsync()
         {
+            string result;
+            if (string.IsNullOrEmpty(Filter))
+            {
+                try
+                {
+                    result = await RESTCaller.GetResponseStringAsync(RepositoryRootPath, "GetContentCountInTree",
+                        server: _server);
+                    return int.TryParse(result, out var count1) ? count1 : default;
+                }
+                catch (Exception e)
+                {
+                    throw new SnException(0, "RepositoryReader: cannot get count of contents.", e);
+                }
+            }
+
             try
             {
-                var result = await RESTCaller.GetResponseStringAsync(RepositoryRootPath, "GetContentCountInTree", server: _server);
-                return int.TryParse(result, out var count) ? count : default;
+                var req = new ODataRequest(_server)
+                {
+                    Path = RepositoryRootPath,
+                    ActionName = "GetContentCountInTree",
+                    ContentQuery = Filter
+                };
+                result = await RESTCaller.GetResponseStringAsync(req, server: _server);
+                return int.TryParse(result, out var count2) ? count2 : default;
             }
             catch (Exception e)
             {
@@ -177,7 +238,8 @@ namespace SenseNet.IO.Implementations
             string query;
             if (contentsWithoutChildren.Length == 0)
             {
-                query = $"InTree:'{rootPath}' .SORT:Path .TOP:{top} .SKIP:{skip} .AUTOFILTERS:OFF";
+                query = Filter != null ? $"+InTree:'{rootPath}' +({Filter})" : $"InTree:'{rootPath}'";
+                query += $" .SORT:Path .TOP:{top} .SKIP:{skip} .AUTOFILTERS:OFF";
             }
             else if (contentsWithoutChildren.Length == 1 && contentsWithoutChildren[0] == string.Empty)
             {

@@ -17,12 +17,13 @@ namespace SenseNet.IO.Tests
         private class RepositoryReaderMock : RepositoryReader
         {
             private StringComparison SC = StringComparison.OrdinalIgnoreCase;
-            public static RepositoryReaderMock Create(Dictionary<string, ContentNode> sourceTree, string rootPath, int blockSize = 10)
+            public static RepositoryReaderMock Create(Dictionary<string, ContentNode> sourceTree, string rootPath, string filter, int blockSize = 10)
             {
                 return new RepositoryReaderMock(sourceTree, Options.Create(new RepositoryReaderArgs
                 {
                     Url = "https://example.com",
                     Path = rootPath,
+                    Filter = filter,
                     BlockSize = blockSize
                 }));
             }
@@ -99,7 +100,32 @@ namespace SenseNet.IO.Tests
                     top = p0 < 0 ? 0 : int.Parse(queryText.Substring(p0, p1 - p0));
                 }
 
-                var items = _sourceTree
+                IContent[] items;
+                if (queryText.Contains("+(+TypeIs:File +InTree:(/Root/Content/Docs/F1/F2 /Root/Content/Docs/F1/F3))"))
+                {
+                    var r = _sourceTree
+                        .Where(x => x.Key == path || x.Key.StartsWith(path))
+                        .ToArray();
+                    r = r
+                        .Where(x => x.Value.Type == "File")
+                        .ToArray();
+                    r = r
+                        .Where(x => x.Key.StartsWith("/Root/Content/Docs/F1/F2/") ||
+                                                              x.Key.StartsWith("/Root/Content/Docs/F1/F3/"))
+                        .ToArray();
+                    r = r
+                        .Where(x => exclusion.All(excluded => !x.Key.StartsWith(excluded, SC)))
+                        .ToArray();
+                    items = r
+                        .OrderBy(x => x.Key)
+                        .Skip(skip)
+                        .Take(top)
+                        .Select(x => x.Value)
+                        .ToArray();
+                    return Task.FromResult((IContent[]) items);
+                }
+
+                items = _sourceTree
                     .Where(x => x.Key == path || x.Key.StartsWith(path))
                     .Where(x => exclusion.All(excluded => !x.Key.StartsWith(excluded, SC)))
                     .OrderBy(x => x.Key)
@@ -127,7 +153,7 @@ namespace SenseNet.IO.Tests
             var targetStates = new Dictionary<string, WriterState>();
 
             // ACTION
-            var reader = RepositoryReaderMock.Create(sourceTree, "/Root", 99999);
+            var reader = RepositoryReaderMock.Create(sourceTree, "/Root", null, 99999);
             var writer = new TestRepositoryWriter(targetTree, targetStates);
             var flow = new SemanticContentFlow(reader, writer, GetLogger<ContentFlow>());
             var progress = new TestProgress();
@@ -165,7 +191,7 @@ namespace SenseNet.IO.Tests
             var targetStates = new Dictionary<string, WriterState>();
 
             // ACTION
-            var reader = RepositoryReaderMock.Create(sourceTree, "/Root/System", 99999);
+            var reader = RepositoryReaderMock.Create(sourceTree, "/Root/System", null, 99999);
             var writer = new TestRepositoryWriter(targetTree, targetStates, "/Root");
             var flow = new SemanticContentFlow(reader, writer, GetLogger<ContentFlow>());
             var progress = new TestProgress();
@@ -205,7 +231,7 @@ namespace SenseNet.IO.Tests
             var targetStates = new Dictionary<string, WriterState>();
 
             // ACTION
-            var reader = RepositoryReaderMock.Create(sourceTree, "/Root/System/Schema", 99999);
+            var reader = RepositoryReaderMock.Create(sourceTree, "/Root/System/Schema", null, 99999);
             var writer = new TestRepositoryWriter(targetTree, targetStates, "/Root/System");
             var flow = new SemanticContentFlow(reader, writer, GetLogger<ContentFlow>());
             var progress = new TestProgress();
@@ -244,7 +270,7 @@ namespace SenseNet.IO.Tests
             var targetStates = new Dictionary<string, WriterState>();
 
             // ACTION
-            var reader = RepositoryReaderMock.Create(sourceTree, "/Root/System/Schema/ContentTypes", 99999);
+            var reader = RepositoryReaderMock.Create(sourceTree, "/Root/System/Schema/ContentTypes", null, 99999);
             var writer = new TestRepositoryWriter(targetTree, targetStates, "/Root/System/Schema");
             var flow = new SemanticContentFlow(reader, writer, GetLogger<ContentFlow>());
             var progress = new TestProgress();
@@ -281,7 +307,7 @@ namespace SenseNet.IO.Tests
             var targetStates = new Dictionary<string, WriterState>();
 
             // ACTION
-            var reader = RepositoryReaderMock.Create(sourceTree, "/Root/System/Schema/Aspects", 99999);
+            var reader = RepositoryReaderMock.Create(sourceTree, "/Root/System/Schema/Aspects", null, 99999);
             var writer = new TestRepositoryWriter(targetTree, targetStates, "/Root/System/Schema");
             var flow = new SemanticContentFlow(reader, writer, GetLogger<ContentFlow>());
             var progress = new TestProgress();
@@ -318,7 +344,7 @@ namespace SenseNet.IO.Tests
             var targetStates = new Dictionary<string, WriterState>();
 
             // ACTION
-            var reader = RepositoryReaderMock.Create(sourceTree, "/Root/System/Settings", 99999);
+            var reader = RepositoryReaderMock.Create(sourceTree, "/Root/System/Settings", null, 99999);
             var writer = new TestRepositoryWriter(targetTree, targetStates, "/Root/System");
             var flow = new SemanticContentFlow(reader, writer, GetLogger<ContentFlow>());
             var progress = new TestProgress();
@@ -354,7 +380,7 @@ namespace SenseNet.IO.Tests
             var targetStates = new Dictionary<string, WriterState>();
 
             // ACTION
-            var reader = RepositoryReaderMock.Create(sourceTree, "/Root/Content", 99999);
+            var reader = RepositoryReaderMock.Create(sourceTree, "/Root/Content", null, 99999);
             var writer = new TestRepositoryWriter(targetTree, targetStates, "/Root");
             var flow = new SemanticContentFlow(reader, writer, GetLogger<ContentFlow>());
             var progress = new TestProgress();
@@ -413,7 +439,7 @@ namespace SenseNet.IO.Tests
             };
 
             // ACTION
-            var reader = RepositoryReaderMock.Create(sourceTree, "/Root", 99999);
+            var reader = RepositoryReaderMock.Create(sourceTree, "/Root", null, 99999);
             var writer = new TestRepositoryWriter(targetTree, targetStates);
             var flow = new SemanticContentFlow(reader, writer, GetLogger<ContentFlow>());
             var progress = new TestProgress();
@@ -442,6 +468,105 @@ namespace SenseNet.IO.Tests
                 "/Root/System/Settings/Settings-2.settings",
                 "/Root/Content/Workspace-1/DocLib-1",
                 "/Root/IMS/BuiltIn/Portal/Group-3",
+            };
+            actual = reader.Queries.ToArray();
+            AssertSequencesAreEqual(expected, actual);
+        }
+
+        /* =========================================================================================== FILTER TESTS */
+
+        [TestMethod]
+        public async Task RepoReader_Query_Preparation()
+        {
+            var sourceTree = CreateTree(new[] {"/Root"});
+
+            // ACTION
+            var filter = "+TypeIs:File .TOP:10 .SORT:Name .SORT:Index +Index:>1 .AUTOFILTERS:ON";
+            var reader = RepositoryReaderMock.Create(sourceTree, "/Root/Content", filter, 5);
+
+            // ASSERT
+            Assert.AreEqual("+TypeIs:File +Index:>1", reader.Filter);
+        }
+
+        [TestMethod]
+        public async Task RepoReader_Query()
+        {
+            var sourceTree = CreateTree(new []
+            {
+                "/Root",
+                "/Root/Content",
+                "/Root/Content/Docs",
+                "/Root/Content/Docs/F1",
+                "/Root/Content/Docs/F1/F2",
+                "/Root/Content/Docs/F1/F2/File-1.txt",
+                "/Root/Content/Docs/F1/F2/File-2.txt",
+                "/Root/Content/Docs/F1/F2/File-3.txt",
+                "/Root/Content/Docs/F1/F2/Folder-5",
+                "/Root/Content/Docs/F1/F3",
+                "/Root/Content/Docs/F1/F3/File-4.txt",
+                "/Root/Content/Docs/F1/F3/File-5.txt",
+                "/Root/Content/Docs/F1/F3/File-6.txt",
+                "/Root/Content/Docs/F1/F3/Folder-6",
+                "/Root/Content/Docs/F1/F4",
+                "/Root/Content/Docs/F1/F4/File-7.txt",
+                "/Root/Content/Docs/F1/F4/File-8.txt",
+                "/Root/Content/Docs/F1/F4/File-9.txt",
+                "/Root/Content/Docs/F1/F4/Folder7",
+                "/Root/Content/Memos",
+                "/Root/Content/Memos/Memo-1",
+                "/Root/Content/Memos/Memo-2",
+                "/Root/Content/Memos/Memo-3",
+                "/Root/Content/Tasks",
+                "/Root/Content/Tasks/Task-1",
+                "/Root/Content/Tasks/Task-2",
+                "/Root/Content/Tasks/Task-3",
+            });
+            var targetTree = CreateTree(new[]
+            {
+                "/Root",
+                "/Root/Content",
+                "/Root/Content/Docs",
+                "/Root/Content/Docs/F1",
+                "/Root/Content/Docs/F1/F2",
+                "/Root/Content/Docs/F1/F3",
+            });
+            var targetStates = new Dictionary<string, WriterState>();
+
+            // ACTION
+            var filter = "+TypeIs:File +InTree:(/Root/Content/Docs/F1/F2 /Root/Content/Docs/F1/F3)";
+            var reader = RepositoryReaderMock.Create(sourceTree, "/Root/Content", filter, 5);
+            var writer = new TestRepositoryWriter(targetTree, targetStates, "/Root");
+            var flow = new SemanticContentFlow(reader, writer, GetLogger<ContentFlow>());
+            var progress = new TestProgress();
+            await flow.TransferAsync(progress);
+
+            // ASSERT
+            var expected = new[]
+            {
+                "/Root",
+                "/Root/Content",
+                "/Root/Content/Docs",
+                "/Root/Content/Docs/F1",
+                "/Root/Content/Docs/F1/F2",
+                "/Root/Content/Docs/F1/F2/File-1.txt",
+                "/Root/Content/Docs/F1/F2/File-2.txt",
+                "/Root/Content/Docs/F1/F2/File-3.txt",
+                "/Root/Content/Docs/F1/F3",
+                "/Root/Content/Docs/F1/F3/File-4.txt",
+                "/Root/Content/Docs/F1/F3/File-5.txt",
+                "/Root/Content/Docs/F1/F3/File-6.txt",
+            };
+
+            var actual = targetTree.Keys
+                .OrderBy(x => x)
+                .ToArray();
+            AssertSequencesAreEqual(expected, actual);
+
+            expected = new[]
+            {
+                "+InTree:'/Root/Content' +(+TypeIs:File +InTree:(/Root/Content/Docs/F1/F2 /Root/Content/Docs/F1/F3)) .SORT:Path .TOP:5 .SKIP:0 .AUTOFILTERS:OFF",
+                "+InTree:'/Root/Content' +(+TypeIs:File +InTree:(/Root/Content/Docs/F1/F2 /Root/Content/Docs/F1/F3)) .SORT:Path .TOP:5 .SKIP:5 .AUTOFILTERS:OFF",
+                "+InTree:'/Root/Content' +(+TypeIs:File +InTree:(/Root/Content/Docs/F1/F2 /Root/Content/Docs/F1/F3)) .SORT:Path .TOP:5 .SKIP:10 .AUTOFILTERS:OFF",
             };
             actual = reader.Queries.ToArray();
             AssertSequencesAreEqual(expected, actual);

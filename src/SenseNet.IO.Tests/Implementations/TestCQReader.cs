@@ -42,10 +42,8 @@ namespace SenseNet.IO.Tests.Implementations
         public Task<bool> ReadAllAsync(string[] contentsWithoutChildren, CancellationToken cancel = default)
         {
             if (contentsWithoutChildren != null && contentsWithoutChildren.Length != 0)
-                //TODO Process "contentsWithoutChildren" parameter
                 throw new NotImplementedException();
 
-            //TODO: Raise performance: read the next block (background)
             if (_currentBlock == null || _currentBlockIndex >= _currentBlock.Length)
             {
                 _currentBlock = QueryBlock(RepositoryRootPath, _blockIndex * _blockSize, _blockSize);

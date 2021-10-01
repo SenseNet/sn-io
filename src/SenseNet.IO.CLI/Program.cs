@@ -38,12 +38,20 @@ namespace SenseNet.IO.CLI
             _displayLevel = app.DisplaySettings.DisplayLevel;
             Console.WriteLine(app.HeadToDisplay());
 
-            await app.RunAsync(ShowProgress);
-
-            await Task.Delay(1000);
-
-            Console.WriteLine();
-            Console.WriteLine("Done.");
+            try
+            {
+                await app.RunAsync(ShowProgress);
+                await Task.Delay(1000);
+                Console.WriteLine();
+                Console.WriteLine("Done.");
+            }
+            catch (Exception e)
+            {
+                using (Color.Error())
+                    Console.Write($" ERROR ");
+                Console.WriteLine();
+                Console.WriteLine(e.GetAllMessages());
+            }
         }
         public static IoApp CreateApp(string[] args, Stream settingsFile = null)
         {
@@ -182,9 +190,11 @@ namespace SenseNet.IO.CLI
         {
             {"FsReader", @"    [-PATH] <Fully qualified path of the filesystem entry to read.>"},
             {"FsWriter", @"    [-PATH] <Fully qualified path of a target filesystem directory.>
-    [-NAME] [Name of the target tree root if it is different from the source name.]"},
+    [-NAME] [Name of the target tree root if it is different from the source name.]
+    [-FLATTEN] Boolean switch. If exists, all content will be written into the target directory without any folder structure."},
             {"RepositoryReader", @"    [-URL] <Url of the source sensenet repository e.g. 'https://example.sensenet.cloud'.>
     [-PATH] [Repository path of the root content of the tree to transfer. Default: '/Root'.]
+    [-FILTER] [Filter in Content Query Language e.g. ""+TypeIs:File +ModificationDate:>@@Today-2@@""]
     [-BLOCKSIZE] [Count of items in one request. Default: 10.]"},
             {"RepositoryWriter", @"    [-URL] <Url of the target sensenet repository e.g. 'https://example.sensenet.cloud'.>
     [-PATH] [Repository path of the target container. Default: '/'.]

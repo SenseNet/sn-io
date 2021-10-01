@@ -35,6 +35,8 @@ namespace SenseNet.IO.CLI
                 settings.Path = args.Path;
             if (args.Name != null)
                 settings.Name = args.Name;
+            if (args.Flatten != null)
+                settings.Flatten = args.Flatten;
         }
         public static void RewriteSettings(this RepositoryReaderArgs args, RepositoryReaderArgs settings)
         {
@@ -43,6 +45,8 @@ namespace SenseNet.IO.CLI
                 settings.Url = null;
             if (string.IsNullOrEmpty(settings.Path))
                 settings.Path = null;
+            if (string.IsNullOrEmpty(settings.Filter))
+                settings.Filter = null;
             if (settings.BlockSize < 1)
                 settings.BlockSize = null;
 
@@ -51,6 +55,8 @@ namespace SenseNet.IO.CLI
                 settings.Url = args.Url;
             if (args.Path != null)
                 settings.Path = args.Path;
+            if (args.Filter != null)
+                settings.Filter = args.Filter;
             if (args.BlockSize != null)
                 settings.BlockSize = args.BlockSize;
         }
@@ -96,11 +102,16 @@ namespace SenseNet.IO.CLI
         }
         public static string ParamsToDisplay(this FsWriterArgs args)
         {
-            return string.IsNullOrEmpty(args.Name) ? $"Path: {args.Path}" : $"Path: {args.Path}, Name: {args.Name}";
+            var result = string.IsNullOrEmpty(args.Name) ? $"Path: {args.Path}" : $"Path: {args.Path}, Name: {args.Name}";
+            if (args.Flatten == true)
+                result += ", Flatten";
+            return result;
         }
         public static string ParamsToDisplay(this RepositoryReaderArgs args)
         {
-            return $"Url: {args.Url}, Path: {args.Path}, BlockSize: {args.BlockSize}";
+            if(args.Filter == null)
+                return $"Url: {args.Url}, Path: {args.Path}, BlockSize: {args.BlockSize}";
+            return $"Url: {args.Url}, Path: {args.Path}, Filter: {args.Filter}, BlockSize: {args.BlockSize}";
         }
         public static string ParamsToDisplay(this RepositoryWriterArgs args)
         {
