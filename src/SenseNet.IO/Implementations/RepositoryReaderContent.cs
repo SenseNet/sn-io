@@ -111,12 +111,16 @@ namespace SenseNet.IO.Implementations
         public async Task<Stream> GetStream(string url)
         {
             var absoluteUrl = _server.Url + url;
-            Stream result = null;
+            MemoryStream result = null;
             try
             {
-                await RESTCaller.ProcessWebResponseAsync(absoluteUrl, HttpMethod.Get, _server, async response =>
+                //TODO: return a stream that can handle huge files by downloading segments
+                // later, instead of storing the whole file in memory.
+                await RESTCaller.ProcessWebResponseAsync(absoluteUrl, HttpMethod.Get, _server, response =>
                 {
-                    result = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
+                    result = new MemoryStream();
+                    response.Content.ReadAsStream().CopyTo(result);
+                    result.Seek(0, SeekOrigin.Begin);
                 }, CancellationToken.None);
             }
             catch (Exception e)
