@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Options;
@@ -106,18 +107,23 @@ namespace SenseNet.IO.Implementations
                 _treeStates.Add(relativePath, treeState);
             }
 
-            //TODO: Raise performance: read the next block (background)
-            if (treeState.CurrentBlock == null || treeState.CurrentBlockIndex >= treeState.CurrentBlock.Length)
+            do
             {
-                treeState.CurrentBlock = await QueryBlockAsync(treeState.AbsolutePath, Array.Empty<string>(), treeState.BlockIndex * _blockSize, _blockSize);
-                treeState.BlockIndex++;
-                treeState.CurrentBlockIndex = 0;
-                if (treeState.CurrentBlock == null || treeState.CurrentBlock.Length == 0)
-                    return false;
-            }
+                //TODO: Raise performance: read the next block (background)
+                if (treeState.CurrentBlock == null || treeState.CurrentBlockIndex >= treeState.CurrentBlock.Length)
+                {
+                    treeState.CurrentBlock = await QueryBlockAsync(treeState.AbsolutePath, Array.Empty<string>(),
+                        treeState.BlockIndex * _blockSize, _blockSize);
+                    treeState.BlockIndex++;
+                    treeState.CurrentBlockIndex = 0;
+                    if (treeState.CurrentBlock == null || treeState.CurrentBlock.Length == 0)
+                        return false;
+                }
 
-            Content = treeState.CurrentBlock[treeState.CurrentBlockIndex++];
-            RelativePath = ContentPath.GetRelativePath(Content.Path, RepositoryRootPath);
+                Content = treeState.CurrentBlock[treeState.CurrentBlockIndex++];
+                RelativePath = ContentPath.GetRelativePath(Content.Path, RepositoryRootPath);
+            } while (SkipContent(Content));
+
             return true;
         }
 
@@ -127,19 +133,45 @@ namespace SenseNet.IO.Implementations
         {
             await InitializeAsync();
 
-            //TODO: Raise performance: read the next block (background)
-            if (_currentBlock == null || _currentBlockIndex >= _currentBlock.Length)
+            do
             {
-                _currentBlock = await QueryBlockAsync(RepositoryRootPath, contentsWithoutChildren, _blockIndex * _blockSize, _blockSize);
-                _blockIndex++;
-                _currentBlockIndex = 0;
-                if (_currentBlock == null || _currentBlock.Length == 0)
-                    return false;
-            }
+                //TODO: Raise performance: read the next block (background)
+                if (_currentBlock == null || _currentBlockIndex >= _currentBlock.Length)
+                {
+                    _currentBlock = await QueryBlockAsync(RepositoryRootPath, contentsWithoutChildren,
+                        _blockIndex * _blockSize, _blockSize);
+                    _blockIndex++;
+                    _currentBlockIndex = 0;
+                    if (_currentBlock == null || _currentBlock.Length == 0)
+                        return false;
+                }
 
-            Content = _currentBlock[_currentBlockIndex++];
-            RelativePath = ContentPath.GetRelativePath(Content.Path, RepositoryRootPath);
+                Content = _currentBlock[_currentBlockIndex++];
+                RelativePath = ContentPath.GetRelativePath(Content.Path, RepositoryRootPath);
+            } while (SkipContent(Content));
+
             return true;
+        }
+
+        private readonly Regex _previewFolderRegex = new("[vV]\\d+\\.\\d+\\.[aAdDpPlLrR]", RegexOptions.Compiled);
+
+        private bool SkipContent(IContent content)
+        {
+            //TODO: find a better algorithm for marking contents to skip.
+            // Currently we skip preview folders based on their names. A better solution 
+            // would be to move this flag to the server and make it available in a search query
+            // (a field or a new container type).
+            if (content.Type != "SystemFolder")
+                return false;
+            if (content.Name == "Previews")
+                return true;
+
+            // check if this is a version folder under Previews
+            var parentPath = RepositoryPath.GetParentPath(content.Path);
+            if (parentPath.EndsWith("/Previews") && _previewFolderRegex.IsMatch(content.Name))
+                return true;
+
+            return false;
         }
 
         private IEnumerator<TransferTask> _referenceUpdateTasksEnumerator;
