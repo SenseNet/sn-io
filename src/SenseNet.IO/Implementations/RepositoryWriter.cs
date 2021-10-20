@@ -21,6 +21,7 @@ namespace SenseNet.IO.Implementations
         public string Path { get; set; }
         public string Name { get; set; }
         public RepositoryAuthenticationOptions Authentication { get; set; } = new RepositoryAuthenticationOptions();
+        public int UploadChunkSize { get; set; }
     }
 
     public class RepositoryWriter : ISnRepositoryWriter
@@ -45,6 +46,9 @@ namespace SenseNet.IO.Implementations
             RootName = Args.Name;
             _tokenStore = tokenStore;
             _logger = logger;
+
+            if (Args.UploadChunkSize > 0)
+                ClientContext.Current.ChunkSizeInBytes = Args.UploadChunkSize;
 
             Initialize();
         }
