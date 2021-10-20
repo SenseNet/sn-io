@@ -1,13 +1,17 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using SenseNet.Client;
 using SenseNet.Client.Authentication;
+using SenseNet.Tools;
 
 namespace SenseNet.IO.Implementations
 {
@@ -23,13 +27,14 @@ namespace SenseNet.IO.Implementations
     {
         private readonly ITokenStore _tokenStore;
         private ServerContext _server;
+        private readonly ILogger _logger;
 
         public RepositoryWriterArgs Args { get; }
         public string Url { get; }
         public string ContainerPath { get; }
         public string RootName { get; }
 
-        public RepositoryWriter(ITokenStore tokenStore, IOptions<RepositoryWriterArgs> args)
+        public RepositoryWriter(ITokenStore tokenStore, IOptions<RepositoryWriterArgs> args, ILogger<RepositoryWriter> logger)
         {
             if (args == null)
                 throw new ArgumentNullException(nameof(args));
@@ -39,6 +44,7 @@ namespace SenseNet.IO.Implementations
             ContainerPath = Args.Path ?? "/";
             RootName = Args.Name;
             _tokenStore = tokenStore;
+            _logger = logger;
 
             Initialize();
         }
@@ -186,11 +192,25 @@ namespace SenseNet.IO.Implementations
             string resultString = null;
             try
             {
-                resultString = await RESTCaller.GetResponseStringAsync(
-                    new ODataRequest(_server) { IsCollectionRequest = false, Path = "/Root", ActionName = "Import" }, HttpMethod.Post, body, _server);
+                await Retrier.RetryAsync(10, 1000, async () =>
+                {
+                    resultString = await RESTCaller.GetResponseStringAsync(
+                        new ODataRequest(_server) { IsCollectionRequest = false, Path = "/Root", ActionName = "Import" }, HttpMethod.Post, body, _server);
+                }, (i, exception) =>
+                {
+                    return exception switch
+                    {
+                        null => true,
+                        ClientException { StatusCode: HttpStatusCode.TooManyRequests } => false,
+                        _ => throw exception
+                    };
+                });
+                
             }
             catch (Exception e)
             {
+                _logger.LogError(e, $"Error during importing {repositoryPath}");
+
                 return new WriterState
                 {
                     WriterPath = repositoryPath,
@@ -203,8 +223,31 @@ namespace SenseNet.IO.Implementations
             var parentPath = ContentPath.GetParentPath(repositoryPath);
             foreach (var attachment in attachments.Where(a => a.Stream != null))
             {
-                using (var stream = attachment.Stream)
-                    uploaded = await Content.UploadAsync(parentPath, content.Name, stream, propertyName: attachment.FieldName, server: _server);
+                
+                try
+                {
+                    await using var stream = attachment.Stream;
+                    await Retrier.RetryAsync(10, 1000, async () =>
+                        {
+                            stream?.Seek(0, SeekOrigin.Begin);
+                            uploaded = await Content.UploadAsync(parentPath, content.Name, stream,
+                                propertyName: attachment.FieldName, server: _server);
+                        },
+                        (i, ex) =>
+                        {
+                            return ex switch
+                            {
+                                null => true,
+                                ClientException { StatusCode: HttpStatusCode.TooManyRequests } => false,
+                                _ => throw ex
+                            };
+                        });
+                }
+                catch (ClientException ex)
+                {
+                    _logger.LogWarning(ex, $"Error during {attachment.FieldName} attachment upload for {repositoryPath}: " +
+                                           $"{ex.Message}. {ex.ErrorData?.ErrorCode} {ex.StatusCode}");
+                }
             }
 
             // Process result
