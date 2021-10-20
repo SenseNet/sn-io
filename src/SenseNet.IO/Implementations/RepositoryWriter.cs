@@ -249,8 +249,15 @@ namespace SenseNet.IO.Implementations
                 }
                 catch (ClientException ex)
                 {
-                    _logger.LogWarning(ex, $"Error during {attachment.FieldName} attachment upload for {repositoryPath}: " +
+                    _logger.LogError(ex, $"Error during {attachment.FieldName} attachment upload for {repositoryPath}: " +
                                            $"{ex.Message}. {ex.ErrorData?.ErrorCode} {ex.StatusCode}");
+
+                    return new WriterState
+                    {
+                        WriterPath = repositoryPath,
+                        Action = WriterAction.Failed,
+                        Messages = new[] { ex.Message }
+                    };
                 }
             }
 
