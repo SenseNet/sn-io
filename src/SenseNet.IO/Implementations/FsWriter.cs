@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 
@@ -23,7 +24,9 @@ namespace SenseNet.IO.Implementations
         public string RootName { get; }
         public bool Flatten { get; }
 
-        public FsWriter(IOptions<FsWriterArgs> args)
+        private readonly ILogger _logger;
+
+        public FsWriter(IOptions<FsWriterArgs> args, ILogger<FsWriter> logger)
         {
             if (args == null)
                 throw new ArgumentNullException(nameof(args));
@@ -32,6 +35,8 @@ namespace SenseNet.IO.Implementations
             OutputDirectory = Args.Path ?? throw new ArgumentException("FsWriter: Invalid target container path.");
             RootName = Args.Name;
             Flatten = Args.Flatten == true;
+
+            _logger = logger;
         }
 
         public async Task<WriterState> WriteAsync(string path, IContent content, CancellationToken cancel = default)
@@ -53,8 +58,23 @@ namespace SenseNet.IO.Implementations
             var src = ToJson(content);
             using (var writer = CreateTextWriter(contentPath, false))
                 await writer.WriteAsync(src);
+            
+            try
+            {
+                await WriteAttachmentsAsync(fileDir, content, cancel);
+            }
+            catch (Exception ex)
+            {
+                //TODO: what can be done in case of an attachment error?
+                // Should we delete the content file? Maybe only if it did not exist before?
+                _logger.LogError(ex, $"Error during writing attachments of {contentPath}.");
 
-            await WriteAttachmentsAsync(fileDir, content, cancel);
+                return new WriterState
+                {
+                    WriterPath = contentPath,
+                    Action = WriterAction.Failed,
+                };
+            }
 
             return new WriterState
             {
@@ -89,7 +109,22 @@ namespace SenseNet.IO.Implementations
             using (var writer = CreateTextWriter(contentPath, false))
                 await writer.WriteAsync(src);
 
-            await WriteAttachmentsAsync(OutputDirectory, content, cancel);
+            try
+            {
+                await WriteAttachmentsAsync(OutputDirectory, content, cancel);
+            }
+            catch (Exception ex)
+            {
+                //TODO: what can be done in case of an attachment error?
+                // Should we delete the content file? Maybe only if it did not exist before?
+                _logger.LogError(ex, $"Error during writing attachments of {contentPath}.");
+
+                return new WriterState
+                {
+                    WriterPath = contentPath,
+                    Action = WriterAction.Failed,
+                };
+            }
 
             return new WriterState
             {

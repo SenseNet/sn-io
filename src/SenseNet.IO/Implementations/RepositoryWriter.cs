@@ -59,7 +59,8 @@ namespace SenseNet.IO.Implementations
             {
                 Url = Url,
                 Username = "builtin\\admin",
-                Password = "admin"
+                Password = "admin",
+                Logger = _logger
             };
 
             // this will take precedence over the username and password
@@ -70,7 +71,6 @@ namespace SenseNet.IO.Implementations
                     .GetAwaiter().GetResult();
             }
 
-            //ClientContext.Current.AddServer(server);
             _server = server;
         }
 
@@ -205,7 +205,9 @@ namespace SenseNet.IO.Implementations
                     return exception switch
                     {
                         null => true,
-                        ClientException { StatusCode: HttpStatusCode.TooManyRequests } => false,
+                        ClientException { StatusCode: HttpStatusCode.TooManyRequests } when i > 1 => false,
+                        ClientException { InnerException: HttpRequestException rex } when i > 1 &&
+                            rex.Message.Contains("The SSL connection could not be established") => false,
                         _ => throw exception
                     };
                 });
@@ -237,13 +239,15 @@ namespace SenseNet.IO.Implementations
                             uploaded = await Content.UploadAsync(parentPath, content.Name, stream,
                                 propertyName: attachment.FieldName, server: _server);
                         },
-                        (i, ex) =>
+                        (i, exception) =>
                         {
-                            return ex switch
+                            return exception switch
                             {
                                 null => true,
-                                ClientException { StatusCode: HttpStatusCode.TooManyRequests } => false,
-                                _ => throw ex
+                                ClientException { StatusCode: HttpStatusCode.TooManyRequests } when i > 1 => false,
+                                ClientException { InnerException: HttpRequestException rex } when i > 1 &&
+                                    rex.Message.Contains("The SSL connection could not be established") => false,
+                                _ => throw exception
                             };
                         });
                 }

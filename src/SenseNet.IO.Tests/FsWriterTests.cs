@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SenseNet.IO.Implementations;
@@ -24,7 +25,8 @@ namespace SenseNet.IO.Tests
                 Action<string> createDirectory,
                 Func<string, bool, TextWriter> createTextWriter,
                 Func<string, FileMode, Stream> createBinaryStream) : base(Options.Create(
-                new FsWriterArgs { Path = outputDirectory, Name = rootName, Flatten = flatten}))
+                new FsWriterArgs { Path = outputDirectory, Name = rootName, Flatten = flatten}), 
+                NullLoggerFactory.Instance.CreateLogger<FsWriter>())
             {
                 _isDirectoryExists = isDirectoryExists;
                 _isFileExists = isFileExists;
