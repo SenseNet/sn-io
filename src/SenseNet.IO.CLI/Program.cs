@@ -57,6 +57,9 @@ namespace SenseNet.IO.CLI
         {
             var host = CreateHost(args, settingsFile);
             var app = ActivatorUtilities.CreateInstance<IoApp>(host.Services);
+
+            app.InitializeAsync().GetAwaiter().GetResult();
+
             return app;
         }
         private static IHost CreateHost(string[] args, Stream settingsFile = null)

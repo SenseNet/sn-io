@@ -1,13 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using SenseNet.IO.Implementations;
 
 namespace SenseNet.IO
 {
@@ -24,6 +22,12 @@ namespace SenseNet.IO
             Reader = reader;
             _writer = writer;
             _logger = logger;
+        }
+
+        public virtual async Task InitializeAsync()
+        {
+            await Reader.InitializeAsync().ConfigureAwait(false);
+            await _writer.InitializeAsync().ConfigureAwait(false);
         }
 
         public abstract Task TransferAsync(IProgress<TransferState> progress, CancellationToken cancel = default);

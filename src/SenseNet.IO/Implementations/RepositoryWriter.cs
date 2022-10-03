@@ -22,6 +22,22 @@ namespace SenseNet.IO.Implementations
         public string Name { get; set; }
         public RepositoryAuthenticationOptions Authentication { get; set; } = new RepositoryAuthenticationOptions();
         public int UploadChunkSize { get; set; }
+
+        internal RepositoryWriterArgs Clone()
+        {
+            return new RepositoryWriterArgs
+            {
+                Url = Url,
+                Path = Path,
+                Name = Name,
+                UploadChunkSize = UploadChunkSize,
+                Authentication = new RepositoryAuthenticationOptions
+                {
+                    ClientId = Authentication?.ClientId,
+                    ClientSecret = Authentication?.ClientSecret
+                }
+            };
+        }
     }
 
     public class RepositoryWriter : ISnRepositoryWriter
@@ -31,30 +47,35 @@ namespace SenseNet.IO.Implementations
         private readonly ILogger _logger;
 
         public RepositoryWriterArgs Args { get; }
-        public string Url { get; }
-        public string ContainerPath { get; }
-        public string RootName { get; }
+        public string Url => Args.Url;
+        public string ContainerPath => Args.Path ?? "/";
+        public string RootName => Args.Name;
+
+        public RepositoryWriterArgs WriterOptions => Args;
 
         public RepositoryWriter(ITokenStore tokenStore, IOptions<RepositoryWriterArgs> args, ILogger<RepositoryWriter> logger)
         {
-            if (args == null)
+            if (args?.Value == null)
                 throw new ArgumentNullException(nameof(args));
-            Args = args.Value;
-
-            Url = Args.Url ?? throw new ArgumentException("RepositoryWriter: Invalid URL.");
-            ContainerPath = Args.Path ?? "/";
-            RootName = Args.Name;
+            Args = args.Value.Clone();
+            
             _tokenStore = tokenStore;
             _logger = logger;
+        }
+
+        private bool _initialized;
+        public virtual async Task InitializeAsync()
+        {
+            if (_initialized)
+                return;
+            _initialized = true;
+
+            if (string.IsNullOrEmpty(Url))
+                throw new ArgumentException("RepositoryWriter: empty URL.");
 
             if (Args.UploadChunkSize > 0)
                 ClientContext.Current.ChunkSizeInBytes = Args.UploadChunkSize;
 
-            Initialize();
-        }
-
-        private void Initialize()
-        {
             var server = new ServerContext
             {
                 Url = Url,
@@ -66,9 +87,9 @@ namespace SenseNet.IO.Implementations
             // this will take precedence over the username and password
             if (!string.IsNullOrEmpty(Args.Authentication.ClientId))
             {
-                server.Authentication.AccessToken = _tokenStore
+                server.Authentication.AccessToken = await _tokenStore
                     .GetTokenAsync(server, Args.Authentication.ClientId, Args.Authentication.ClientSecret)
-                    .GetAwaiter().GetResult();
+                    .ConfigureAwait(false);
             }
 
             _server = server;
@@ -76,6 +97,8 @@ namespace SenseNet.IO.Implementations
 
         public virtual async Task<WriterState> WriteAsync(string path, IContent content, CancellationToken cancel = default)
         {
+            await InitializeAsync();
+
             var repositoryPath = ContentPath.Combine(ContainerPath, path);
             if (content.Type == "ContentType")
                 return await WriteContentTypeAsync(repositoryPath, content, cancel);

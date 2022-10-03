@@ -32,6 +32,11 @@ namespace SenseNet.IO.Tests.Implementations
             _tree = tree;
         }
 
+        public Task InitializeAsync()
+        {
+            return Task.CompletedTask;
+        }
+
         public Task<bool> ReadSubTreeAsync(string relativePath, CancellationToken cancel = default)
         {
             throw new System.NotImplementedException();

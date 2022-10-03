@@ -1,13 +1,25 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Tasks;
+using SenseNet.IO.Implementations;
 
 namespace SenseNet.IO
 {
     /// <summary>
+    /// Defines members of a filesystem writer.
+    /// </summary>
+    public interface IFilesystemWriter : IContentWriter
+    {
+        /// <summary>
+        /// Filesystem writer options.
+        /// </summary>
+        FsWriterArgs WriterOptions { get; }
+    }
+
+    /// <summary>
     /// Defines an interface for writing items to any content store.
     /// </summary>
-    public interface IContentWriter
+    public interface IContentWriter : ISnInitializable
     {
         /// <summary>
         /// Gets the absolute path of the target container. Cannot be null.

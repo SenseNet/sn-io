@@ -14,37 +14,55 @@ namespace SenseNet.IO.Implementations
         public string Path { get; set; }
         public string Name { get; set; }
         public bool? Flatten { get; set; }
+
+        internal FsWriterArgs Clone()
+        {
+            return new FsWriterArgs
+            {
+                Path = Path,
+                Name = Name,
+                Flatten = Flatten
+            };
+        }
     }
 
-    public class FsWriter : IContentWriter
+    public class FsWriter : IFilesystemWriter
     {
         public FsWriterArgs Args { get; }
-        public string OutputDirectory { get; }
+        public string OutputDirectory => Args.Path;
         public string ContainerPath => "/";
-        public string RootName { get; }
-        public bool Flatten { get; }
+        public string RootName => Args.Name;
+        public bool Flatten => Args.Flatten == true;
+
+        public FsWriterArgs WriterOptions => Args;
 
         private readonly ILogger _logger;
 
         public FsWriter(IOptions<FsWriterArgs> args, ILogger<FsWriter> logger)
         {
-            if (args == null)
+            if (args?.Value == null)
                 throw new ArgumentNullException(nameof(args));
-            Args = args.Value;
-
-            OutputDirectory = Args.Path ?? throw new ArgumentException("FsWriter: Invalid target container path.");
-            RootName = Args.Name;
-            Flatten = Args.Flatten == true;
-
+            Args = args.Value.Clone();
+            
             _logger = logger;
+        }
+
+        public virtual Task InitializeAsync()
+        {
+            if (OutputDirectory == null)
+                throw new ArgumentException("FsWriter: Invalid target container path.");
+
+            return Task.CompletedTask;
         }
 
         public async Task<WriterState> WriteAsync(string path, IContent content, CancellationToken cancel = default)
         {
+            if (OutputDirectory == null)
+                throw new ArgumentException("FsWriter: Invalid target container path.");
+
             if (Flatten)
                 return await WriteFlattenedAsync(path, content, cancel);
 
-            //var name = content.Name;
             var containerPath = (ContainerPath ?? "").TrimStart('/');
             var contentPath = Path.Combine(OutputDirectory, containerPath, path) + ".Content";
             var fileDir = Path.GetDirectoryName(contentPath);

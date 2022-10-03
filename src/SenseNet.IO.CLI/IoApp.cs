@@ -24,10 +24,17 @@ namespace SenseNet.IO.CLI
             DisplaySettings = displaySettings.Value;
         }
 
-        public async Task RunAsync(Action<TransferState> progressCallback)
+        public Task InitializeAsync()
+        {
+            return _contentFlow != null ? _contentFlow.InitializeAsync() : Task.CompletedTask;
+        }
+
+       public async Task RunAsync(Action<TransferState> progressCallback)
         {
             _logger.LogTrace("================================================== SnIO transfer session");
             _logger.LogInformation(this.HeadToLog());
+
+            await _contentFlow.InitializeAsync().ConfigureAwait(false);
 
             var progress = new Progress<TransferState>(progressCallback);
             try

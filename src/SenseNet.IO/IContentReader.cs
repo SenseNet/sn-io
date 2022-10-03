@@ -2,13 +2,36 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Tasks;
+using SenseNet.IO.Implementations;
 
 namespace SenseNet.IO
 {
     /// <summary>
+    /// Defines members of a filesystem reader.
+    /// </summary>
+    public interface IFilesystemReader : IContentReader
+    {
+        /// <summary>
+        /// Filesystem reader options.
+        /// </summary>
+        FsReaderArgs ReaderOptions { get; }
+    }
+
+    /// <summary>
+    /// Defines members of a repository reader.
+    /// </summary>
+    public interface ISnRepositoryReader : IContentReader
+    {
+        /// <summary>
+        /// Repository reader options.
+        /// </summary>
+        RepositoryReaderArgs ReaderOptions { get; }
+    }
+
+    /// <summary>
     /// Defines an interface for reading items from any content store.
     /// </summary>
-    public interface IContentReader
+    public interface IContentReader : ISnInitializable
     {
         /// <summary>
         /// Gets the name of the copied subtree. Cannot be null.
