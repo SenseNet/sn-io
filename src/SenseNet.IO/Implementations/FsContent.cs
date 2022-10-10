@@ -189,7 +189,8 @@ namespace SenseNet.IO.Implementations
         }
         protected virtual Stream CreateFileStream(string fsPath, FileMode fileMode)
         {
-            return new FileStream(fsPath, fileMode);
+            // Open the file while allowing others to read it too. 
+            return new FileStream(fsPath, fileMode, FileAccess.Read);
         }
     }
 }
