@@ -4,25 +4,25 @@ using System.Threading.Tasks;
 
 namespace SenseNet.IO
 {
-    internal interface IImportContentFlow : IContentFlow
+    public interface IImportContentFlow : IContentFlow
     {
         new IFilesystemReader Reader { get; }
         new ISnRepositoryWriter Writer { get; }
     }
 
-    internal interface IExportContentFlow : IContentFlow
+    public interface IExportContentFlow : IContentFlow
     {
         new ISnRepositoryReader Reader { get; }
         new IFilesystemWriter Writer { get; }
     }
 
-    internal interface ICopyContentFlow : IContentFlow
+    public interface ICopyContentFlow : IContentFlow
     {
         new IFilesystemReader Reader { get; }
         new IFilesystemWriter Writer { get; }
     }
 
-    internal interface ISynchronizeContentFlow : IContentFlow
+    public interface ISynchronizeContentFlow : IContentFlow
     {
         new ISnRepositoryReader Reader { get; }
         new ISnRepositoryWriter Writer { get; }
