@@ -7,11 +7,8 @@ using Microsoft.Extensions.Logging;
 
 namespace SenseNet.IO.Implementations
 {
-    internal class SemanticContentFlow : ContentFlow, IContentFlow
+    internal class SemanticContentFlow : ContentFlow
     {
-        IContentWriter IContentFlow.Writer => Writer;
-        public override ISnRepositoryWriter Writer => (ISnRepositoryWriter)_writer;
-
         public SemanticContentFlow(IContentReader reader, IContentWriter writer, ILogger<ContentFlow> logger)
             : base(reader, writer, logger)
         {
@@ -20,7 +17,7 @@ namespace SenseNet.IO.Implementations
             if (writer == null)
                 throw new ArgumentNullException(nameof(writer));
 
-            if (!(writer is ISnRepositoryWriter))
+            if (writer is not ISnRepositoryWriter)
                 throw new ArgumentException($"Type mismatch: the writer is {writer.GetType().FullName} but should be ISnRepositoryWriter");
         }
 
@@ -31,6 +28,8 @@ namespace SenseNet.IO.Implementations
         private string _rootName;
         public override async Task TransferAsync(IProgress<TransferState> progress, CancellationToken cancel = default)
         {
+            await InitializeAsync().ConfigureAwait(false);
+
             var timer = Stopwatch.StartNew();
 
             _rootName = Writer.RootName ?? Reader.RootName;

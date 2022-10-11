@@ -22,70 +22,102 @@ namespace SenseNet.IO.Implementations
         public int? BlockSize { get; set; }
         public string Filter { get; set; }
         public RepositoryAuthenticationOptions Authentication { get; set; } = new RepositoryAuthenticationOptions();
+
+        internal RepositoryReaderArgs Clone()
+        {
+            return new RepositoryReaderArgs
+            {
+                Url = Url,
+                Path = Path,
+                BlockSize = BlockSize,
+                Filter = Filter,
+                Authentication = new RepositoryAuthenticationOptions
+                {
+                    ClientId = Authentication?.ClientId,
+                    ClientSecret = Authentication?.ClientSecret
+                }
+            };
+        }
     }
 
     /// <summary>
     /// Reads a subtree of a sensenet repository order by path.
     /// </summary>
-    public class RepositoryReader : IContentReader
+    public class RepositoryReader : ISnRepositoryReader
     {
         public RepositoryReaderArgs Args { get; }
-        private readonly int _blockSize;
+        private int _blockSize;
         private int _blockIndex;
         private readonly ITokenStore _tokenStore;
         private ServerContext _server;
 
-        public string Url { get; }
-        public string RootName { get; }
-        public string RepositoryRootPath { get; }
-        public string Filter { get; }
+        public string Url => Args.Url;
+        public string RootName => ContentPath.GetName(Args.Path);
+        public string RepositoryRootPath => Args.Path;
+        public string Filter { get; private set; }
         public int EstimatedCount { get; private set; }
         public IContent Content { get; private set; }
         public string RelativePath { get; private set; }
 
+        public RepositoryReaderArgs ReaderOptions => Args;
+
         public RepositoryReader(ITokenStore tokenStore, IOptions<RepositoryReaderArgs> args)
         {
-            if (args == null)
+            if (args?.Value == null)
                 throw new ArgumentNullException(nameof(args));
-            Args = args.Value;
+            Args = args.Value.Clone();
 
             Args.Path ??= "/Root";
             Args.BlockSize ??= 10;
 
-            Url = Args.Url ?? throw new ArgumentException("RepositoryReader: Invalid URL.");
-            RepositoryRootPath = Args.Path;
-            RootName = ContentPath.GetName(Args.Path);
-            Filter = InitializeFilter(args.Value.Filter);
             _blockSize = Args.BlockSize.Value;
             _tokenStore = tokenStore;
         }
 
-        private async Task InitializeAsync()
+        public virtual Task InitializeAsync()
         {
             if (Content == null)
             {
-                var server = new ServerContext
-                {
-                    Url = Url,
-                    Username = "builtin\\admin",
-                    Password = "admin"
-                };
+                //initialize properties from configured options
+                if (Url == null)
+                    throw new ArgumentException("RepositoryReader: empty URL.");
 
-                // this will take precedence over the username and password
-                if (!string.IsNullOrEmpty(Args.Authentication.ClientId))
-                {
-                    server.Authentication.AccessToken = await _tokenStore
-                        .GetTokenAsync(server, Args.Authentication.ClientId, Args.Authentication.ClientSecret);
-                }
-
-                //ClientContext.Current.AddServer(server);
-                _server = server;
-
-                // Get tree size before first read
-                EstimatedCount = await GetCountAsync();
+                Filter = InitializeFilter(Args.Filter);
+                _blockSize = Args.BlockSize ??= 10;
             }
+
+            return Task.CompletedTask;
         }
 
+        private bool _initializedInternal;
+        private async Task InitializeInternalAsync()
+        {
+            if (_initializedInternal)
+                return;
+
+            _initializedInternal = true;
+
+            await InitializeAsync().ConfigureAwait(false);
+
+            var server = new ServerContext
+            {
+                Url = Url,
+                Username = "builtin\\admin",
+                Password = "admin"
+            };
+
+            // this will take precedence over the username and password
+            if (!string.IsNullOrEmpty(Args.Authentication.ClientId))
+            {
+                server.Authentication.AccessToken = await _tokenStore
+                    .GetTokenAsync(server, Args.Authentication.ClientId, Args.Authentication.ClientSecret);
+            }
+
+            _server = server;
+
+            // Get tree size before first read
+            EstimatedCount = await GetCountAsync();
+        }
         private class TreeState
         {
             public string AbsolutePath;
@@ -96,7 +128,7 @@ namespace SenseNet.IO.Implementations
         private Dictionary<string, TreeState> _treeStates = new();
         public async Task<bool> ReadSubTreeAsync(string relativePath, CancellationToken cancel = default)
         {
-            await InitializeAsync();
+            await InitializeInternalAsync();
 
             if (!_treeStates.TryGetValue(relativePath, out var treeState))
             {
@@ -131,7 +163,7 @@ namespace SenseNet.IO.Implementations
         private int _currentBlockIndex;
         public async Task<bool> ReadAllAsync(string[] contentsWithoutChildren, CancellationToken cancel = default)
         {
-            await InitializeAsync();
+            await InitializeInternalAsync();
 
             do
             {

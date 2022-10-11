@@ -20,6 +20,11 @@ namespace SenseNet.IO.Tests.Implementations
         public string ContainerPath { get; }
         public string RootName { get; }
 
+        public Task InitializeAsync()
+        {
+            return Task.CompletedTask;
+        }
+
 
         public Task<WriterState> WriteAsync(string path, IContent content, CancellationToken cancel = default)
         {

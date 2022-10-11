@@ -484,6 +484,8 @@ namespace SenseNet.IO.Tests
             var filter = "+TypeIs:File .TOP:10 .SORT:Name .SORT:Index +Index:>1 .AUTOFILTERS:ON";
             var reader = RepositoryReaderMock.Create(sourceTree, "/Root/Content", filter, 5);
 
+            await reader.InitializeAsync();
+
             // ASSERT
             Assert.AreEqual("+TypeIs:File +Index:>1", reader.Filter);
         }

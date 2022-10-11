@@ -11,44 +11,57 @@ namespace SenseNet.IO.Implementations
     public class FsReaderArgs
     {
         public string Path { get; set; }
+
+        internal FsReaderArgs Clone()
+        {
+            return new FsReaderArgs
+            {
+                Path = Path
+            };
+        }
     }
 
-    public class FsReader : IContentReader
+    public class FsReader : IFilesystemReader
     {
         public FsReaderArgs Args { get; }
         private FsContent _content; // Current IContent
-        public string ReaderRootPath { get; }
+        public string ReaderRootPath => Args.Path;
 
-        public string RootName { get; }
+        public string RootName => ContentPath.GetName(Args.Path);
         public int EstimatedCount { get; private set; }
         public IContent Content => _content;
         public string RelativePath => _content?.Path;
 
+        public FsReaderArgs ReaderOptions => Args;
+
         public FsReader(IOptions<FsReaderArgs> args)
         {
-            if (args == null)
+            if (args?.Value == null)
                 throw new ArgumentNullException(nameof(args));
-            Args = args.Value;
-            ReaderRootPath = Args.Path ?? throw new ArgumentException("FsReader: Invalid root path.");
-            RootName = ContentPath.GetName(Args.Path);
+            Args = args.Value.Clone();
         }
 
         private bool _initialized;
-        private void Initialize()
+        public virtual Task InitializeAsync()
         {
             if (_initialized)
-                return;
+                return Task.CompletedTask;
             _initialized = true;
+
+            if (ReaderRootPath == null)
+                throw new ArgumentException("FsReader: empty root path.");
 
             EstimatedCount = IsDirectoryExists(ReaderRootPath) || IsFileExists(ReaderRootPath) || IsFileExists(ReaderRootPath + ".Content") ? 1 : 0;
             Task.Run(() => GetContentCount(ReaderRootPath));
+
+            return Task.CompletedTask;
         }
 
         private TreeState _mainState;
         private readonly Dictionary<string, TreeState> _treeStates = new Dictionary<string, TreeState>();
-        public Task<bool> ReadSubTreeAsync(string relativePath, CancellationToken cancel = default)
+        public async Task<bool> ReadSubTreeAsync(string relativePath, CancellationToken cancel = default)
         {
-            Initialize();
+            await InitializeAsync().ConfigureAwait(false);
 
             if (!_treeStates.TryGetValue(relativePath, out var treeState))
             {
@@ -58,7 +71,7 @@ namespace SenseNet.IO.Implementations
             }
 
             var goAhead = ReadTree(treeState);
-            return Task.FromResult(goAhead);
+            return goAhead;
         }
 
         private class TreeState
@@ -73,11 +86,11 @@ namespace SenseNet.IO.Implementations
             public int Index { get; set; }
             public FsContent[] Contents { get; set; }
         }
-        public Task<bool> ReadAllAsync(string[] contentsWithoutChildren, CancellationToken cancel = default)
+        public async Task<bool> ReadAllAsync(string[] contentsWithoutChildren, CancellationToken cancel = default)
         {
             if (_mainState == null)
             {
-                Initialize();
+                await InitializeAsync().ConfigureAwait(false);
                 _mainState = new TreeState
                 {
                     FsRootPath = ReaderRootPath,
@@ -85,8 +98,8 @@ namespace SenseNet.IO.Implementations
                 };
             }
 
-            bool goAhead = ReadTree(_mainState);
-            return Task.FromResult(goAhead);
+            var goAhead = ReadTree(_mainState);
+            return goAhead;
         }
 
         private IEnumerator<TransferTask> _referenceUpdateTasksEnumerator;
@@ -340,6 +353,5 @@ namespace SenseNet.IO.Implementations
         {
             return IsDirectoryExists(fsDirectoryPath) ? Directory.GetFiles(fsDirectoryPath) : Array.Empty<string>();
         }
-
     }
 }

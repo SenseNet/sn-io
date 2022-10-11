@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using SenseNet.IO.Implementations;
 
 namespace SenseNet.IO.Tests.Implementations
 {
@@ -16,12 +17,19 @@ namespace SenseNet.IO.Tests.Implementations
         public string ContainerPath { get; }
         public string RootName { get; }
 
+        public RepositoryWriterArgs WriterOptions => throw new NotImplementedException();
+
         public TestRepositoryWriter(Dictionary<string, ContentNode> initialTree, Dictionary<string, WriterState> states, string containerPath = null, string rootName = null)
         {
             Tree = initialTree;
             ContainerPath = containerPath ?? "/";
             RootName = rootName;
             _states = states;
+        }
+
+        public Task InitializeAsync()
+        {
+            return Task.CompletedTask;
         }
 
         public Task<WriterState> WriteAsync(string path, IContent content, CancellationToken cancel = default)

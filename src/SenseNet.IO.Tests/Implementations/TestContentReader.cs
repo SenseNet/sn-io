@@ -35,6 +35,11 @@ namespace SenseNet.IO.Tests.Implementations
             _filteredPathIndex = 0;
         }
 
+        public Task InitializeAsync()
+        {
+            return Task.CompletedTask;
+        }
+
         private Dictionary<string, int> _indexes = new Dictionary<string, int>();
         public Task<bool> ReadSubTreeAsync(string relativePath, CancellationToken cancel = default)
         {

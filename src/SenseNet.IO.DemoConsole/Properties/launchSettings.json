@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "SenseNet.IO.DemoConsole": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "DOTNET_ENVIRONMENT": "Development"
+      }
+    }
+  }
+}

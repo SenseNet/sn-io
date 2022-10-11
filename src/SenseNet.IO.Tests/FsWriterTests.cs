@@ -121,6 +121,11 @@ namespace SenseNet.IO.Tests
                 _contentsToRead = contentsToRead;
             }
 
+            public Task InitializeAsync()
+            {
+                return Task.CompletedTask;
+            }
+
             public Task<bool> ReadSubTreeAsync(string relativePath, CancellationToken cancel = default)
             {
                 throw new NotImplementedException();
