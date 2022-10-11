@@ -14,6 +14,7 @@ namespace SenseNet.IO.Implementations
     internal class ImportContentFlow : SemanticContentFlow, IImportContentFlow
     {
         public new IFilesystemReader Reader => (IFilesystemReader)base.Reader;
+        public new ISnRepositoryWriter Writer => (ISnRepositoryWriter)base.Writer;
 
         public ImportContentFlow(IFilesystemReader reader, ISnRepositoryWriter writer, ILogger<ImportContentFlow> logger) : 
             base(reader, writer, logger)
@@ -46,6 +47,7 @@ namespace SenseNet.IO.Implementations
     internal class SynchronizeContentFlow : SemanticContentFlow, ISynchronizeContentFlow
     {
         public new ISnRepositoryReader Reader => (ISnRepositoryReader)base.Reader;
+        public new ISnRepositoryWriter Writer => (ISnRepositoryWriter)base.Writer;
 
         public SynchronizeContentFlow(ISnRepositoryReader reader, ISnRepositoryWriter writer,
             ILogger<SynchronizeContentFlow> logger) : base(reader, writer, logger)

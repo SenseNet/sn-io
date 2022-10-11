@@ -11,23 +11,21 @@ namespace SenseNet.IO
 {
     public abstract class ContentFlow : IContentFlow
     {
-        private ILogger<ContentFlow> _logger;
+        private readonly ILogger<ContentFlow> _logger;
         public IContentReader Reader { get; }
-        // ReSharper disable once InconsistentNaming
-        protected IContentWriter _writer;
-        public virtual IContentWriter Writer => _writer;
+        public IContentWriter Writer { get; }
 
         protected ContentFlow(IContentReader reader, IContentWriter writer, ILogger<ContentFlow> logger)
         {
             Reader = reader;
-            _writer = writer;
+            Writer = writer;
             _logger = logger;
         }
 
         public virtual async Task InitializeAsync()
         {
             await Reader.InitializeAsync().ConfigureAwait(false);
-            await _writer.InitializeAsync().ConfigureAwait(false);
+            await Writer.InitializeAsync().ConfigureAwait(false);
         }
 
         public abstract Task TransferAsync(IProgress<TransferState> progress, CancellationToken cancel = default);
