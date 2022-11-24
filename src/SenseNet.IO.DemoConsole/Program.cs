@@ -1,6 +1,8 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using System.Diagnostics;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using SenseNet.Extensions.DependencyInjection;
 using SenseNet.IO;
 using Serilog;
@@ -80,10 +82,15 @@ public class Program
 
     private static async Task ImportAsync()
     {
+        var count = 1;
+        var states = new TransferState[count];
+
         var flowFactory = _host.Services.GetRequiredService<IImportFlowFactory>();
+        var logger = _host.Services.GetRequiredService<ILogger<Program>>();
+        var timer = Stopwatch.StartNew();
 
         // start multiple tasks in parallel if necessary
-        var tasks = Enumerable.Range(1, 5).Select(i =>
+        var tasks = Enumerable.Range(1, count).Select(i =>
         {
             return Task.Run(async () =>
             {
@@ -96,12 +103,23 @@ public class Program
                 await flow.TransferAsync(new Progress<TransferState>(state =>
                 {
                     // log state if necessary
+                    var index = i-1;
+                    states[index] = state;
                 }));
             });
         }).ToList();
 
         // complete all tasks
         await Task.WhenAll(tasks);
+
+        var elapsed = timer.Elapsed;
+        var contentCount = states.Sum(s => s.ContentCount);
+        logger.LogInformation($"IMPORT FINISHED: " +
+                              $"parallelism: {count}, " +
+                              $"imported content: {contentCount}, " +
+                              $"errors: {states.Sum(s => s.ErrorCount)}, " +
+                              $"duration: {elapsed}");
+        logger.LogInformation($"IMPORT SPEED: {contentCount / elapsed.TotalSeconds} CPS.");
     }
 
     private static async Task ExportAsync()
