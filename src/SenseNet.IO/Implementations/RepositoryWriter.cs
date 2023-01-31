@@ -152,7 +152,7 @@ namespace SenseNet.IO.Implementations
             );
 
             // {path, name, type, action, brokenReferences, retryPermissions, messages };
-            string resultString = null;
+            string resultString;
             try
             {
                 resultString = await RESTCaller.GetResponseStringAsync(
@@ -168,8 +168,7 @@ namespace SenseNet.IO.Implementations
                 };
             }
 
-            var result = JsonConvert.DeserializeObject(resultString) as JObject;
-            if (result == null)
+            if (JsonConvert.DeserializeObject(resultString) is not JObject result)
                 return new WriterState{Action = WriterAction.Unknown, WriterPath = repositoryPath};
 
             Enum.TryParse(typeof(WriterAction), result["action"]?.Value<string>(), true, out var rawAction);
@@ -219,26 +218,34 @@ namespace SenseNet.IO.Implementations
             string resultString = null;
             try
             {
-                await Retrier.RetryAsync(10, 1000, async () =>
+                await Retrier.RetryAsync(50, 3000, async () =>
                 {
-                    resultString = await RESTCaller.GetResponseStringAsync(
-                        new ODataRequest(_server) { IsCollectionRequest = false, Path = "/Root", ActionName = "Import" }, HttpMethod.Post, body, _server);
+                    var request = new ODataRequest(_server)
+                    {
+                        IsCollectionRequest = false, Path = "/Root", ActionName = "Import"
+                    };
+
+                    resultString = await RESTCaller.GetResponseStringAsync(request, HttpMethod.Post, body, _server);
                 }, (i, exception) =>
                 {
                     return exception switch
                     {
                         null => true,
-                        ClientException { StatusCode: HttpStatusCode.TooManyRequests } when i > 1 => false,
+                        ClientException { StatusCode: HttpStatusCode.TooManyRequests or HttpStatusCode.GatewayTimeout } 
+                            when i > 1 => false,
                         ClientException { InnerException: HttpRequestException rex } when i > 1 &&
-                            rex.Message.Contains("The SSL connection could not be established") => false,
+                            (rex.Message.Contains("The SSL connection could not be established") ||
+                             rex.Message.Contains("An error occurred while sending the request"))
+                            => false,
                         _ => throw exception
                     };
                 });
                 
             }
-            catch (Exception e)
+            catch (ClientException e)
             {
-                _logger.LogError(e, $"Error during importing {repositoryPath}");
+                _logger.LogError(e, $"Error during importing {repositoryPath}: " +
+                                    $"{e.Message}. {e.ErrorData?.ErrorCode} {e.StatusCode}");
 
                 return new WriterState
                 {
@@ -256,7 +263,7 @@ namespace SenseNet.IO.Implementations
                 try
                 {
                     await using var stream = attachment.Stream;
-                    await Retrier.RetryAsync(10, 1000, async () =>
+                    await Retrier.RetryAsync(50, 3000, async () =>
                         {
                             stream?.Seek(0, SeekOrigin.Begin);
                             uploaded = await Content.UploadAsync(parentPath, content.Name, stream,
@@ -267,9 +274,12 @@ namespace SenseNet.IO.Implementations
                             return exception switch
                             {
                                 null => true,
-                                ClientException { StatusCode: HttpStatusCode.TooManyRequests } when i > 1 => false,
+                                ClientException { StatusCode: HttpStatusCode.TooManyRequests or HttpStatusCode.GatewayTimeout } 
+                                    when i > 1 => false,
                                 ClientException { InnerException: HttpRequestException rex } when i > 1 &&
-                                    rex.Message.Contains("The SSL connection could not be established") => false,
+                                    (rex.Message.Contains("The SSL connection could not be established") ||
+                                     rex.Message.Contains("An error occurred while sending the request"))
+                                    => false,
                                 _ => throw exception
                             };
                         });

@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using System.Diagnostics;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using SenseNet.Extensions.DependencyInjection;
@@ -40,8 +41,17 @@ public class Program
         // Use this method when you want to start multiple export/import
         // processes in parallel.
 
-        //await ImportAsync();
+        var sw = Stopwatch.StartNew();
+        
+        await ImportAsync();
         //await ExportAsync();
+
+        sw.Stop();
+
+        Console.WriteLine();
+        Console.WriteLine("==============================================");
+        Console.WriteLine($"Elapsed time: {sw.Elapsed}");
+        Console.WriteLine("==============================================");
     }
 
     private static IHost CreateHost()
