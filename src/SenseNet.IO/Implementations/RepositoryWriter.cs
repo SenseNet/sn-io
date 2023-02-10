@@ -219,28 +219,16 @@ namespace SenseNet.IO.Implementations
             try
             {
                 await Retrier.RetryAsync(50, 3000, async () =>
-                {
-                    var request = new ODataRequest(_server)
                     {
-                        IsCollectionRequest = false, Path = "/Root", ActionName = "Import"
-                    };
+                        var request = new ODataRequest(_server)
+                        {
+                            IsCollectionRequest = false, Path = "/Root", ActionName = "Import"
+                        };
 
-                    resultString = await RESTCaller.GetResponseStringAsync(request, HttpMethod.Post, body, _server);
-                }, (i, exception) =>
-                {
-                    return exception switch
-                    {
-                        null => true,
-                        ClientException { StatusCode: HttpStatusCode.TooManyRequests or HttpStatusCode.GatewayTimeout } 
-                            when i > 1 => false,
-                        ClientException { InnerException: HttpRequestException rex } when i > 1 &&
-                            (rex.Message.Contains("The SSL connection could not be established") ||
-                             rex.Message.Contains("An error occurred while sending the request"))
-                            => false,
-                        _ => throw exception
-                    };
-                });
-                
+                        resultString = await RESTCaller.GetResponseStringAsync(request, HttpMethod.Post, body, _server);
+                    },
+                    (i, exception) => exception.CheckRetryConditionOrThrow(i));
+
             }
             catch (ClientException e)
             {
@@ -269,20 +257,7 @@ namespace SenseNet.IO.Implementations
                             uploaded = await Content.UploadAsync(parentPath, content.Name, stream,
                                 propertyName: attachment.FieldName, server: _server);
                         },
-                        (i, exception) =>
-                        {
-                            return exception switch
-                            {
-                                null => true,
-                                ClientException { StatusCode: HttpStatusCode.TooManyRequests or HttpStatusCode.GatewayTimeout } 
-                                    when i > 1 => false,
-                                ClientException { InnerException: HttpRequestException rex } when i > 1 &&
-                                    (rex.Message.Contains("The SSL connection could not be established") ||
-                                     rex.Message.Contains("An error occurred while sending the request"))
-                                    => false,
-                                _ => throw exception
-                            };
-                        });
+                        (i, exception) => exception.CheckRetryConditionOrThrow(i));
                 }
                 catch (ClientException ex)
                 {
