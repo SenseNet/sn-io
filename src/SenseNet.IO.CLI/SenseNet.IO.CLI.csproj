@@ -4,7 +4,7 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>net5.0</TargetFramework>
     <AssemblyName>SnIO</AssemblyName>
-    <Version>1.0.1</Version>
+    <Version>1.0.1.1</Version>
     <UserSecretsId>d4014fe1-34a8-4ce0-a3dc-3cc00491a07c</UserSecretsId>
     <Authors>kavics,tusmester</Authors>
     <Company>Sense/Net Inc.</Company>
@@ -17,7 +17,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="6.0.1" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="6.0.1" />
-    <PackageReference Include="SenseNet.Client" Version="2.0.13.1" />
+    <PackageReference Include="SenseNet.Client" Version="2.0.14.1" />
     <PackageReference Include="Serilog.Extensions.Logging" Version="3.1.0" />
     <PackageReference Include="Serilog.Settings.Configuration" Version="3.4.0" />
     <PackageReference Include="Serilog.Sinks.Console" Version="4.1.0" />
