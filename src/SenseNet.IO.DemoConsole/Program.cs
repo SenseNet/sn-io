@@ -91,7 +91,7 @@ public class Program
 
     private static async Task ImportAsync()
     {
-        var count = 60;
+        var count = 1;
         var states = new TransferState[count];
 
         var flowFactory = _host.Services.GetRequiredService<IImportFlowFactory>();
