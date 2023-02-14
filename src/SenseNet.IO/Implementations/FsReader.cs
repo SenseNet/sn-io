@@ -39,6 +39,10 @@ namespace SenseNet.IO.Implementations
             if (args?.Value == null)
                 throw new ArgumentNullException(nameof(args));
             Args = args.Value.Clone();
+
+            // deal with relative paths like '..\\..\\MyFolder'
+            if (!string.IsNullOrEmpty(Args.Path))
+                Args.Path = Path.GetFullPath(Args.Path);
         }
 
         private bool _initialized;
