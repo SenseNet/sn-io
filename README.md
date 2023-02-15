@@ -14,6 +14,13 @@ There are four scenarios offered by the built-in tool.
 
 > **For developers**: SnIO is extendable. You can extend our default content tree readers and writers, or implement your own. Currently you'll have to look into the source code for examples.
 
+## Installation
+You can get the SnIO tool in the following ways:
+- compile the source in this repository and use the tool from the `SenseNet.IO.CLI` folder
+- **BETA**: install it as a [dotnet tool](https://learn.microsoft.com/en-us/dotnet/core/tools/global-tools) from [NuGet](https://www.nuget.org/packages/SenseNet.IO.CLI).
+
+[![NuGet](https://img.shields.io/nuget/v/SenseNet.IO.CLI.svg)](https://www.nuget.org/packages/SenseNet.IO.CLI)
+
 ## Parameters
 The SnIO tool has a number of parameters with some restrictions. The general form is the following:
 ```
