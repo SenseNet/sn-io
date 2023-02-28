@@ -1,7 +1,6 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
-using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -20,7 +19,7 @@ namespace SenseNet.IO.Implementations
         public string Url { get; set; }
         public string Path { get; set; }
         public string Name { get; set; }
-        public RepositoryAuthenticationOptions Authentication { get; set; } = new RepositoryAuthenticationOptions();
+        public RepositoryAuthenticationOptions Authentication { get; set; } = new();
         public int UploadChunkSize { get; set; }
 
         internal RepositoryWriterArgs Clone()
@@ -31,11 +30,7 @@ namespace SenseNet.IO.Implementations
                 Path = Path,
                 Name = Name,
                 UploadChunkSize = UploadChunkSize,
-                Authentication = new RepositoryAuthenticationOptions
-                {
-                    ClientId = Authentication?.ClientId,
-                    ClientSecret = Authentication?.ClientSecret
-                }
+                Authentication = Authentication?.Clone() ?? new RepositoryAuthenticationOptions()
             };
         }
     }
@@ -79,8 +74,6 @@ namespace SenseNet.IO.Implementations
             var server = new ServerContext
             {
                 Url = Url,
-                Username = "builtin\\admin",
-                Password = "admin",
                 Logger = _logger
             };
 
@@ -90,6 +83,10 @@ namespace SenseNet.IO.Implementations
                 server.Authentication.AccessToken = await _tokenStore
                     .GetTokenAsync(server, Args.Authentication.ClientId, Args.Authentication.ClientSecret)
                     .ConfigureAwait(false);
+            }
+            else if (!string.IsNullOrEmpty(Args.Authentication.ApiKey))
+            {
+                server.Authentication.ApiKey = Args.Authentication.ApiKey;
             }
 
             _server = server;

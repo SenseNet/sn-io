@@ -74,7 +74,7 @@ namespace SenseNet.IO.CLI
                     if (settingsFile != null)
                         configurationBuilder.AddJsonStream(settingsFile);
                     else
-                        configurationBuilder.AddJsonFile("providerSettings.json");
+                        configurationBuilder.AddJsonFile("providerSettings.json", true);
                     configurationBuilder
                         .AddUserSecrets<Program>()
                         .AddEnvironmentVariables()

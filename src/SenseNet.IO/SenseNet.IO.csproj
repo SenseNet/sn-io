@@ -21,7 +21,7 @@
 
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
-    <PackageReference Include="SenseNet.Client" Version="2.0.14.1" />
+    <PackageReference Include="SenseNet.Client" Version="2.0.14.2" />
   </ItemGroup>
 
 </Project>

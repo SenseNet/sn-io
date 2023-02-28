@@ -5,7 +5,8 @@
     "blockSize": null, // Contents per request. Default (null, 0 or less): 10.
     "Authentication": {
       "ClientId": "",
-      "ClientSecret": "" 
+      "ClientSecret": "",
+      "ApiKey": ""
     } 
   },
   "repositoryWriter": {
@@ -14,14 +15,15 @@
     "name": null, // Target name under the container. Default: name of the reader's root.
     "Authentication": {
       "ClientId": "",
-      "ClientSecret": ""
+      "ClientSecret": "",
+      "ApiKey": ""
     }
   },
   "fsReader": {
-    "path": "D:\\_sn-io-test\\localhost_44362\\Root" // Source root
+    "path": "" // Source root
   },
   "fsWriter": {
-    "path": "D:\\_sn-io-test\\localhost_44362", // Target container. Will be created if does not exists.
+    "path": "", // Target container. Will be created if does not exists.
     "name": null // Target name under the container. Default: name of the reader's root.
   }
 }
