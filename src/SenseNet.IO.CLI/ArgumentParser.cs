@@ -119,11 +119,12 @@ namespace SenseNet.IO.CLI
         }
         protected virtual RepositoryReaderArgs ParseRepositoryReaderArgs(string[] args)
         {
-            // [[-URL] Url]] [[-PATH ]Path]] [[-FILTER ]Filter]] [[-BLOCKSIZE ]BlockSize]]
+            // [[-URL] Url]] [[-PATH ]Path]] [[-FILTER ]Filter]] [[-BLOCKSIZE ]BlockSize]] [[-APIKEY ]ApiKey]
+            // [[-CLIENTID ]ClientId] [[-CLIENTSECRET ]ClientSecret]
             var result = new RepositoryReaderArgs();
             var parsedArgs = ParseSequence(args);
 
-            if (parsedArgs.Length > 5)
+            if (parsedArgs.Length > 8)
                 throw new ArgumentParserException("Too many RepositoryReader arguments.");
 
             foreach (var arg in parsedArgs)
@@ -154,6 +155,24 @@ namespace SenseNet.IO.CLI
                         throw new ArgumentParserException("Invalid RepositoryReader argument: BlockSize: " + arg.Value);
                     result.BlockSize = intValue;
                 }
+                else if (arg.Key == "4" || arg.Key.Equals("APIKEY", Cmp))
+                {
+                    if (result.Authentication.ApiKey != null)
+                        throw new ArgumentParserException("Invalid RepositoryReader arguments.");
+                    result.Authentication.ApiKey = arg.Value;
+                }
+                else if (arg.Key == "5" || arg.Key.Equals("CLIENTID", Cmp))
+                {
+                    if (result.Authentication.ClientId != null)
+                        throw new ArgumentParserException("Invalid RepositoryReader arguments.");
+                    result.Authentication.ClientId = arg.Value;
+                }
+                else if (arg.Key == "6" || arg.Key.Equals("CLIENTSECRET", Cmp))
+                {
+                    if (result.Authentication.ClientSecret != null)
+                        throw new ArgumentParserException("Invalid RepositoryReader arguments.");
+                    result.Authentication.ClientSecret = arg.Value;
+                }
                 else
                     throw new ArgumentParserException("Unknown RepositoryReader argument: " + arg.Key);
             }
@@ -161,11 +180,12 @@ namespace SenseNet.IO.CLI
         }
         protected virtual RepositoryWriterArgs ParseRepositoryWriterArgs(string[] args)
         {
-            // [[-URL] Url]] [[-PATH ]Path]] [[-NAME ]Name]]
+            // [[-URL] Url]] [[-PATH ]Path]] [[-NAME ]Name]] [[-APIKEY ]ApiKey]
+            // [[-CLIENTID ]ClientId] [[-CLIENTSECRET ]ClientSecret]
             var result = new RepositoryWriterArgs();
             var parsedArgs = ParseSequence(args);
 
-            if (parsedArgs.Length > 3)
+            if (parsedArgs.Length > 6)
                 throw new ArgumentParserException("Too many RepositoryWriter arguments.");
 
             foreach (var arg in parsedArgs)
@@ -187,6 +207,24 @@ namespace SenseNet.IO.CLI
                     if (result.Name != null)
                         throw new ArgumentParserException("Invalid RepositoryWriter arguments.");
                     result.Name = arg.Value;
+                }
+                else if (arg.Key == "3" || arg.Key.Equals("APIKEY", Cmp))
+                {
+                    if (result.Authentication.ApiKey != null)
+                        throw new ArgumentParserException("Invalid RepositoryWriter arguments.");
+                    result.Authentication.ApiKey = arg.Value;
+                }
+                else if (arg.Key == "4" || arg.Key.Equals("CLIENTID", Cmp))
+                {
+                    if (result.Authentication.ClientId != null)
+                        throw new ArgumentParserException("Invalid RepositoryReader arguments.");
+                    result.Authentication.ClientId = arg.Value;
+                }
+                else if (arg.Key == "5" || arg.Key.Equals("CLIENTSECRET", Cmp))
+                {
+                    if (result.Authentication.ClientSecret != null)
+                        throw new ArgumentParserException("Invalid RepositoryReader arguments.");
+                    result.Authentication.ClientSecret = arg.Value;
                 }
                 else
                     throw new ArgumentParserException("Unknown RepositoryWriter argument: " + arg.Key);
