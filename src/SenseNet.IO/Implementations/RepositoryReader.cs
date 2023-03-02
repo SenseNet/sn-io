@@ -14,6 +14,17 @@ namespace SenseNet.IO.Implementations
     {
         public string ClientId { get; set; }
         public string ClientSecret { get; set; }
+        public string ApiKey { get; set; }
+
+        internal RepositoryAuthenticationOptions Clone()
+        {
+            return new RepositoryAuthenticationOptions
+            {
+                ClientId = ClientId,
+                ClientSecret = ClientSecret,
+                ApiKey = ApiKey
+            };
+        }
     }
     public class RepositoryReaderArgs
     {
@@ -21,7 +32,7 @@ namespace SenseNet.IO.Implementations
         public string Path { get; set; }
         public int? BlockSize { get; set; }
         public string Filter { get; set; }
-        public RepositoryAuthenticationOptions Authentication { get; set; } = new RepositoryAuthenticationOptions();
+        public RepositoryAuthenticationOptions Authentication { get; set; } = new();
 
         internal RepositoryReaderArgs Clone()
         {
@@ -31,11 +42,7 @@ namespace SenseNet.IO.Implementations
                 Path = Path,
                 BlockSize = BlockSize,
                 Filter = Filter,
-                Authentication = new RepositoryAuthenticationOptions
-                {
-                    ClientId = Authentication?.ClientId,
-                    ClientSecret = Authentication?.ClientSecret
-                }
+                Authentication = Authentication?.Clone() ?? new RepositoryAuthenticationOptions()
             };
         }
     }
@@ -101,9 +108,7 @@ namespace SenseNet.IO.Implementations
 
             var server = new ServerContext
             {
-                Url = Url,
-                Username = "builtin\\admin",
-                Password = "admin"
+                Url = Url
             };
 
             // this will take precedence over the username and password
@@ -111,6 +116,10 @@ namespace SenseNet.IO.Implementations
             {
                 server.Authentication.AccessToken = await _tokenStore
                     .GetTokenAsync(server, Args.Authentication.ClientId, Args.Authentication.ClientSecret);
+            }
+            else if (!string.IsNullOrEmpty(Args.Authentication.ApiKey))
+            {
+                server.Authentication.ApiKey = Args.Authentication.ApiKey;
             }
 
             _server = server;
