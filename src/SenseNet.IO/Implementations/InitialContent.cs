@@ -3,6 +3,9 @@ using System.Threading.Tasks;
 
 namespace SenseNet.IO.Implementations
 {
+    /// <summary>
+    /// Technical class for building initial structures.
+    /// </summary>
     internal class InitialContent : IContent
     {
         public string[] FieldNames { get; } = new string[0];
@@ -17,6 +20,8 @@ namespace SenseNet.IO.Implementations
         public string Path { get; }
         public string Type { get; }
         public PermissionInfo Permissions { get; set; }
+        public bool IsFolder => true; // always a folder
+        public bool HasMetadata => false; // never contains metadata
 
         public InitialContent(string path, string name, string type)
         {

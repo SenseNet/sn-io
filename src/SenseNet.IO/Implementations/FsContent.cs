@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Security.Cryptography;
-using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -42,6 +40,8 @@ namespace SenseNet.IO.Implementations
         }
 
         public PermissionInfo Permissions { get; set; }
+        public bool IsFolder => IsDirectory;
+        public bool HasMetadata => !string.IsNullOrEmpty(_metaFilePath);
 
         private readonly string _defaultAttachmentPath;
         public Task<Attachment[]> GetAttachmentsAsync()

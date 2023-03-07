@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
@@ -22,6 +23,8 @@ namespace SenseNet.IO.Tests.Implementations
         public string Name { get; set; }
         public string Type { get; set; }
         public PermissionInfo Permissions { get; set; }
+        public bool IsFolder => throw new NotImplementedException();
+        public bool HasMetadata => throw new NotImplementedException();
 
         public Task<Attachment[]> GetAttachmentsAsync()
         {
