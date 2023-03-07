@@ -13,7 +13,7 @@ namespace SenseNet.IO
         public PermissionInfo Permissions { get; set; }
 
         public bool IsFolder { get; }
-        public bool HasMetadata { get; }
+        public bool HasData { get; }
 
         Task<Attachment[]> GetAttachmentsAsync();
     }

@@ -22,7 +22,7 @@ namespace SenseNet.IO
         public string Type { get; set; }
         public PermissionInfo Permissions { get; set; }
         public bool IsFolder => throw new NotImplementedException("IsFolder is not implemented in IoContent.");
-        public bool HasMetadata => _fields.Any();
+        public bool HasData => _fields.Any();
 
         public Task<Attachment[]> GetAttachmentsAsync()
         {

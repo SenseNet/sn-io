@@ -183,7 +183,7 @@ namespace SenseNet.IO.Implementations
         }
         private async Task<WriterState> WriteContentAsync(string repositoryPath, IContent content, CancellationToken cancel)
         {
-            if (content.IsFolder && !content.HasMetadata)
+            if (content.IsFolder && !content.HasData)
             {
                 var existing = await Content.ExistsAsync(repositoryPath, _server).ConfigureAwait(false);
                 if (existing)

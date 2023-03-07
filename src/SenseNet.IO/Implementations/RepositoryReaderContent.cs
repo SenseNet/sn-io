@@ -33,7 +33,7 @@ namespace SenseNet.IO.Implementations
         public bool IsFolder =>
             throw new NotImplementedException("IsFolder is not implemented in RepositoryReaderContent.");
 
-        public bool HasMetadata => _fields?.Any() ?? false;
+        public bool HasData => _fields?.Any() ?? false;
 
         public object this[string fieldName]
         {

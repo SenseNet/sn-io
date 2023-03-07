@@ -24,7 +24,7 @@ namespace SenseNet.IO.Tests.Implementations
         public string Type { get; set; }
         public PermissionInfo Permissions { get; set; }
         public bool IsFolder => throw new NotImplementedException();
-        public bool HasMetadata => throw new NotImplementedException();
+        public bool HasData => throw new NotImplementedException();
 
         public Task<Attachment[]> GetAttachmentsAsync()
         {

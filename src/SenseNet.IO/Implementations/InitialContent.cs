@@ -21,7 +21,7 @@ namespace SenseNet.IO.Implementations
         public string Type { get; }
         public PermissionInfo Permissions { get; set; }
         public bool IsFolder => true; // always a folder
-        public bool HasMetadata => false; // never contains metadata
+        public bool HasData => false; // never contains data
 
         public InitialContent(string path, string name, string type)
         {

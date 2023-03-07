@@ -41,7 +41,7 @@ namespace SenseNet.IO.Implementations
 
         public PermissionInfo Permissions { get; set; }
         public bool IsFolder => IsDirectory;
-        public bool HasMetadata => !string.IsNullOrEmpty(_metaFilePath);
+        public bool HasData => !string.IsNullOrEmpty(_metaFilePath);
 
         private readonly string _defaultAttachmentPath;
         public Task<Attachment[]> GetAttachmentsAsync()

@@ -80,7 +80,7 @@ namespace SenseNet.IO.Tests
             public string Type { get; }
             public PermissionInfo Permissions { get; set; }
             public bool IsFolder => throw new NotImplementedException();
-            public bool HasMetadata => throw new NotImplementedException();
+            public bool HasData => throw new NotImplementedException();
 
             public TestContent(string name, string path, string type, Dictionary<string, object> fields, Attachment[] attachments)
             {
