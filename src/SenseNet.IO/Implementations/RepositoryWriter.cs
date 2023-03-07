@@ -104,25 +104,23 @@ namespace SenseNet.IO.Implementations
 
         private async Task<WriterState> WriteContentTypeAsync(string repositoryPath, IContent content, CancellationToken cancel)
         {
-            Content uploaded;
             var attachments = await content.GetAttachmentsAsync();
 
             // "Binary" field of a ContentType need to uploaded first.
             var binary = attachments.FirstOrDefault(a => a.FieldName == "Binary");
             if (binary != null)
             {
-                using (var stream = binary.Stream)
-                    uploaded = await Content.UploadAsync("/Root/System/Schema/ContentTypes", content.Name, stream, "ContentType", server: _server);
+                await using var stream = binary.Stream;
+                await Content.UploadAsync("/Root/System/Schema/ContentTypes", content.Name, stream, "ContentType",
+                    server: _server);
             }
 
             // Upload other binaries if there are.
-            foreach (var attachment in attachments)
+            foreach (var attachment in attachments.Where(a => a.FieldName != "Binary"))
             {
-                if (attachment.FieldName != "Binary")
-                {
-                    using (var stream = attachment.Stream)
-                        uploaded = await Content.UploadAsync("/Root/System/Schema/ContentTypes", content.Name, stream, "ContentType", attachment.FieldName, server: _server);
-                }
+                await using var stream = attachment.Stream;
+                await Content.UploadAsync("/Root/System/Schema/ContentTypes", content.Name, stream, "ContentType",
+                    attachment.FieldName, server: _server);
             }
 
             // Remove attachments from field set.
@@ -185,7 +183,21 @@ namespace SenseNet.IO.Implementations
         }
         private async Task<WriterState> WriteContentAsync(string repositoryPath, IContent content, CancellationToken cancel)
         {
-            Content uploaded;
+            if (content.IsFolder && !content.HasData)
+            {
+                var existing = await Content.ExistsAsync(repositoryPath, _server).ConfigureAwait(false);
+                if (existing)
+                {
+                    _logger.LogTrace("Skip importing existing folder without metadata: {repositoryPath}", repositoryPath);
+
+                    return new WriterState
+                    {
+                        WriterPath = repositoryPath,
+                        Action = WriterAction.Skipped
+                    };
+                }
+            }
+
             var attachments = await content.GetAttachmentsAsync();
 
             // Remove attachments from field set.
@@ -244,14 +256,13 @@ namespace SenseNet.IO.Implementations
             var parentPath = ContentPath.GetParentPath(repositoryPath);
             foreach (var attachment in attachments.Where(a => a.Stream != null))
             {
-                
                 try
                 {
                     await using var stream = attachment.Stream;
                     await Retrier.RetryAsync(50, 3000, async () =>
                         {
                             stream?.Seek(0, SeekOrigin.Begin);
-                            uploaded = await Content.UploadAsync(parentPath, content.Name, stream,
+                            await Content.UploadAsync(parentPath, content.Name, stream,
                                 propertyName: attachment.FieldName, server: _server);
                         },
                         (i, exception) => exception.CheckRetryConditionOrThrow(i));
