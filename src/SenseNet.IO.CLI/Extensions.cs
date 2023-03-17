@@ -1,4 +1,5 @@
 ﻿using System;
+using SenseNet.Client;
 using SenseNet.IO.Implementations;
 
 namespace SenseNet.IO.CLI
@@ -66,6 +67,18 @@ namespace SenseNet.IO.CLI
             if (args.Authentication.ClientSecret != null)
                 settings.Authentication.ClientSecret = args.Authentication.ClientSecret;
         }
+        public static void RewriteSettings(this RepositoryReaderArgs args, RepositoryOptions settings)
+        {
+            // rewrite
+            if (args.Url != null)
+                settings.Url = args.Url;
+            if (args.Authentication.ApiKey != null)
+                settings.Authentication.ApiKey = args.Authentication.ApiKey;
+            if (args.Authentication.ClientId != null)
+                settings.Authentication.ClientId = args.Authentication.ClientId;
+            if (args.Authentication.ClientSecret != null)
+                settings.Authentication.ClientSecret = args.Authentication.ClientSecret;
+        }
         public static void RewriteSettings(this RepositoryWriterArgs args, RepositoryWriterArgs settings)
         {
             // workaround for "Null configuration elements deserialized as empty strings" https://github.com/dotnet/runtime/issues/36510
@@ -83,6 +96,18 @@ namespace SenseNet.IO.CLI
                 settings.Path = args.Path;
             if (args.Name != null)
                 settings.Name = args.Name;
+            if (args.Authentication.ApiKey != null)
+                settings.Authentication.ApiKey = args.Authentication.ApiKey;
+            if (args.Authentication.ClientId != null)
+                settings.Authentication.ClientId = args.Authentication.ClientId;
+            if (args.Authentication.ClientSecret != null)
+                settings.Authentication.ClientSecret = args.Authentication.ClientSecret;
+        }
+        public static void RewriteSettings(this RepositoryWriterArgs args, RepositoryOptions settings)
+        {
+            // rewrite
+            if (args.Url != null)
+                settings.Url = args.Url;
             if (args.Authentication.ApiKey != null)
                 settings.Authentication.ApiKey = args.Authentication.ApiKey;
             if (args.Authentication.ClientId != null)

@@ -9,7 +9,6 @@ using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using SenseNet.Client;
-using SenseNet.Client.Authentication;
 using SenseNet.Tools;
 
 namespace SenseNet.IO.Implementations
@@ -37,9 +36,9 @@ namespace SenseNet.IO.Implementations
 
     public class RepositoryWriter : ISnRepositoryWriter
     {
-        private readonly ITokenStore _tokenStore;
-        private ServerContext _server;
-        private readonly ILogger _logger;
+        private readonly IRepositoryCollection _repositoryCollection;
+        private readonly ILogger<RepositoryWriter> _logger;
+        private IRepository _repository;
 
         public RepositoryWriterArgs Args { get; }
         public string Url => Args.Url;
@@ -48,13 +47,14 @@ namespace SenseNet.IO.Implementations
 
         public RepositoryWriterArgs WriterOptions => Args;
 
-        public RepositoryWriter(ITokenStore tokenStore, IOptions<RepositoryWriterArgs> args, ILogger<RepositoryWriter> logger)
+        public RepositoryWriter(IRepositoryCollection repositoryCollection, IOptions<RepositoryWriterArgs> args, 
+            ILogger<RepositoryWriter> logger)
         {
             if (args?.Value == null)
                 throw new ArgumentNullException(nameof(args));
             Args = args.Value.Clone();
-            
-            _tokenStore = tokenStore;
+
+            _repositoryCollection = repositoryCollection;
             _logger = logger;
         }
 
@@ -71,25 +71,12 @@ namespace SenseNet.IO.Implementations
             if (Args.UploadChunkSize > 0)
                 ClientContext.Current.ChunkSizeInBytes = Args.UploadChunkSize;
 
-            var server = new ServerContext
-            {
-                Url = Url,
-                Logger = _logger
-            };
+            _repository = await _repositoryCollection.GetRepositoryAsync("target", CancellationToken.None)
+                .ConfigureAwait(false);
 
-            // this will take precedence over the username and password
-            if (!string.IsNullOrEmpty(Args.Authentication.ClientId))
-            {
-                server.Authentication.AccessToken = await _tokenStore
-                    .GetTokenAsync(server, Args.Authentication.ClientId, Args.Authentication.ClientSecret)
-                    .ConfigureAwait(false);
-            }
-            else if (!string.IsNullOrEmpty(Args.Authentication.ApiKey))
-            {
-                server.Authentication.ApiKey = Args.Authentication.ApiKey;
-            }
-
-            _server = server;
+            // workaround while the client api sets the logger internally
+            if (_repository.Server is { Logger: null })
+                _repository.Server.Logger = _logger;
         }
 
         public virtual async Task<WriterState> WriteAsync(string path, IContent content, CancellationToken cancel = default)
@@ -112,7 +99,7 @@ namespace SenseNet.IO.Implementations
             {
                 await using var stream = binary.Stream;
                 await Content.UploadAsync("/Root/System/Schema/ContentTypes", content.Name, stream, "ContentType",
-                    server: _server);
+                    server: _repository.Server);
             }
 
             // Upload other binaries if there are.
@@ -120,7 +107,7 @@ namespace SenseNet.IO.Implementations
             {
                 await using var stream = attachment.Stream;
                 await Content.UploadAsync("/Root/System/Schema/ContentTypes", content.Name, stream, "ContentType",
-                    attachment.FieldName, server: _server);
+                    attachment.FieldName, server: _repository.Server);
             }
 
             // Remove attachments from field set.
@@ -151,7 +138,9 @@ namespace SenseNet.IO.Implementations
             try
             {
                 resultString = await RESTCaller.GetResponseStringAsync(
-                    new ODataRequest(_server) {IsCollectionRequest = false, Path = "/Root", ActionName = "Import"}, HttpMethod.Post, body, _server);
+                    new ODataRequest(_repository.Server)
+                        { IsCollectionRequest = false, Path = "/Root", ActionName = "Import" }, HttpMethod.Post, body,
+                    _repository.Server);
             }
             catch (Exception e)
             {
@@ -185,7 +174,7 @@ namespace SenseNet.IO.Implementations
         {
             if (content.IsFolder && !content.HasData)
             {
-                var existing = await Content.ExistsAsync(repositoryPath, _server).ConfigureAwait(false);
+                var existing = await Content.ExistsAsync(repositoryPath, _repository.Server).ConfigureAwait(false);
                 if (existing)
                 {
                     _logger.LogTrace("Skip importing existing folder without metadata: {repositoryPath}", repositoryPath);
@@ -229,12 +218,12 @@ namespace SenseNet.IO.Implementations
             {
                 await Retrier.RetryAsync(50, 3000, async () =>
                     {
-                        var request = new ODataRequest(_server)
+                        var request = new ODataRequest(_repository.Server)
                         {
                             IsCollectionRequest = false, Path = "/Root", ActionName = "Import"
                         };
 
-                        resultString = await RESTCaller.GetResponseStringAsync(request, HttpMethod.Post, body, _server);
+                        resultString = await RESTCaller.GetResponseStringAsync(request, HttpMethod.Post, body, _repository.Server);
                     },
                     (i, exception) => exception.CheckRetryConditionOrThrow(i));
 
@@ -263,7 +252,7 @@ namespace SenseNet.IO.Implementations
                         {
                             stream?.Seek(0, SeekOrigin.Begin);
                             await Content.UploadAsync(parentPath, content.Name, stream,
-                                propertyName: attachment.FieldName, server: _server);
+                                propertyName: attachment.FieldName, server: _repository.Server);
                         },
                         (i, exception) => exception.CheckRetryConditionOrThrow(i));
                 }
