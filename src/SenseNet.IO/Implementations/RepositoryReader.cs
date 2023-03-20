@@ -321,7 +321,7 @@ namespace SenseNet.IO.Implementations
         }
         protected virtual async Task<IContent[]> QueryAsync(string queryText)
         {
-            var oDataRequest = new ODataRequest(_repository.Server)
+            var request = new LoadCollectionRequest
             {
                 Path = "/Root",
                 ContentQuery = queryText,
@@ -329,7 +329,7 @@ namespace SenseNet.IO.Implementations
             };
             try
             {
-                var result = await Client.Content.LoadCollectionAsync(oDataRequest, _repository.Server)
+                var result = await _repository.LoadCollectionAsync(request, CancellationToken.None)
                     .ConfigureAwait(false);
                 var transformed = result.Select(x => new RepositoryReaderContent(x)).ToArray();
                 // ReSharper disable once CoVariantArrayConversion
@@ -345,7 +345,7 @@ namespace SenseNet.IO.Implementations
 
         protected virtual async Task<IContent> GetContentAsync(string path, string[] fields)
         {
-            var oDataRequest = new ODataRequest(_repository.Server)
+            var request = new LoadContentRequest
             {
                 Path = path,
                 Select = _idFields.Union(fields),
@@ -353,7 +353,7 @@ namespace SenseNet.IO.Implementations
             };
             try
             {
-                var result = await _repository.LoadContentAsync(oDataRequest, CancellationToken.None)
+                var result = await _repository.LoadContentAsync(request, CancellationToken.None)
                     .ConfigureAwait(false);
                 var transformed = new RepositoryReaderContent(result);
                 return transformed;

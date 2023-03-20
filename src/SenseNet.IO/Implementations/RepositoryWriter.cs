@@ -174,7 +174,9 @@ namespace SenseNet.IO.Implementations
         {
             if (content.IsFolder && !content.HasData)
             {
-                var existing = await Content.ExistsAsync(repositoryPath, _repository.Server).ConfigureAwait(false);
+                var existing = await _repository.IsContentExistsAsync(repositoryPath, cancel)
+                    .ConfigureAwait(false);
+
                 if (existing)
                 {
                     _logger.LogTrace("Skip importing existing folder without metadata: {repositoryPath}", repositoryPath);
