@@ -76,8 +76,6 @@ namespace SenseNet.IO.CLI
                     else
                         configurationBuilder.AddJsonFile("providerSettings.json", true);
                     configurationBuilder
-                        .AddUserSecrets<Program>()
-                        .AddEnvironmentVariables()
                         .AddCommandLine(args);
                 })
                 .ConfigureServices((hostBuilderContext, serviceCollection) =>
@@ -88,60 +86,93 @@ namespace SenseNet.IO.CLI
                         case Verb.Export:
                             var exportArgs = (ExportArguments) appArguments;
                             serviceCollection
-                                .AddSenseNetClientTokenStore()
+                                .AddSenseNetIO(configureRepositoryReader: readerArgs =>
+                                    {
+                                        hostBuilderContext.Configuration.GetSection("repositoryReader")
+                                            .Bind(readerArgs);
+                                        exportArgs.ReaderArgs.RewriteSettings(readerArgs);
+                                    },
+                                    configureFilesystemWriter: writerArgs =>
+                                    {
+                                        hostBuilderContext.Configuration.GetSection("fsWriter").Bind(writerArgs);
+                                        exportArgs.WriterArgs.RewriteSettings(writerArgs);
+                                    })
                                 .AddContentFlow<RepositoryReader, FsWriter>()
-                                // settings file
-                                .Configure<RepositoryReaderArgs>(
-                                    hostBuilderContext.Configuration.GetSection("repositoryReader"))
-                                .Configure<FsWriterArgs>(hostBuilderContext.Configuration.GetSection("fsWriter"))
-                                // rewrite settings
-                                .Configure<RepositoryReaderArgs>(settings =>
-                                    exportArgs.ReaderArgs.RewriteSettings(settings))
-                                .Configure<FsWriterArgs>(settings => exportArgs.WriterArgs.RewriteSettings(settings))
+                                .ConfigureSenseNetRepository("source", options =>
+                                {
+                                    hostBuilderContext.Configuration.GetSection("repositoryReader").Bind(options);
+                                    //update from command line
+                                    exportArgs.ReaderArgs.RewriteSettings(options);
+                                })
                                 ;
                             break;
                         case Verb.Import:
                             var importArgs = (ImportArguments) appArguments;
                             serviceCollection
-                                .AddSenseNetClientTokenStore()
+                                .AddSenseNetIO(configureFilesystemReader: readerArgs =>
+                                    {
+                                        hostBuilderContext.Configuration.GetSection("fsReader")
+                                            .Bind(readerArgs);
+                                        importArgs.ReaderArgs.RewriteSettings(readerArgs);
+                                    },
+                                    configureRepositoryWriter: writerArgs =>
+                                    {
+                                        hostBuilderContext.Configuration.GetSection("repositoryWriter").Bind(writerArgs);
+                                        importArgs.WriterArgs.RewriteSettings(writerArgs);
+                                    })
                                 .AddContentFlow<FsReader, RepositoryWriter>()
-                                // settings file
-                                .Configure<FsReaderArgs>(hostBuilderContext.Configuration.GetSection("fsReader"))
-                                .Configure<RepositoryWriterArgs>(
-                                    hostBuilderContext.Configuration.GetSection("repositoryWriter"))
-                                // rewrite settings
-                                .Configure<FsReaderArgs>(settings => importArgs.ReaderArgs.RewriteSettings(settings))
-                                .Configure<RepositoryWriterArgs>(settings =>
-                                    importArgs.WriterArgs.RewriteSettings(settings))
+                                .ConfigureSenseNetRepository("target", options =>
+                                {
+                                    hostBuilderContext.Configuration.GetSection("repositoryWriter").Bind(options);
+                                    //update from command line
+                                    importArgs.WriterArgs.RewriteSettings(options);
+                                })
                                 ;
                             break;
                         case Verb.Copy:
                             var copyArgs = (CopyArguments) appArguments;
                             serviceCollection
+                                .AddSenseNetIO(configureFilesystemReader: readerArgs =>
+                                    {
+                                        hostBuilderContext.Configuration.GetSection("fsReader")
+                                            .Bind(readerArgs);
+                                        copyArgs.ReaderArgs.RewriteSettings(readerArgs);
+                                    },
+                                    configureFilesystemWriter: writerArgs =>
+                                    {
+                                        hostBuilderContext.Configuration.GetSection("fsWriter").Bind(writerArgs);
+                                        copyArgs.WriterArgs.RewriteSettings(writerArgs);
+                                    })
                                 .AddContentFlow<FsReader, FsWriter>()
-                                // settings file
-                                .Configure<FsReaderArgs>(hostBuilderContext.Configuration.GetSection("fsReader"))
-                                .Configure<FsWriterArgs>(hostBuilderContext.Configuration.GetSection("fsWriter"))
-                                // rewrite settings
-                                .Configure<FsReaderArgs>(settings => copyArgs.ReaderArgs.RewriteSettings(settings))
-                                .Configure<FsWriterArgs>(settings => copyArgs.WriterArgs.RewriteSettings(settings))
                                 ;
                             break;
                         case Verb.Sync:
                             var syncArgs = (SyncArguments) appArguments;
                             serviceCollection
-                                .AddSenseNetClientTokenStore()
+                                .AddSenseNetIO(configureRepositoryReader: readerArgs =>
+                                    {
+                                        hostBuilderContext.Configuration.GetSection("repositoryReader")
+                                            .Bind(readerArgs);
+                                        syncArgs.ReaderArgs.RewriteSettings(readerArgs);
+                                    },
+                                    configureRepositoryWriter: writerArgs =>
+                                    {
+                                        hostBuilderContext.Configuration.GetSection("repositoryWriter").Bind(writerArgs);
+                                        syncArgs.WriterArgs.RewriteSettings(writerArgs);
+                                    })
                                 .AddContentFlow<RepositoryReader, RepositoryWriter>()
-                                // settings file
-                                .Configure<RepositoryReaderArgs>(
-                                    hostBuilderContext.Configuration.GetSection("repositoryReader"))
-                                .Configure<RepositoryWriterArgs>(
-                                    hostBuilderContext.Configuration.GetSection("repositoryWriter"))
-                                // rewrite settings
-                                .Configure<RepositoryReaderArgs>(settings =>
-                                    syncArgs.ReaderArgs.RewriteSettings(settings))
-                                .Configure<RepositoryWriterArgs>(settings =>
-                                    syncArgs.WriterArgs.RewriteSettings(settings))
+                                .ConfigureSenseNetRepository("source", options =>
+                                {
+                                    hostBuilderContext.Configuration.GetSection("repositoryReader").Bind(options);
+                                    //update from command line
+                                    syncArgs.ReaderArgs.RewriteSettings(options);
+                                })
+                                .ConfigureSenseNetRepository("target", options =>
+                                {
+                                    hostBuilderContext.Configuration.GetSection("repositoryWriter").Bind(options);
+                                    //update from command line
+                                    syncArgs.WriterArgs.RewriteSettings(options);
+                                })
                                 ;
                             break;
                         case Verb.Transfer:
