@@ -76,5 +76,7 @@ namespace SenseNet.IO
         void SetReferenceUpdateTasks(IEnumerable<TransferTask> tasks, int taskCount);
 
         Task<bool> ReadByReferenceUpdateTasksAsync(CancellationToken cancel);
+
+        void SkipSubtree(string path);
     }
 }

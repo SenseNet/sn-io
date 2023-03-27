@@ -125,6 +125,12 @@ namespace SenseNet.IO.Implementations
             return Task.FromResult(true);
         }
 
+        public void SkipSubtree(string path)
+        {
+            //UNDONE: NotImplementedException: FsReader.SkipSubtree
+            throw new NotImplementedException();
+        }
+
         private FsContent GetRootContent(string fsRootPath)
         {
             var contentName = Path.GetFileName(fsRootPath);

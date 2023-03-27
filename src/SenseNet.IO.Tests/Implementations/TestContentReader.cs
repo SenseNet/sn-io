@@ -1,8 +1,10 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using IdentityModel.Client;
 
 namespace SenseNet.IO.Tests.Implementations
 {
@@ -49,15 +51,24 @@ namespace SenseNet.IO.Tests.Implementations
             var subTreePath = NormalizePath(ContentPath.GetAbsolutePath(relativePath, ReaderRootPath));
 
             var paths = _sortedPaths.Where(x => x.StartsWith(subTreePath + _separator) || x == subTreePath).ToArray();
-            if (index >= paths.Length)
-                return Task.FromResult(false);
+            while (true)
+            {
+                if (index >= paths.Length)
+                    return Task.FromResult(false);
 
-            var content = _tree[paths[index]];
-            RelativePath = ContentPath.GetRelativePath(content.Path, ReaderRootPath);
-            Content = content.Clone();
+                var path = paths[index];
+                if (NeedToSkip(path))
+                {
+                    ++index;
+                    continue;
+                }
+                var content = _tree[path];
+                RelativePath = ContentPath.GetRelativePath(content.Path, ReaderRootPath);
+                Content = content.Clone();
 
-            _indexes[relativePath] = ++index;
-            return Task.FromResult(true);
+                _indexes[relativePath] = ++index;
+                return Task.FromResult(true);
+            }
         }
 
         private string[] _filteredPaths;
@@ -79,14 +90,23 @@ namespace SenseNet.IO.Tests.Implementations
                     .ToArray();
             }
 
-            if (_filteredPathIndex >= _filteredPaths.Length)
-                return Task.FromResult(false);
-            var sourceContent = _tree[_filteredPaths[_filteredPathIndex]];
-            RelativePath = ContentPath.GetRelativePath(sourceContent.Path, ReaderRootPath);
-            Content = sourceContent.Clone();
+            while (true)
+            {
+                if (_filteredPathIndex >= _filteredPaths.Length)
+                    return Task.FromResult(false);
+                var filteredPath = _filteredPaths[_filteredPathIndex];
+                if (NeedToSkip(filteredPath))
+                {
+                    ++_filteredPathIndex;
+                    continue;
+                }
+                var sourceContent = _tree[filteredPath];
+                RelativePath = ContentPath.GetRelativePath(sourceContent.Path, ReaderRootPath);
+                Content = sourceContent.Clone();
 
-            _filteredPathIndex++;
-            return Task.FromResult(true);
+                _filteredPathIndex++;
+                return Task.FromResult(true);
+            }
         }
 
         public void SetReferenceUpdateTasks(IEnumerable<TransferTask> tasks, int taskCount)
@@ -107,6 +127,17 @@ namespace SenseNet.IO.Tests.Implementations
             RelativePath = task.ReaderPath;
 
             return Task.FromResult(true);
+        }
+
+        private readonly List<string> _cutoffs = new();
+        public void SkipSubtree(string relativePath)
+        {
+            _cutoffs.Add(relativePath);
+        }
+        private bool NeedToSkip(string path)
+        {
+            var relativePath = ContentPath.GetRelativePath(path, ReaderRootPath);
+            return _cutoffs.Any(relativePath.StartsWith);
         }
 
 

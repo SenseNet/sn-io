@@ -62,13 +62,19 @@ namespace SenseNet.IO
         }
         private void WriteLog(WriterState state)
         {
-            using (var writer = new StringWriter())
+            if (state.Action == WriterAction.MissingParent)
             {
-                writer.WriteLine($"{state.Action,-8} {state.WriterPath}");
-                foreach (var message in state.Messages)
-                    writer.WriteLine($"         {message.Replace("The server returned an error (HttpStatus: InternalServerError): ", "")}");
-                WriteLog(writer.GetStringBuilder().ToString().Trim());
+                WriteLog($"Skip subtree: reader: {ContentPath.GetParentPath(Reader.Content.Path)}");
+                WriteLog($"Skip subtree: writer: {ContentPath.GetParentPath(state.WriterPath)}");
+                return;
             }
+
+            using var writer = new StringWriter();
+            writer.WriteLine($"{state.Action,-8} {state.WriterPath}");
+            //UNDONE: check real message when parent not found
+            foreach (var message in state.Messages)
+                writer.WriteLine($"         {message.Replace("The server returned an error (HttpStatus: InternalServerError): ", "")}");
+            WriteLog(writer.GetStringBuilder().ToString().Trim());
         }
         protected void WriteLog(Exception e)
         {

@@ -1,6 +1,6 @@
 ﻿namespace SenseNet.IO
 {
-    public enum WriterAction { Unknown, Created, Creating, Updated, Updating, Failed }
+    public enum WriterAction { Unknown, Created, Creating, Updated, Updating, MissingParent, Failed }
 
     public class WriterState
     {

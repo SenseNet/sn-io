@@ -225,6 +225,12 @@ namespace SenseNet.IO.Implementations
             return true;
         }
 
+        public void SkipSubtree(string path)
+        {
+            //UNDONE: NotImplementedException: RepositoryReader.SkipSubtree
+            throw new NotImplementedException();
+        }
+
 
         private static readonly string[] _keywords = new[]
         {

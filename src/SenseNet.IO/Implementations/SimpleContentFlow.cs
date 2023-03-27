@@ -37,7 +37,10 @@ namespace SenseNet.IO.Implementations
                     await WriteAsync(progress, false, cancel);
                     while (await Reader.ReadAllAsync(new string[0], cancel))
                     {
-                        await WriteAsync(progress, false, cancel);
+                        //UNDONE: Not tested: SimpleContentFlow.TransferAsync
+                        var writerState = await WriteAsync(progress, false, cancel);
+                        if (writerState.Action == WriterAction.MissingParent)
+                            Reader.SkipSubtree(ContentPath.GetParentPath(writerState.ReaderPath));
                     }
                 }
             }
@@ -51,7 +54,7 @@ namespace SenseNet.IO.Implementations
             WriteSummaryToLog(_contentCount, Reader.EstimatedCount, 0, _errorCount, timer.Elapsed);
         }
 
-        private async Task WriteAsync(IProgress<TransferState> progress, bool updateReferences, CancellationToken cancel = default)
+        private async Task<WriterState> WriteAsync(IProgress<TransferState> progress, bool updateReferences, CancellationToken cancel = default)
         {
             var readerPath = Reader.RelativePath;
             var writerPath = ContentPath.Combine(_rootName, readerPath);
@@ -59,10 +62,11 @@ namespace SenseNet.IO.Implementations
             state.ReaderPath = readerPath;
             state.WriterPath = writerPath;
             Progress(ref _contentCount, state, updateReferences, progress);
+            return state;
         }
         private void Progress(ref int count, WriterState state, bool updateReferences, IProgress<TransferState> progress = null)
         {
-            if(state.Action == WriterAction.Failed)
+            if (state.Action == WriterAction.MissingParent || state.Action == WriterAction.Failed)
                 _errorCount++;
 
             WriteLogAndTask(state, updateReferences);

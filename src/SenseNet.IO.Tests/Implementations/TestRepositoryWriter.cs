@@ -13,18 +13,20 @@ namespace SenseNet.IO.Tests.Implementations
     {
         public Dictionary<string, ContentNode> Tree { get; }
         private readonly Dictionary<string, WriterState> _states;
+        private string[] _badContentPaths;
 
         public string ContainerPath { get; }
         public string RootName { get; }
 
         public RepositoryWriterArgs WriterOptions => throw new NotImplementedException();
 
-        public TestRepositoryWriter(Dictionary<string, ContentNode> initialTree, Dictionary<string, WriterState> states, string containerPath = null, string rootName = null)
+        public TestRepositoryWriter(Dictionary<string, ContentNode> initialTree, Dictionary<string, WriterState> states, string containerPath = null, string rootName = null, string[] badContentPaths = null)
         {
             Tree = initialTree;
             ContainerPath = containerPath ?? "/";
             RootName = rootName;
             _states = states;
+            _badContentPaths = badContentPaths;
         }
 
         public Task InitializeAsync()
@@ -35,10 +37,28 @@ namespace SenseNet.IO.Tests.Implementations
         public Task<WriterState> WriteAsync(string path, IContent content, CancellationToken cancel = default)
         {
             var absolutePath = ContentPath.GetAbsolutePath(path, ContainerPath);
+            if (_badContentPaths != null && _badContentPaths.Contains(absolutePath))
+            {
+                return Task.FromResult(new WriterState
+                {
+                    WriterPath = absolutePath,
+                    Action = WriterAction.Failed,
+                    Messages = new[] {"ErrorMessage1"}
+                });
+            }
             var parentPath = ContentPath.GetParentPath(absolutePath);
             var contentNode = new ContentNode { Name = content.Name, Type = content.Type };
             CopyFieldsAndPermissions(content, contentNode);
-            var parent = parentPath == "/" || string.IsNullOrEmpty(parentPath) ? null : Tree[parentPath];
+            ContentNode parent = null;
+            if (parentPath != "/" && !string.IsNullOrEmpty(parentPath))
+                if (!Tree.TryGetValue(parentPath, out parent))
+                    return Task.FromResult(new WriterState
+                    {
+                        WriterPath = absolutePath,
+                        Action = WriterAction.MissingParent,
+                        Messages = new[] { $"Cannot create content {ContentPath.GetName(absolutePath)}, " +
+                                           $"parent not found: {parentPath}" }
+                    });
 
             contentNode.Parent = parent;
             if (parent != null)
