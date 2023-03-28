@@ -327,7 +327,7 @@ namespace SenseNet.IO.Implementations
         }
         protected virtual async Task<IContent[]> QueryAsync(string queryText)
         {
-            var request = new LoadCollectionRequest
+            var request = new QueryContentRequest
             {
                 Path = "/Root",
                 ContentQuery = queryText,
@@ -335,7 +335,7 @@ namespace SenseNet.IO.Implementations
             };
             try
             {
-                var result = await _repository.LoadCollectionAsync(request, CancellationToken.None)
+                var result = await _repository.QueryAsync(request, CancellationToken.None)
                     .ConfigureAwait(false);
                 var transformed = result.Select(x => new RepositoryReaderContent(x)).ToArray();
                 // ReSharper disable once CoVariantArrayConversion
