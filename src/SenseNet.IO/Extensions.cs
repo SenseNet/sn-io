@@ -45,7 +45,7 @@ namespace SenseNet.Extensions.DependencyInjection
             Action<RepositoryWriterArgs> configureRepositoryWriter = null)
         {
             services
-                .AddSenseNetClientTokenStore()
+                .AddSenseNetClient()
 
                 .AddTransient<IFilesystemReader, FsReader>()
                 .AddTransient<IFilesystemWriter, FsWriter>()

@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using SenseNet.Client;
-using SenseNet.Client.Authentication;
 
 namespace SenseNet.IO.Implementations
 {
@@ -14,6 +14,17 @@ namespace SenseNet.IO.Implementations
     {
         public string ClientId { get; set; }
         public string ClientSecret { get; set; }
+        public string ApiKey { get; set; }
+
+        internal RepositoryAuthenticationOptions Clone()
+        {
+            return new RepositoryAuthenticationOptions
+            {
+                ClientId = ClientId,
+                ClientSecret = ClientSecret,
+                ApiKey = ApiKey
+            };
+        }
     }
     public class RepositoryReaderArgs
     {
@@ -21,7 +32,7 @@ namespace SenseNet.IO.Implementations
         public string Path { get; set; }
         public int? BlockSize { get; set; }
         public string Filter { get; set; }
-        public RepositoryAuthenticationOptions Authentication { get; set; } = new RepositoryAuthenticationOptions();
+        public RepositoryAuthenticationOptions Authentication { get; set; } = new();
 
         internal RepositoryReaderArgs Clone()
         {
@@ -31,11 +42,7 @@ namespace SenseNet.IO.Implementations
                 Path = Path,
                 BlockSize = BlockSize,
                 Filter = Filter,
-                Authentication = new RepositoryAuthenticationOptions
-                {
-                    ClientId = Authentication?.ClientId,
-                    ClientSecret = Authentication?.ClientSecret
-                }
+                Authentication = Authentication?.Clone() ?? new RepositoryAuthenticationOptions()
             };
         }
     }
@@ -48,8 +55,9 @@ namespace SenseNet.IO.Implementations
         public RepositoryReaderArgs Args { get; }
         private int _blockSize;
         private int _blockIndex;
-        private readonly ITokenStore _tokenStore;
-        private ServerContext _server;
+        private readonly IRepositoryCollection _repositoryCollection;
+        private readonly ILogger<RepositoryReader> _logger;
+        private IRepository _repository;
 
         public string Url => Args.Url;
         public string RootName => ContentPath.GetName(Args.Path);
@@ -61,7 +69,8 @@ namespace SenseNet.IO.Implementations
 
         public RepositoryReaderArgs ReaderOptions => Args;
 
-        public RepositoryReader(ITokenStore tokenStore, IOptions<RepositoryReaderArgs> args)
+        public RepositoryReader(IRepositoryCollection repositoryCollection, IOptions<RepositoryReaderArgs> args, 
+            ILogger<RepositoryReader> logger)
         {
             if (args?.Value == null)
                 throw new ArgumentNullException(nameof(args));
@@ -71,7 +80,8 @@ namespace SenseNet.IO.Implementations
             Args.BlockSize ??= 10;
 
             _blockSize = Args.BlockSize.Value;
-            _tokenStore = tokenStore;
+            _repositoryCollection = repositoryCollection;
+            _logger = logger;
         }
 
         public virtual Task InitializeAsync()
@@ -98,22 +108,13 @@ namespace SenseNet.IO.Implementations
             _initializedInternal = true;
 
             await InitializeAsync().ConfigureAwait(false);
+            
+            _repository = await _repositoryCollection.GetRepositoryAsync("source", CancellationToken.None)
+                .ConfigureAwait(false);
 
-            var server = new ServerContext
-            {
-                Url = Url,
-                Username = "builtin\\admin",
-                Password = "admin"
-            };
-
-            // this will take precedence over the username and password
-            if (!string.IsNullOrEmpty(Args.Authentication.ClientId))
-            {
-                server.Authentication.AccessToken = await _tokenStore
-                    .GetTokenAsync(server, Args.Authentication.ClientId, Args.Authentication.ClientSecret);
-            }
-
-            _server = server;
+            // workaround while the client api sets the logger internally
+            if (_repository.Server is { Logger: null })
+                _repository.Server.Logger = _logger;
 
             // Get tree size before first read
             EstimatedCount = await GetCountAsync();
@@ -278,7 +279,7 @@ namespace SenseNet.IO.Implementations
                 try
                 {
                     result = await RESTCaller.GetResponseStringAsync(RepositoryRootPath, "GetContentCountInTree",
-                        server: _server);
+                        server: _repository.Server);
                     return int.TryParse(result, out var count1) ? count1 : default;
                 }
                 catch (Exception e)
@@ -289,13 +290,13 @@ namespace SenseNet.IO.Implementations
 
             try
             {
-                var req = new ODataRequest(_server)
+                var req = new ODataRequest(_repository.Server)
                 {
                     Path = RepositoryRootPath,
                     ActionName = "GetContentCountInTree",
                     ContentQuery = Filter
                 };
-                result = await RESTCaller.GetResponseStringAsync(req, server: _server);
+                result = await RESTCaller.GetResponseStringAsync(req, server: _repository.Server);
                 return int.TryParse(result, out var count2) ? count2 : default;
             }
             catch (Exception e)
@@ -326,7 +327,7 @@ namespace SenseNet.IO.Implementations
         }
         protected virtual async Task<IContent[]> QueryAsync(string queryText)
         {
-            var oDataRequest = new ODataRequest(_server)
+            var request = new LoadCollectionRequest
             {
                 Path = "/Root",
                 ContentQuery = queryText,
@@ -334,7 +335,8 @@ namespace SenseNet.IO.Implementations
             };
             try
             {
-                var result = await Client.Content.LoadCollectionAsync(oDataRequest, _server).ConfigureAwait(false);
+                var result = await _repository.LoadCollectionAsync(request, CancellationToken.None)
+                    .ConfigureAwait(false);
                 var transformed = result.Select(x => new RepositoryReaderContent(x)).ToArray();
                 // ReSharper disable once CoVariantArrayConversion
                 return transformed;
@@ -346,9 +348,10 @@ namespace SenseNet.IO.Implementations
         }
 
         readonly string[] _idFields = {"Id", "Path"} ;
+
         protected virtual async Task<IContent> GetContentAsync(string path, string[] fields)
         {
-            var oDataRequest = new ODataRequest(_server)
+            var request = new LoadContentRequest
             {
                 Path = path,
                 Select = _idFields.Union(fields),
@@ -356,7 +359,8 @@ namespace SenseNet.IO.Implementations
             };
             try
             {
-                var result = await Client.Content.LoadAsync(oDataRequest, _server).ConfigureAwait(false);
+                var result = await _repository.LoadContentAsync(request, CancellationToken.None)
+                    .ConfigureAwait(false);
                 var transformed = new RepositoryReaderContent(result);
                 return transformed;
             }

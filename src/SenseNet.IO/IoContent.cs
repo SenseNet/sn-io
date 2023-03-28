@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -20,10 +21,12 @@ namespace SenseNet.IO
         public string Name { get; set; }
         public string Type { get; set; }
         public PermissionInfo Permissions { get; set; }
+        public bool IsFolder => throw new NotImplementedException("IsFolder is not implemented in IoContent.");
+        public bool HasData => _fields.Any();
 
         public Task<Attachment[]> GetAttachmentsAsync()
         {
-            throw new System.NotImplementedException();
+            throw new NotImplementedException();
         }
     }
 }

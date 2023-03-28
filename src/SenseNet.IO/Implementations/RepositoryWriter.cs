@@ -1,7 +1,6 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
-using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -10,7 +9,6 @@ using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using SenseNet.Client;
-using SenseNet.Client.Authentication;
 using SenseNet.Tools;
 
 namespace SenseNet.IO.Implementations
@@ -20,7 +18,7 @@ namespace SenseNet.IO.Implementations
         public string Url { get; set; }
         public string Path { get; set; }
         public string Name { get; set; }
-        public RepositoryAuthenticationOptions Authentication { get; set; } = new RepositoryAuthenticationOptions();
+        public RepositoryAuthenticationOptions Authentication { get; set; } = new();
         public int UploadChunkSize { get; set; }
 
         internal RepositoryWriterArgs Clone()
@@ -31,20 +29,16 @@ namespace SenseNet.IO.Implementations
                 Path = Path,
                 Name = Name,
                 UploadChunkSize = UploadChunkSize,
-                Authentication = new RepositoryAuthenticationOptions
-                {
-                    ClientId = Authentication?.ClientId,
-                    ClientSecret = Authentication?.ClientSecret
-                }
+                Authentication = Authentication?.Clone() ?? new RepositoryAuthenticationOptions()
             };
         }
     }
 
     public class RepositoryWriter : ISnRepositoryWriter
     {
-        private readonly ITokenStore _tokenStore;
-        private ServerContext _server;
-        private readonly ILogger _logger;
+        private readonly IRepositoryCollection _repositoryCollection;
+        private readonly ILogger<RepositoryWriter> _logger;
+        private IRepository _repository;
 
         public RepositoryWriterArgs Args { get; }
         public string Url => Args.Url;
@@ -53,13 +47,14 @@ namespace SenseNet.IO.Implementations
 
         public RepositoryWriterArgs WriterOptions => Args;
 
-        public RepositoryWriter(ITokenStore tokenStore, IOptions<RepositoryWriterArgs> args, ILogger<RepositoryWriter> logger)
+        public RepositoryWriter(IRepositoryCollection repositoryCollection, IOptions<RepositoryWriterArgs> args, 
+            ILogger<RepositoryWriter> logger)
         {
             if (args?.Value == null)
                 throw new ArgumentNullException(nameof(args));
             Args = args.Value.Clone();
-            
-            _tokenStore = tokenStore;
+
+            _repositoryCollection = repositoryCollection;
             _logger = logger;
         }
 
@@ -76,23 +71,12 @@ namespace SenseNet.IO.Implementations
             if (Args.UploadChunkSize > 0)
                 ClientContext.Current.ChunkSizeInBytes = Args.UploadChunkSize;
 
-            var server = new ServerContext
-            {
-                Url = Url,
-                Username = "builtin\\admin",
-                Password = "admin",
-                Logger = _logger
-            };
+            _repository = await _repositoryCollection.GetRepositoryAsync("target", CancellationToken.None)
+                .ConfigureAwait(false);
 
-            // this will take precedence over the username and password
-            if (!string.IsNullOrEmpty(Args.Authentication.ClientId))
-            {
-                server.Authentication.AccessToken = await _tokenStore
-                    .GetTokenAsync(server, Args.Authentication.ClientId, Args.Authentication.ClientSecret)
-                    .ConfigureAwait(false);
-            }
-
-            _server = server;
+            // workaround while the client api sets the logger internally
+            if (_repository.Server is { Logger: null })
+                _repository.Server.Logger = _logger;
         }
 
         public virtual async Task<WriterState> WriteAsync(string path, IContent content, CancellationToken cancel = default)
@@ -115,25 +99,23 @@ namespace SenseNet.IO.Implementations
 
         private async Task<WriterState> WriteContentTypeAsync(string repositoryPath, IContent content, CancellationToken cancel)
         {
-            Content uploaded;
             var attachments = await content.GetAttachmentsAsync();
 
             // "Binary" field of a ContentType need to uploaded first.
             var binary = attachments.FirstOrDefault(a => a.FieldName == "Binary");
             if (binary != null)
             {
-                using (var stream = binary.Stream)
-                    uploaded = await Content.UploadAsync("/Root/System/Schema/ContentTypes", content.Name, stream, "ContentType", server: _server);
+                await using var stream = binary.Stream;
+                await Content.UploadAsync("/Root/System/Schema/ContentTypes", content.Name, stream, "ContentType",
+                    server: _repository.Server);
             }
 
             // Upload other binaries if there are.
-            foreach (var attachment in attachments)
+            foreach (var attachment in attachments.Where(a => a.FieldName != "Binary"))
             {
-                if (attachment.FieldName != "Binary")
-                {
-                    using (var stream = attachment.Stream)
-                        uploaded = await Content.UploadAsync("/Root/System/Schema/ContentTypes", content.Name, stream, "ContentType", attachment.FieldName, server: _server);
-                }
+                await using var stream = attachment.Stream;
+                await Content.UploadAsync("/Root/System/Schema/ContentTypes", content.Name, stream, "ContentType",
+                    attachment.FieldName, server: _repository.Server);
             }
 
             // Remove attachments from field set.
@@ -164,7 +146,9 @@ namespace SenseNet.IO.Implementations
             try
             {
                 resultString = await RESTCaller.GetResponseStringAsync(
-                    new ODataRequest(_server) {IsCollectionRequest = false, Path = "/Root", ActionName = "Import"}, HttpMethod.Post, body, _server);
+                    new ODataRequest(_repository.Server)
+                        { IsCollectionRequest = false, Path = "/Root", ActionName = "Import" }, HttpMethod.Post, body,
+                    _repository.Server);
             }
             catch (Exception e)
             {
@@ -196,7 +180,23 @@ namespace SenseNet.IO.Implementations
         }
         private async Task<WriterState> WriteContentAsync(string repositoryPath, IContent content, CancellationToken cancel)
         {
-            Content uploaded;
+            if (content.IsFolder && !content.HasData)
+            {
+                var existing = await _repository.IsContentExistsAsync(repositoryPath, cancel)
+                    .ConfigureAwait(false);
+
+                if (existing)
+                {
+                    _logger.LogTrace("Skip importing existing folder without metadata: {repositoryPath}", repositoryPath);
+
+                    return new WriterState
+                    {
+                        WriterPath = repositoryPath,
+                        Action = WriterAction.Skipped
+                    };
+                }
+            }
+
             var attachments = await content.GetAttachmentsAsync();
 
             // Remove attachments from field set.
@@ -226,30 +226,17 @@ namespace SenseNet.IO.Implementations
             string resultString = null;
             try
             {
-                //await Retrier.RetryAsync(50, 3000, async () =>
-await Retrier.RetryAsync(2, 30, async () =>
-                {
-                      var request = new ODataRequest(_server)
+                await Retrier.RetryAsync(50, 3000, async () =>
                     {
-                        IsCollectionRequest = false, Path = "/Root", ActionName = "Import"
-                    };
+                        var request = new ODataRequest(_repository.Server)
+                        {
+                            IsCollectionRequest = false, Path = "/Root", ActionName = "Import"
+                        };
 
-                    resultString = await RESTCaller.GetResponseStringAsync(request, HttpMethod.Post, body, _server);
-                }, (i, exception) =>
-                {
-                    return exception switch
-                    {
-                        null => true,
-                        ClientException { StatusCode: HttpStatusCode.TooManyRequests or HttpStatusCode.GatewayTimeout } 
-                            when i > 1 => false,
-                        ClientException { InnerException: HttpRequestException rex } when i > 1 &&
-                            (rex.Message.Contains("The SSL connection could not be established") ||
-                             rex.Message.Contains("An error occurred while sending the request"))
-                            => false,
-                        _ => throw exception
-                    };
-                });
-                
+                        resultString = await RESTCaller.GetResponseStringAsync(request, HttpMethod.Post, body, _repository.Server);
+                    },
+                    (i, exception) => exception.CheckRetryConditionOrThrow(i));
+
             }
             catch (ClientException e)
             {
@@ -267,30 +254,16 @@ await Retrier.RetryAsync(2, 30, async () =>
             var parentPath = ContentPath.GetParentPath(repositoryPath);
             foreach (var attachment in attachments.Where(a => a.Stream != null))
             {
-                
                 try
                 {
                     await using var stream = attachment.Stream;
                     await Retrier.RetryAsync(50, 3000, async () =>
                         {
                             stream?.Seek(0, SeekOrigin.Begin);
-                            uploaded = await Content.UploadAsync(parentPath, content.Name, stream,
-                                propertyName: attachment.FieldName, server: _server);
+                            await Content.UploadAsync(parentPath, content.Name, stream,
+                                propertyName: attachment.FieldName, server: _repository.Server);
                         },
-                        (i, exception) =>
-                        {
-                            return exception switch
-                            {
-                                null => true,
-                                ClientException { StatusCode: HttpStatusCode.TooManyRequests or HttpStatusCode.GatewayTimeout } 
-                                    when i > 1 => false,
-                                ClientException { InnerException: HttpRequestException rex } when i > 1 &&
-                                    (rex.Message.Contains("The SSL connection could not be established") ||
-                                     rex.Message.Contains("An error occurred while sending the request"))
-                                    => false,
-                                _ => throw exception
-                            };
-                        });
+                        (i, exception) => exception.CheckRetryConditionOrThrow(i));
                 }
                 catch (ClientException ex)
                 {

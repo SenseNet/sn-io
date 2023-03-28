@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SenseNet.Client;
@@ -32,7 +33,7 @@ namespace SenseNet.IO.Tests
             public List<string> Queries { get; } = new List<string>();
 
             public RepositoryReaderMock(Dictionary<string, ContentNode> sourceTree,
-                IOptions<RepositoryReaderArgs> args) : base(null, args)
+                IOptions<RepositoryReaderArgs> args) : base(null, args, NullLogger<RepositoryReader>.Instance)
             {
                 _sourceTree = sourceTree;
             }

@@ -2,7 +2,10 @@
   "profiles": {
     "SenseNet.IO.CLI": {
       "commandName": "Project",
-      "commandLineArgs": "EXPORT -SOURCE -PATH /Root/IMS"
+      "commandLineArgs": "EXPORT -SOURCE -PATH /Root/IMS",
+      "environmentVariables": {
+        "DOTNET_ENVIRONMENT": "Development"
+      }
     }
   }
 }

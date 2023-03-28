@@ -14,11 +14,23 @@ There are four scenarios offered by the built-in tool.
 
 > **For developers**: SnIO is extendable. You can extend our default content tree readers and writers, or implement your own. Currently you'll have to look into the source code for examples.
 
+## Installation
+You can get the SnIO tool in the following ways:
+- integrate the [SenseNet.IO](https://www.nuget.org/packages/SenseNet.IO) NuGet package into your application and use our API to manage content in your repository
+- compile the source code in this repository and use the tool from the `SenseNet.IO.CLI` folder
+- **BETA**: install the tool as a [dotnet tool](https://learn.microsoft.com/en-us/dotnet/core/tools/global-tools) from [NuGet](https://www.nuget.org/packages/SenseNet.IO.CLI) and use it anywhere from command line. The following command will install the sensenet IO tool as a global dotnet tool:
+
+`dotnet tool install -g sensenet.io.cli`
+
+[![NuGet](https://img.shields.io/nuget/v/SenseNet.IO.CLI.svg)](https://www.nuget.org/packages/SenseNet.IO.CLI)
+
 ## Parameters
 The SnIO tool has a number of parameters with some restrictions. The general form is the following:
 ```
 SnIO <Scenario> [General parameters] [-SOURCE <Source parameters>] [-TARGET <Target parameters>]
 ```
+
+> For a full command line example with **authentication** please see the end of this article.
 
 ### General parameters
 SnIO has its own configuration file, as you will see later in this article. All configured values can be overwritten using environment variables or in the command line using the usual .NET Core rules (see the [command-line arguments](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/configuration/?view=aspnetcore-5.0#command-line-arguments-1 "Microsoft documentation") and configuration in the .NET Core documentation).
@@ -190,7 +202,7 @@ SnIO EXPORT --DISPLAY:LEVEL Verbose -SOURCE -PATH "/Root/Content"
 ```
 In the second example the log-file name pattern will be changed (consider that an array is accessed by the index of the desired item):
 ```
-./SnIO.exe EXPORT --Serilog:WriteTo:0:Args:path "logs/SnIO-.txt" -SOURCE -PATH /Root/IMS
+SnIO EXPORT --Serilog:WriteTo:0:Args:path "logs/SnIO-.txt" -SOURCE -PATH /Root/IMS
 ```
 
 ### providerSettings.json
@@ -228,23 +240,32 @@ The providers have several parameters. To simplify SnIO usages, default values c
 ```
 
 ## Authentication
-Authenticating works the same way in case of the source and the target repository: it uses the same client/secret technique other sensenet tools use. You provide the clientid and secret values for the repository reader and/or writer in the configuration (or overwrite them in environment variables or command line) and let the tool get the auth token from the corresponding authority related to the sensenet content repository.
+Authenticating works the same way in case of the source and the target repository: it uses the same client/secret or API key technique other sensenet tools use. You provide the clientid and secret or api key values for the repository reader and/or writer in the configuration (or overwrite them in environment variables or command line) and let the tool get the auth token from the corresponding authority related to the sensenet content repository.
 
 To obtain the necessary values, please log in to your repository on the admin ui and visit the [Security settings page](https://docs.sensenet.com/guides/settings/api-and-security). There are also OData actions that will let you manage these values. 
 
 ### Examples
+#### In command line
+```
+SnIO IMPORT -SOURCE "d:\import" -TARGET -URL "https://example.com" -PATH "/Root/Content" -APIKEY "..." 
+
+SnIO IMPORT -SOURCE "d:\import" -TARGET -URL "https://example.com" -PATH "/Root/Content" -CLIENTID "..." -CLIENTSECRET "..."
+```
+#### In configuration
 ```json
 {
   "repositoryReader": {
     "Authentication": {
       "ClientId": "...",
-      "ClientSecret": "..." 
+      "ClientSecret": "...",
+      "ApiKey": "..." 
     } 
   },
   "repositoryWriter": {
     "Authentication": {
       "ClientId": "...",
-      "ClientSecret": "..." 
+      "ClientSecret": "...", 
+      "ApiKey": "..." 
     } 
   }
 }

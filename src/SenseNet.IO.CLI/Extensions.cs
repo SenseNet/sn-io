@@ -1,4 +1,5 @@
 ﻿using System;
+using SenseNet.Client;
 using SenseNet.IO.Implementations;
 
 namespace SenseNet.IO.CLI
@@ -59,6 +60,24 @@ namespace SenseNet.IO.CLI
                 settings.Filter = args.Filter;
             if (args.BlockSize != null)
                 settings.BlockSize = args.BlockSize;
+            if (args.Authentication.ApiKey != null)
+                settings.Authentication.ApiKey = args.Authentication.ApiKey;
+            if (args.Authentication.ClientId != null)
+                settings.Authentication.ClientId = args.Authentication.ClientId;
+            if (args.Authentication.ClientSecret != null)
+                settings.Authentication.ClientSecret = args.Authentication.ClientSecret;
+        }
+        public static void RewriteSettings(this RepositoryReaderArgs args, RepositoryOptions settings)
+        {
+            // rewrite
+            if (args.Url != null)
+                settings.Url = args.Url;
+            if (args.Authentication.ApiKey != null)
+                settings.Authentication.ApiKey = args.Authentication.ApiKey;
+            if (args.Authentication.ClientId != null)
+                settings.Authentication.ClientId = args.Authentication.ClientId;
+            if (args.Authentication.ClientSecret != null)
+                settings.Authentication.ClientSecret = args.Authentication.ClientSecret;
         }
         public static void RewriteSettings(this RepositoryWriterArgs args, RepositoryWriterArgs settings)
         {
@@ -77,8 +96,25 @@ namespace SenseNet.IO.CLI
                 settings.Path = args.Path;
             if (args.Name != null)
                 settings.Name = args.Name;
+            if (args.Authentication.ApiKey != null)
+                settings.Authentication.ApiKey = args.Authentication.ApiKey;
+            if (args.Authentication.ClientId != null)
+                settings.Authentication.ClientId = args.Authentication.ClientId;
+            if (args.Authentication.ClientSecret != null)
+                settings.Authentication.ClientSecret = args.Authentication.ClientSecret;
         }
-
+        public static void RewriteSettings(this RepositoryWriterArgs args, RepositoryOptions settings)
+        {
+            // rewrite
+            if (args.Url != null)
+                settings.Url = args.Url;
+            if (args.Authentication.ApiKey != null)
+                settings.Authentication.ApiKey = args.Authentication.ApiKey;
+            if (args.Authentication.ClientId != null)
+                settings.Authentication.ClientId = args.Authentication.ClientId;
+            if (args.Authentication.ClientSecret != null)
+                settings.Authentication.ClientSecret = args.Authentication.ClientSecret;
+        }
 
         public static string ParamsToDisplay(this IContentReader reader)
         {
