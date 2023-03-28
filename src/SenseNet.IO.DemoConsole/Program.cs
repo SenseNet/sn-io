@@ -122,7 +122,7 @@ public class Program
         await Task.WhenAll(tasks);
 
         var elapsed = timer.Elapsed;
-        var contentCount = states.Sum(s => s.ContentCount);
+        var contentCount = states.Sum(s => s.CurrentCount);
         logger.LogInformation($"IMPORT FINISHED: " +
                               $"parallelism: {count}, " +
                               $"imported content: {contentCount}, " +
