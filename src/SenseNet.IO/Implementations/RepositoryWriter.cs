@@ -94,7 +94,7 @@ namespace SenseNet.IO.Implementations
             //UNDONE: ? ContainerPath can be "/"? See TestRepositoryWriter.IsContentExists()
             if (!path.StartsWith("/"))
                 path = ContentPath.Combine(ContainerPath, path);
-            return await Content.ExistsAsync(path, _server);
+            return await _repository.IsContentExistsAsync(path, cancel);
         }
 
         private async Task<WriterState> WriteContentTypeAsync(string repositoryPath, IContent content, CancellationToken cancel)
@@ -187,7 +187,7 @@ namespace SenseNet.IO.Implementations
 
                 if (existing)
                 {
-                    _logger.LogTrace("Skip importing existing folder without metadata: {repositoryPath}", repositoryPath);
+                    _logger.LogTrace("Skip update of existing folder without metadata: {repositoryPath}", repositoryPath);
 
                     return new WriterState
                     {
