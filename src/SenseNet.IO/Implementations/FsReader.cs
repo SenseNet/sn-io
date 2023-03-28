@@ -125,10 +125,15 @@ namespace SenseNet.IO.Implementations
             return Task.FromResult(true);
         }
 
-        public void SkipSubtree(string path)
+        private readonly List<string> _cutoffs = new();
+        public void SkipSubtree(string relativePath)
         {
-            //UNDONE: NotImplementedException: FsReader.SkipSubtree
-            throw new NotImplementedException();
+            _cutoffs.Add(relativePath);
+        }
+        private bool NeedToSkip(string path)
+        {
+            var relativePath = ContentPath.GetRelativePath(path, ReaderRootPath);
+            return _cutoffs.Any(relativePath.StartsWith);
         }
 
         private FsContent GetRootContent(string fsRootPath)
@@ -147,15 +152,18 @@ namespace SenseNet.IO.Implementations
             return content;
         }
 
-        //private Stack<Level> _levels;
         private bool ReadTree(TreeState state)
         {
             if (state.Levels.Count == 0)
                 return MoveToFirst(state);
-            if (MoveToFirstChild(state))
-                return true;
+
+            if (!NeedToSkip(Content.Path))
+                if (MoveToFirstChild(state))
+                    return true;
+
             if (MoveToNextSibling(state))
                 return true;
+
             while (true)
             {
                 if (MoveToParent(state))

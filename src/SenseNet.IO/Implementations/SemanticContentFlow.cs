@@ -162,12 +162,22 @@ namespace SenseNet.IO.Implementations
                 _currentBatchAction = "Transfer contents";
                 WriteLog($"------------ {_currentBatchAction.ToUpper()} ------------");
 
-                await WriteAsync(progress, false, cancel);
+                var writerState = await WriteAsync(progress, false, cancel);
+                if (writerState.Action == WriterAction.MissingParent)
+                    return;
+
                 while (await Reader.ReadAllAsync(skippedSubTreePaths, cancel))
                 {
-                    var writerState = await WriteAsync(progress, false, cancel);
-                    if (writerState.Action == WriterAction.MissingParent)
-                        Reader.SkipSubtree(ContentPath.GetParentPath(writerState.ReaderPath));
+                    writerState = await WriteAsync(progress, false, cancel);
+                    if (writerState.Action == WriterAction.Failed)
+                    {
+                        if (!await Writer.IsContentExists(writerState.WriterPath, cancel))
+                        {
+                            Reader.SkipSubtree(writerState.ReaderPath);
+                            WriteLog($"Skip subtree: reader: {Reader.Content.Path}");
+                            WriteLog($"Skip subtree: writer: {writerState.WriterPath}");
+                        }
+                    }
                 }
             }
         }

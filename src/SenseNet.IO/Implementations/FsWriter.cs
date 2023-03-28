@@ -100,6 +100,13 @@ namespace SenseNet.IO.Implementations
                 Action = action,
             };
         }
+
+        public Task<bool> IsContentExists(string path, CancellationToken cancel = default)
+        {
+            //UNDONE: NotImplementedException: FsWriter.IsContentExists
+            throw new NotImplementedException();
+        }
+
         public async Task<WriterState> WriteFlattenedAsync(string path, IContent content, CancellationToken cancel = default)
         {
             if (!IsDirectoryExists(OutputDirectory))

@@ -42,5 +42,14 @@ namespace SenseNet.IO
         /// <param name="cancel">An optional token to monitor for cancellation requests.</param>
         /// <returns>A Task that represents the asynchronous operation and wraps an <see cref="WriterState"/> instance.</returns>
         Task<WriterState> WriteAsync(string path, IContent content, CancellationToken cancel = default);
+
+        /// <summary>
+        /// Returns true if the target content is available.
+        /// The path can be absolute (/Root...) or relative to the <see cref="ContainerPath"/>.
+        /// </summary>
+        /// <param name="path">Absolute or relative repository path.</param>
+        /// <param name="cancel">An optional token to monitor for cancellation requests.</param>
+        /// <returns>A Task that represents the asynchronous operation and wraps a bool value.</returns>
+        Task<bool> IsContentExists(string path, CancellationToken cancel = default);
     }
 }
