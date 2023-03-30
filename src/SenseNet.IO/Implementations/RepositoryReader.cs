@@ -146,7 +146,7 @@ namespace SenseNet.IO.Implementations
                 if (treeState.CurrentBlock == null || treeState.CurrentBlockIndex >= treeState.CurrentBlock.Length)
                 {
                     treeState.CurrentBlock = await QueryBlockAsync(treeState.AbsolutePath, Array.Empty<string>(),
-                        treeState.BlockIndex * _blockSize, _blockSize, cancel);
+                        treeState.CurrentBlock?[^1].Path, _blockSize, cancel);
                     treeState.BlockIndex++;
                     treeState.CurrentBlockIndex = 0;
                     if (treeState.CurrentBlock == null || treeState.CurrentBlock.Length == 0)
@@ -172,7 +172,7 @@ namespace SenseNet.IO.Implementations
                 if (_currentBlock == null || _currentBlockIndex >= _currentBlock.Length)
                 {
                     _currentBlock = await QueryBlockAsync(RepositoryRootPath, contentsWithoutChildren,
-                        _blockIndex * _blockSize, _blockSize, cancel);
+                        _currentBlock?[^1].Path, _blockSize, cancel);
                     _blockIndex++;
                     _currentBlockIndex = 0;
                     if (_currentBlock == null || _currentBlock.Length == 0)
@@ -311,7 +311,7 @@ namespace SenseNet.IO.Implementations
             }
         }
         protected virtual async Task<IContent[]> QueryBlockAsync(string rootPath, string[] contentsWithoutChildren,
-            int skip, int top, CancellationToken cancel)
+            string lastPath, int top, CancellationToken cancel)
         {
             //UNDONE: Use the following queries:
             /*
@@ -330,8 +330,11 @@ namespace SenseNet.IO.Implementations
             var orderByPath = true;
             if (contentsWithoutChildren.Length == 0)
             {
-                query = Filter != null ? $"+InTree:'{rootPath}' +({Filter})" : $"InTree:'{rootPath}'";
-                query += $" .SKIP:{skip}";
+                query = $"+InTree:'{rootPath}'";
+                if (Filter != null)
+                    query += $" +({Filter})";
+                if (lastPath != null)
+                    query += $" +Path:>'{lastPath}'";
             }
             else if (contentsWithoutChildren.Length == 1 && contentsWithoutChildren[0] == string.Empty)
             {
@@ -342,7 +345,9 @@ namespace SenseNet.IO.Implementations
             else
             {
                 var paths = $"('{string.Join("' '", contentsWithoutChildren.Select(x => RepositoryRootPath + '/' + x))}')";
-                query = $"Path:{paths} (+InTree:'{rootPath}' -InTree:{paths}) .SKIP:{skip}";
+                query = $"+(Path:{paths} (+InTree:'{rootPath}' -InTree:{paths}))";
+                if (lastPath != null)
+                    query += $" +Path:>'{lastPath}'";
             }
 
             var queryResult = await QueryAsync(query, orderByPath, top, cancel).ConfigureAwait(false);

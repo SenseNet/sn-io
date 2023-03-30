@@ -102,6 +102,7 @@ namespace SenseNet.IO.Tests
 
                 int p0, p1;
                 string path;
+                string lastPath = null;
                 if (queryText.Contains("InTree:"))
                 {
                     // InTree:'/Root/System/Schema/ContentTypes' .TOP:10 .SKIP:0
@@ -119,16 +120,26 @@ namespace SenseNet.IO.Tests
                         p1 = queryText.Length;
                     path = queryText.Substring(p0, p1 - p0).Trim('\'');
                 }
-
-                var skip = 0;
-                if (queryText.Contains(".SKIP:"))
+                if (queryText.Contains("Path:>"))
                 {
-                    p0 = queryText.IndexOf(".SKIP:", SC) + 6;
+                    // Path:>'/Root/System/Schema/ContentTypes/GenericContent/FieldSettingContent'
+                    p0 = queryText.IndexOf("Path:>", SC) + 6;
                     p1 = queryText.IndexOf(" ", p0, SC);
                     if (p1 < 0)
                         p1 = queryText.Length;
-                    skip = int.Parse(queryText.Substring(p0, p1 - p0));
+                    lastPath = queryText.Substring(p0, p1 - p0).Trim('\'');
                 }
+
+
+                //var skip = 0;
+                //if (queryText.Contains(".SKIP:"))
+                //{
+                //    p0 = queryText.IndexOf(".SKIP:", SC) + 6;
+                //    p1 = queryText.IndexOf(" ", p0, SC);
+                //    if (p1 < 0)
+                //        p1 = queryText.Length;
+                //    skip = int.Parse(queryText.Substring(p0, p1 - p0));
+                //}
 
                 //var top = 0;
                 //if (queryText.Contains(".TOP:"))
@@ -156,7 +167,8 @@ namespace SenseNet.IO.Tests
                         .ToArray();
                     items = r
                         .OrderBy(x => x.Key)
-                        .Skip(skip)
+                        //.Skip(skip)
+                        .Where(x => x.Key.CompareTo(lastPath) > 0)
                         .Take(top)
                         .Select(x => x.Value)
                         .ToArray();
@@ -166,8 +178,8 @@ namespace SenseNet.IO.Tests
                 items = _sourceTree
                     .Where(x => x.Key == path || x.Key.StartsWith(path))
                     .Where(x => exclusion.All(excluded => !x.Key.StartsWith(excluded, SC)))
+                    .Where(x => lastPath == null || x.Key.CompareTo(lastPath) > 0)
                     .OrderBy(x => x.Key)
-                    .Skip(skip)
                     .Take(top)
                     .Select(x => x.Value)
                     .ToArray();
@@ -209,14 +221,14 @@ namespace SenseNet.IO.Tests
 
             expected = new[]
             {
-                "InTree:'/Root/System/Schema/ContentTypes' .SKIP:0",
-                "InTree:'/Root/System/Schema/ContentTypes' .SKIP:99999",
-                "InTree:'/Root/System/Settings' .SKIP:0",
-                "InTree:'/Root/System/Settings' .SKIP:99999",
-                "InTree:'/Root/System/Schema/Aspects' .SKIP:0",
-                "InTree:'/Root/System/Schema/Aspects' .SKIP:99999",
-                "Path:('/Root/System/Schema/ContentTypes' '/Root/System/Settings' '/Root/System/Schema/Aspects') (+InTree:'/Root' -InTree:('/Root/System/Schema/ContentTypes' '/Root/System/Settings' '/Root/System/Schema/Aspects')) .SKIP:0",
-                "Path:('/Root/System/Schema/ContentTypes' '/Root/System/Settings' '/Root/System/Schema/Aspects') (+InTree:'/Root' -InTree:('/Root/System/Schema/ContentTypes' '/Root/System/Settings' '/Root/System/Schema/Aspects')) .SKIP:99999",
+                "+InTree:'/Root/System/Schema/ContentTypes'",
+                "+InTree:'/Root/System/Schema/ContentTypes' +Path:>'/Root/System/Schema/ContentTypes/ContentType-2'",
+                "+InTree:'/Root/System/Settings'",
+                "+InTree:'/Root/System/Settings' +Path:>'/Root/System/Settings/Settings-3.settings'",
+                "+InTree:'/Root/System/Schema/Aspects'",
+                "+InTree:'/Root/System/Schema/Aspects' +Path:>'/Root/System/Schema/Aspects/Aspect-2'",
+                "+(Path:('/Root/System/Schema/ContentTypes' '/Root/System/Settings' '/Root/System/Schema/Aspects') (+InTree:'/Root' -InTree:('/Root/System/Schema/ContentTypes' '/Root/System/Settings' '/Root/System/Schema/Aspects')))",
+                "+(Path:('/Root/System/Schema/ContentTypes' '/Root/System/Settings' '/Root/System/Schema/Aspects') (+InTree:'/Root' -InTree:('/Root/System/Schema/ContentTypes' '/Root/System/Settings' '/Root/System/Schema/Aspects'))) +Path:>'/Root/System/Settings/Settings-3.settings'",
             };
             actual = reader.Queries.ToArray();
             AssertSequencesAreEqual(expected, actual);
@@ -249,14 +261,14 @@ namespace SenseNet.IO.Tests
 
             expected = new[]
             {
-                "InTree:'/Root/System/Schema/ContentTypes' .SKIP:0",
-                "InTree:'/Root/System/Schema/ContentTypes' .SKIP:99999",
-                "InTree:'/Root/System/Settings' .SKIP:0",
-                "InTree:'/Root/System/Settings' .SKIP:99999",
-                "InTree:'/Root/System/Schema/Aspects' .SKIP:0",
-                "InTree:'/Root/System/Schema/Aspects' .SKIP:99999",
-                "Path:('/Root/System/Schema/ContentTypes' '/Root/System/Settings' '/Root/System/Schema/Aspects') (+InTree:'/Root/System' -InTree:('/Root/System/Schema/ContentTypes' '/Root/System/Settings' '/Root/System/Schema/Aspects')) .SKIP:0",
-                "Path:('/Root/System/Schema/ContentTypes' '/Root/System/Settings' '/Root/System/Schema/Aspects') (+InTree:'/Root/System' -InTree:('/Root/System/Schema/ContentTypes' '/Root/System/Settings' '/Root/System/Schema/Aspects')) .SKIP:99999",
+                "+InTree:'/Root/System/Schema/ContentTypes'",
+                "+InTree:'/Root/System/Schema/ContentTypes' +Path:>'/Root/System/Schema/ContentTypes/ContentType-2'",
+                "+InTree:'/Root/System/Settings'",
+                "+InTree:'/Root/System/Settings' +Path:>'/Root/System/Settings/Settings-3.settings'",
+                "+InTree:'/Root/System/Schema/Aspects'",
+                "+InTree:'/Root/System/Schema/Aspects' +Path:>'/Root/System/Schema/Aspects/Aspect-2'",
+                "+(Path:('/Root/System/Schema/ContentTypes' '/Root/System/Settings' '/Root/System/Schema/Aspects') (+InTree:'/Root/System' -InTree:('/Root/System/Schema/ContentTypes' '/Root/System/Settings' '/Root/System/Schema/Aspects')))",
+                "+(Path:('/Root/System/Schema/ContentTypes' '/Root/System/Settings' '/Root/System/Schema/Aspects') (+InTree:'/Root/System' -InTree:('/Root/System/Schema/ContentTypes' '/Root/System/Settings' '/Root/System/Schema/Aspects'))) +Path:>'/Root/System/Settings/Settings-3.settings'",
             };
             actual = reader.Queries.ToArray();
             AssertSequencesAreEqual(expected, actual);
@@ -290,12 +302,12 @@ namespace SenseNet.IO.Tests
 
             expected = new[]
             {
-                "InTree:'/Root/System/Schema/ContentTypes' .SKIP:0",
-                "InTree:'/Root/System/Schema/ContentTypes' .SKIP:99999",
-                "InTree:'/Root/System/Schema/Aspects' .SKIP:0",
-                "InTree:'/Root/System/Schema/Aspects' .SKIP:99999",
-                "Path:('/Root/System/Schema/ContentTypes' '/Root/System/Schema/Aspects') (+InTree:'/Root/System/Schema' -InTree:('/Root/System/Schema/ContentTypes' '/Root/System/Schema/Aspects')) .SKIP:0",
-                "Path:('/Root/System/Schema/ContentTypes' '/Root/System/Schema/Aspects') (+InTree:'/Root/System/Schema' -InTree:('/Root/System/Schema/ContentTypes' '/Root/System/Schema/Aspects')) .SKIP:99999",
+                "+InTree:'/Root/System/Schema/ContentTypes'",
+                "+InTree:'/Root/System/Schema/ContentTypes' +Path:>'/Root/System/Schema/ContentTypes/ContentType-2'",
+                "+InTree:'/Root/System/Schema/Aspects'",
+                "+InTree:'/Root/System/Schema/Aspects' +Path:>'/Root/System/Schema/Aspects/Aspect-2'",
+                "+(Path:('/Root/System/Schema/ContentTypes' '/Root/System/Schema/Aspects') (+InTree:'/Root/System/Schema' -InTree:('/Root/System/Schema/ContentTypes' '/Root/System/Schema/Aspects')))",
+                "+(Path:('/Root/System/Schema/ContentTypes' '/Root/System/Schema/Aspects') (+InTree:'/Root/System/Schema' -InTree:('/Root/System/Schema/ContentTypes' '/Root/System/Schema/Aspects'))) +Path:>'/Root/System/Schema/ContentTypes/ContentType-2'",
             };
             actual = reader.Queries.ToArray();
             AssertSequencesAreEqual(expected, actual);
@@ -330,8 +342,8 @@ namespace SenseNet.IO.Tests
 
             expected = new[]
             {
-                "InTree:'/Root/System/Schema/ContentTypes' .SKIP:0",
-                "InTree:'/Root/System/Schema/ContentTypes' .SKIP:99999",
+                "+InTree:'/Root/System/Schema/ContentTypes'",
+                "+InTree:'/Root/System/Schema/ContentTypes' +Path:>'/Root/System/Schema/ContentTypes/ContentType-2'",
                 "Path:'/Root/System/Schema/ContentTypes'",
             };
             actual = reader.Queries.ToArray();
@@ -367,8 +379,8 @@ namespace SenseNet.IO.Tests
 
             expected = new[]
             {
-                "InTree:'/Root/System/Schema/Aspects' .SKIP:0",
-                "InTree:'/Root/System/Schema/Aspects' .SKIP:99999",
+                "+InTree:'/Root/System/Schema/Aspects'",
+                "+InTree:'/Root/System/Schema/Aspects' +Path:>'/Root/System/Schema/Aspects/Aspect-2'",
                 "Path:'/Root/System/Schema/Aspects'",
             };
             actual = reader.Queries.ToArray();
@@ -403,8 +415,8 @@ namespace SenseNet.IO.Tests
 
             expected = new[]
             {
-                "InTree:'/Root/System/Settings' .SKIP:0",
-                "InTree:'/Root/System/Settings' .SKIP:99999",
+                "+InTree:'/Root/System/Settings'",
+                "+InTree:'/Root/System/Settings' +Path:>'/Root/System/Settings/Settings-3.settings'",
                 "Path:'/Root/System/Settings'",
             };
             actual = reader.Queries.ToArray();
@@ -438,8 +450,8 @@ namespace SenseNet.IO.Tests
 
             expected = new[]
             {
-                "InTree:'/Root/Content' .SKIP:0",
-                "InTree:'/Root/Content' .SKIP:99999",
+                "+InTree:'/Root/Content'",
+                "+InTree:'/Root/Content' +Path:>'/Root/Content/Workspace-2'",
             };
             actual = reader.Queries.ToArray();
             AssertSequencesAreEqual(expected, actual);
@@ -494,14 +506,14 @@ namespace SenseNet.IO.Tests
 
             expected = new[]
             {
-                "InTree:'/Root/System/Schema/ContentTypes' .SKIP:0",
-                "InTree:'/Root/System/Schema/ContentTypes' .SKIP:99999",
-                "InTree:'/Root/System/Settings' .SKIP:0",
-                "InTree:'/Root/System/Settings' .SKIP:99999",
-                "InTree:'/Root/System/Schema/Aspects' .SKIP:0",
-                "InTree:'/Root/System/Schema/Aspects' .SKIP:99999",
-                "Path:('/Root/System/Schema/ContentTypes' '/Root/System/Settings' '/Root/System/Schema/Aspects') (+InTree:'/Root' -InTree:('/Root/System/Schema/ContentTypes' '/Root/System/Settings' '/Root/System/Schema/Aspects')) .SKIP:0",
-                "Path:('/Root/System/Schema/ContentTypes' '/Root/System/Settings' '/Root/System/Schema/Aspects') (+InTree:'/Root' -InTree:('/Root/System/Schema/ContentTypes' '/Root/System/Settings' '/Root/System/Schema/Aspects')) .SKIP:99999",
+                "+InTree:'/Root/System/Schema/ContentTypes'",
+                "+InTree:'/Root/System/Schema/ContentTypes' +Path:>'/Root/System/Schema/ContentTypes/ContentType-2'",
+                "+InTree:'/Root/System/Settings'",
+                "+InTree:'/Root/System/Settings' +Path:>'/Root/System/Settings/Settings-3.settings'",
+                "+InTree:'/Root/System/Schema/Aspects'",
+                "+InTree:'/Root/System/Schema/Aspects' +Path:>'/Root/System/Schema/Aspects/Aspect-2'",
+                "+(Path:('/Root/System/Schema/ContentTypes' '/Root/System/Settings' '/Root/System/Schema/Aspects') (+InTree:'/Root' -InTree:('/Root/System/Schema/ContentTypes' '/Root/System/Settings' '/Root/System/Schema/Aspects')))",
+                "+(Path:('/Root/System/Schema/ContentTypes' '/Root/System/Settings' '/Root/System/Schema/Aspects') (+InTree:'/Root' -InTree:('/Root/System/Schema/ContentTypes' '/Root/System/Settings' '/Root/System/Schema/Aspects'))) +Path:>'/Root/System/Settings/Settings-3.settings'",
                 "/Root/System/Schema/ContentTypes/ContentType-1/ContentType-4",
                 "/Root/System/Settings/Settings-2.settings",
                 "/Root/Content/Workspace-1/DocLib-1",
@@ -604,9 +616,9 @@ namespace SenseNet.IO.Tests
 
             expected = new[]
             {
-                "+InTree:'/Root/Content' +(+TypeIs:File +InTree:(/Root/Content/Docs/F1/F2 /Root/Content/Docs/F1/F3)) .SKIP:0",
-                "+InTree:'/Root/Content' +(+TypeIs:File +InTree:(/Root/Content/Docs/F1/F2 /Root/Content/Docs/F1/F3)) .SKIP:5",
-                "+InTree:'/Root/Content' +(+TypeIs:File +InTree:(/Root/Content/Docs/F1/F2 /Root/Content/Docs/F1/F3)) .SKIP:10",
+                "+InTree:'/Root/Content' +(+TypeIs:File +InTree:(/Root/Content/Docs/F1/F2 /Root/Content/Docs/F1/F3))",
+                "+InTree:'/Root/Content' +(+TypeIs:File +InTree:(/Root/Content/Docs/F1/F2 /Root/Content/Docs/F1/F3)) +Path:>'/Root/Content/Docs/F1/F3/File-5.txt'",
+                "+InTree:'/Root/Content' +(+TypeIs:File +InTree:(/Root/Content/Docs/F1/F2 /Root/Content/Docs/F1/F3)) +Path:>'/Root/Content/Docs/F1/F3/File-6.txt'",
             };
             actual = reader.Queries.ToArray();
             AssertSequencesAreEqual(expected, actual);
