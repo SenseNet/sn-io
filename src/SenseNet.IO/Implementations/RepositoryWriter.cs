@@ -91,7 +91,7 @@ namespace SenseNet.IO.Implementations
 
         public async Task<bool> ShouldSkipSubtree(string path, CancellationToken cancel = default)
         {
-            //UNDONE: ? ContainerPath can be "/"? See TestRepositoryWriter.IsContentExists()
+            //TODO: ? ContainerPath can be "/"? See TestRepositoryWriter.IsContentExists()
             if (!path.StartsWith("/"))
                 path = ContentPath.Combine(ContainerPath, path);
             return !await _repository.IsContentExistsAsync(path, cancel).ConfigureAwait(false);

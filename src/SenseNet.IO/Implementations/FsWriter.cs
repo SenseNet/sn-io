@@ -83,10 +83,6 @@ namespace SenseNet.IO.Implementations
 
             try
             {
-if (content.Path == "/Root/Content/SnRM1/ex1/F2" ||
-    content.Path == "/Root/System/Schema/ContentTypes/GenericContent/Folder" ||
-    content.Path == "/Root/System/Schema/ContentTypes/GenericContent/FieldSettingContent")
-    throw new NotSupportedException("##CustomError##");
                 await WriteAttachmentsAsync(fileDir, content, cancel);
             }
             catch (Exception ex)

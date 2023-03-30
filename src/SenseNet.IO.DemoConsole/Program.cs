@@ -44,8 +44,8 @@ public class Program
 
         var sw = Stopwatch.StartNew();
         
-        //await ImportAsync();
-        await Export2Async();
+        await ImportAsync();
+        //await ExportAsync();
 
         sw.Stop();
 
@@ -164,18 +164,5 @@ public class Program
 
         // complete all tasks
         await Task.WhenAll(tasks);
-    }
-    private static async Task Export2Async()
-    {
-        var flowFactory = _host.Services.GetRequiredService<IExportFlowFactory>();
-
-        var flow = flowFactory.Create(readerArgs =>
-        {
-        });
-
-        await flow.TransferAsync(new Progress<TransferState>(state =>
-        {
-            // log state if necessary
-        }));
     }
 }

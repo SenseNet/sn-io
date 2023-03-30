@@ -313,20 +313,6 @@ namespace SenseNet.IO.Implementations
         protected virtual async Task<IContent[]> QueryBlockAsync(string rootPath, string[] contentsWithoutChildren,
             string lastPath, int top, CancellationToken cancel)
         {
-            //UNDONE: Use the following queries:
-            /*
-            first page:
-                /odata.svc/Root?metadata=no&$orderby=Path&$top=10&enableautofilters=false&
-                query=InTree:'{RepositoryRootPath}'
-            page:
-                /odata.svc/Root?metadata=no&$orderby=Path&$top=10&enableautofilters=false&
-                query=InTree:'{RepositoryRootPath}' AND Path:>'{lastContent.Path}'
-            page with cutoff:
-                /odata.svc/Root?metadata=no&$orderby=Path&$top=10&enableautofilters=false&
-                query=InTree:'{RepositoryRootPath}' AND Path:>'{lastContent.Path}'
-                                                    AND NOT Path:'{cutoff[0]}/*' AND NOT Path:'{cutoff[1]}/*'
-            */
-
             // Remove irrelevant cutoffs
             if (lastPath != null)
             {
@@ -336,7 +322,7 @@ namespace SenseNet.IO.Implementations
                         _cutoffs.RemoveAt(i);
             }
 
-
+            // Build query
             string query;
             var orderByPath = true;
             var cutoffClause = GetCutoffClause();
@@ -374,9 +360,6 @@ namespace SenseNet.IO.Implementations
             if (_cutoffs.Count == 0)
                 return null;
 
-            // AND NOT Path:'{cutoff[0]}/*' AND NOT Path:'{cutoff[1]}/*'
-            // -Path:'{cutoff[0]}/*'
-            // -Path:('{cutoff[0]}/*' '{cutoff[1]}/*')
             return _cutoffs.Count == 1
                 ? $"-Path:'{_cutoffs[0]}/*'"
                 : $"-Path:({string.Join(" ", _cutoffs.Select(x => $"'{x}/*'"))})";
