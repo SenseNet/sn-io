@@ -146,7 +146,7 @@ namespace SenseNet.IO.Implementations
                 if (treeState.CurrentBlock == null || treeState.CurrentBlockIndex >= treeState.CurrentBlock.Length)
                 {
                     treeState.CurrentBlock = await QueryBlockAsync(treeState.AbsolutePath, Array.Empty<string>(),
-                        treeState.BlockIndex * _blockSize, _blockSize);
+                        treeState.BlockIndex * _blockSize, _blockSize, cancel);
                     treeState.BlockIndex++;
                     treeState.CurrentBlockIndex = 0;
                     if (treeState.CurrentBlock == null || treeState.CurrentBlock.Length == 0)
@@ -172,7 +172,7 @@ namespace SenseNet.IO.Implementations
                 if (_currentBlock == null || _currentBlockIndex >= _currentBlock.Length)
                 {
                     _currentBlock = await QueryBlockAsync(RepositoryRootPath, contentsWithoutChildren,
-                        _blockIndex * _blockSize, _blockSize);
+                        _blockIndex * _blockSize, _blockSize, cancel);
                     _blockIndex++;
                     _currentBlockIndex = 0;
                     if (_currentBlock == null || _currentBlock.Length == 0)
@@ -310,44 +310,45 @@ namespace SenseNet.IO.Implementations
                 throw new SnException(0, "RepositoryReader: cannot get count of contents.", e);
             }
         }
-        protected virtual async Task<IContent[]> QueryBlockAsync(string rootPath, string[] contentsWithoutChildren, int skip, int top)
+        protected virtual async Task<IContent[]> QueryBlockAsync(string rootPath, string[] contentsWithoutChildren,
+            int skip, int top, CancellationToken cancel)
         {
             //UNDONE: Use the following queries:
             /*
             first page:
-                /odata.svc/Root?metadata=no&
-                $orderby=Path&$top=10&enableautofilters=false&
+                /odata.svc/Root?metadata=no&$orderby=Path&$top=10&enableautofilters=false&
                 query=InTree:'{RepositoryRootPath}'
             page:
-                /odata.svc/Root?metadata=no&
-                $orderby=Path&$top=10&enableautofilters=false&
+                /odata.svc/Root?metadata=no&$orderby=Path&$top=10&enableautofilters=false&
                 query=InTree:'{RepositoryRootPath}' AND Path:>'{lastContent.Path}'
             page with cutoff:
-                /odata.svc/Root?metadata=no&
-                $orderby=Path&$top=10&enableautofilters=false&
+                /odata.svc/Root?metadata=no&$orderby=Path&$top=10&enableautofilters=false&
                 query=InTree:'{RepositoryRootPath}' AND Path:>'{lastContent.Path}'
                                                     AND NOT Path:'{cutoff[0]}/*' AND NOT Path:'{cutoff[1]}/*'
             */
             string query;
+            var orderByPath = true;
             if (contentsWithoutChildren.Length == 0)
             {
                 query = Filter != null ? $"+InTree:'{rootPath}' +({Filter})" : $"InTree:'{rootPath}'";
-                query += $" .SORT:Path .TOP:{top} .SKIP:{skip}";
+                query += $" .SKIP:{skip}";
             }
             else if (contentsWithoutChildren.Length == 1 && contentsWithoutChildren[0] == string.Empty)
             {
                 query = $"Path:'{rootPath}'";
+                top = 0;
+                orderByPath = false;
             }
             else
             {
                 var paths = $"('{string.Join("' '", contentsWithoutChildren.Select(x => RepositoryRootPath + '/' + x))}')";
-                query = $"Path:{paths} (+InTree:'{rootPath}' -InTree:{paths}) .SORT:Path .TOP:{top} .SKIP:{skip}";
+                query = $"Path:{paths} (+InTree:'{rootPath}' -InTree:{paths}) .SKIP:{skip}";
             }
 
-            var queryResult = await QueryAsync(query).ConfigureAwait(false);
+            var queryResult = await QueryAsync(query, orderByPath, top, cancel).ConfigureAwait(false);
             return queryResult;
         }
-        protected virtual async Task<IContent[]> QueryAsync(string queryText)
+        protected virtual async Task<IContent[]> QueryAsync(string queryText, bool orderByPath, int top, CancellationToken cancel)
         {
             var request = new QueryContentRequest
             {
@@ -356,9 +357,14 @@ namespace SenseNet.IO.Implementations
                 AutoFilters = FilterStatus.Disabled,
                 Parameters = {{"$format", "export"}}
             };
+            if (top > 0)
+                request.Top = top;
+            if (orderByPath)
+                request.OrderBy = new[] {"Path"};
+
             try
             {
-                var result = await _repository.QueryAsync(request, CancellationToken.None)
+                var result = await _repository.QueryAsync(request, cancel)
                     .ConfigureAwait(false);
                 var transformed = result.Select(x => new RepositoryReaderContent(x)).ToArray();
                 // ReSharper disable once CoVariantArrayConversion
