@@ -21,31 +21,52 @@ namespace SenseNet.IO.Tests
     [TestClass]
     public class RepositoryReaderTests : TestBase
     {
+        #region Nested classes NullRepository, TestRepositoryCollection, RepositoryReaderMock
+        private class NullRepository : IRepository
+        {
+            public ServerContext Server { get; set; }
+            public RegisteredContentTypes GlobalContentTypes { get; }
+
+            public NullRepository() { GlobalContentTypes = null; }
+
+            public Content CreateExistingContent(int id) => throw new NotImplementedException();
+            public Content CreateExistingContent(string path) => throw new NotImplementedException();
+            public T CreateExistingContent<T>(int id) where T : Content => throw new NotImplementedException();
+            public T CreateExistingContent<T>(string path) where T : Content => throw new NotImplementedException();
+            public Content CreateContent(string parentPath, string contentTypeName, string name) => throw new NotImplementedException();
+            public T CreateContent<T>(string parentPath, string contentTypeName, string name) where T : Content => throw new NotImplementedException();
+            public Content CreateContentFromJson(JObject jObject, Type contentType = null) => throw new NotImplementedException();
+            public Content CreateContentByTemplate(string parentPath, string contentTypeName, string name, string contentTemplate) => throw new NotImplementedException();
+            public T CreateContentByTemplate<T>(string parentPath, string contentTypeName, string name, string contentTemplate) where T : Content => throw new NotImplementedException();
+            public Task<Content> LoadContentAsync(int id, CancellationToken cancel) => throw new NotImplementedException();
+            public Task<Content> LoadContentAsync(string path, CancellationToken cancel) => throw new NotImplementedException();
+            public Task<Content> LoadContentAsync(LoadContentRequest requestData, CancellationToken cancel) => throw new NotImplementedException();
+            public Task<T> LoadContentAsync<T>(int id, CancellationToken cancel) where T : Content => throw new NotImplementedException();
+            public Task<T> LoadContentAsync<T>(string path, CancellationToken cancel) where T : Content => throw new NotImplementedException();
+            public Task<T> LoadContentAsync<T>(LoadContentRequest requestData, CancellationToken cancel) where T : Content => throw new NotImplementedException();
+            public Task<IEnumerable<Content>> LoadCollectionAsync(LoadCollectionRequest requestData, CancellationToken cancel) => throw new NotImplementedException();
+            public Task<IEnumerable<T>> LoadCollectionAsync<T>(LoadCollectionRequest requestData, CancellationToken cancel) where T : Content => throw new NotImplementedException();
+            public Task<int> GetContentCountAsync(LoadCollectionRequest requestData, CancellationToken cancel) => throw new NotImplementedException();
+            public Task<bool> IsContentExistsAsync(string path, CancellationToken cancel) => throw new NotImplementedException();
+            public Task<IEnumerable<Content>> QueryForAdminAsync(QueryContentRequest requestData, CancellationToken cancel) => throw new NotImplementedException();
+            public Task<IEnumerable<T>> QueryForAdminAsync<T>(QueryContentRequest requestData, CancellationToken cancel) where T : Content => throw new NotImplementedException();
+            public Task<IEnumerable<Content>> QueryAsync(QueryContentRequest requestData, CancellationToken cancel) => throw new NotImplementedException();
+            public Task<IEnumerable<T>> QueryAsync<T>(QueryContentRequest requestData, CancellationToken cancel) where T : Content => throw new NotImplementedException();
+            public Task<int> QueryCountForAdminAsync(QueryContentRequest requestData, CancellationToken cancel) => throw new NotImplementedException();
+            public Task<int> QueryCountAsync(QueryContentRequest requestData, CancellationToken cancel) => throw new NotImplementedException();
+            public Task DeleteContentAsync(string path, bool permanent, CancellationToken cancel) => throw new NotImplementedException();
+            public Task DeleteContentAsync(string[] paths, bool permanent, CancellationToken cancel) => throw new NotImplementedException();
+            public Task DeleteContentAsync(int id, bool permanent, CancellationToken cancel) => throw new NotImplementedException();
+            public Task DeleteContentAsync(int[] ids, bool permanent, CancellationToken cancel) => throw new NotImplementedException();
+            public Task DeleteContentAsync(object[] idsOrPaths, bool permanent, CancellationToken cancel) => throw new NotImplementedException();
+        }
         private class TestRepositoryCollection : IRepositoryCollection
         {
-            private IRepository _instance;
+            private readonly IRepository _instance;
             public TestRepositoryCollection(IRepository instance) { _instance = instance; }
             public Task<IRepository> GetRepositoryAsync(CancellationToken cancel) => Task.FromResult(_instance);
             public Task<IRepository> GetRepositoryAsync(string name, CancellationToken cancel) => Task.FromResult(_instance);
         }
-
-        private IRepositoryCollection CreateRepositoryCollection()
-        {
-            var registeredContentTypes = new RegisteredContentTypes();
-            var globalContentTypes = Options.Create(registeredContentTypes);
-            var type = GetRepositoryType();
-            var repository = Activator.CreateInstance(type, null, null, globalContentTypes, null);
-            return new TestRepositoryCollection((IRepository)repository);
-        }
-        private Type GetRepositoryType()
-        {
-            foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
-                foreach (var type in asm.GetTypes())
-                    if (type.FullName == "SenseNet.Client.Repository")
-                        return type;
-            return null;
-        }
-
         private class RepositoryReaderMock : RepositoryReader
         {
             private StringComparison SC = StringComparison.OrdinalIgnoreCase;
@@ -192,6 +213,9 @@ namespace SenseNet.IO.Tests
                 return Task.FromResult((IContent)_sourceTree[path]);
             }
         }
+        #endregion
+
+        private IRepositoryCollection CreateRepositoryCollection() => new TestRepositoryCollection(new NullRepository());
 
         /* ----------------------------------------------------------------------- q:\io\Root */
 
