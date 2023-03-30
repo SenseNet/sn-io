@@ -21,6 +21,31 @@ namespace SenseNet.IO.Tests
     [TestClass]
     public class RepositoryReaderTests : TestBase
     {
+        private class TestRepositoryCollection : IRepositoryCollection
+        {
+            private IRepository _instance;
+            public TestRepositoryCollection(IRepository instance) { _instance = instance; }
+            public Task<IRepository> GetRepositoryAsync(CancellationToken cancel) => Task.FromResult(_instance);
+            public Task<IRepository> GetRepositoryAsync(string name, CancellationToken cancel) => Task.FromResult(_instance);
+        }
+
+        private IRepositoryCollection CreateRepositoryCollection()
+        {
+            var registeredContentTypes = new RegisteredContentTypes();
+            var globalContentTypes = Options.Create(registeredContentTypes);
+            var type = GetRepositoryType();
+            var repository = Activator.CreateInstance(type, null, null, globalContentTypes, null);
+            return new TestRepositoryCollection((IRepository)repository);
+        }
+        private Type GetRepositoryType()
+        {
+            foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
+                foreach (var type in asm.GetTypes())
+                    if (type.FullName == "SenseNet.Client.Repository")
+                        return type;
+            return null;
+        }
+
         private class RepositoryReaderMock : RepositoryReader
         {
             private StringComparison SC = StringComparison.OrdinalIgnoreCase;
@@ -157,33 +182,6 @@ namespace SenseNet.IO.Tests
         }
 
         /* ----------------------------------------------------------------------- q:\io\Root */
-
-
-        class TestRepositoryCollection : IRepositoryCollection
-        {
-            private IRepository _instance;
-            public TestRepositoryCollection(IRepository instance) { _instance = instance; }
-            public Task<IRepository> GetRepositoryAsync(CancellationToken cancel) => Task.FromResult(_instance);
-            public Task<IRepository> GetRepositoryAsync(string name, CancellationToken cancel) => Task.FromResult(_instance);
-        }
-
-        private IRepositoryCollection CreateRepositoryCollection()
-        {
-            var registeredContentTypes = new RegisteredContentTypes();
-            var globalContentTypes = Options.Create(registeredContentTypes);
-            var type = GetRepositoryType();
-            var repository = Activator.CreateInstance(type, null, null, globalContentTypes, null);
-            return new TestRepositoryCollection((IRepository)repository);
-        }
-
-        Type GetRepositoryType()
-        {
-            foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
-                foreach (var type in asm.GetTypes())
-                    if (type.FullName == "SenseNet.Client.Repository")
-                        return type;
-            return null;
-        }
 
         [TestMethod]
         public async Task RepoReader_Root()
