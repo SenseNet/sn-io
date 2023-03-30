@@ -89,12 +89,12 @@ namespace SenseNet.IO.Implementations
             return await WriteContentAsync(repositoryPath, content, cancel);
         }
 
-        public async Task<bool> IsContentExists(string path, CancellationToken cancel = default)
+        public async Task<bool> ShouldSkipSubtree(string path, CancellationToken cancel = default)
         {
             //UNDONE: ? ContainerPath can be "/"? See TestRepositoryWriter.IsContentExists()
             if (!path.StartsWith("/"))
                 path = ContentPath.Combine(ContainerPath, path);
-            return await _repository.IsContentExistsAsync(path, cancel);
+            return !await _repository.IsContentExistsAsync(path, cancel).ConfigureAwait(false);
         }
 
         private async Task<WriterState> WriteContentTypeAsync(string repositoryPath, IContent content, CancellationToken cancel)

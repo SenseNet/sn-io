@@ -26,7 +26,7 @@ namespace SenseNet.IO.Implementations
             _rootName = Writer.RootName ?? Reader.RootName;
             try
             {
-                if (await Reader.ReadAllAsync(new string[0], cancel))
+                if (await Reader.ReadAllAsync(Array.Empty<string>(), cancel))
                 {
                     if (Writer.RootName != null)
                         Rename(Reader.Content, _rootName);
@@ -43,7 +43,7 @@ namespace SenseNet.IO.Implementations
                         writerState = await WriteAsync(progress, false, cancel);
                         if (writerState.Action == WriterAction.Failed)
                         {
-                            if (!await Writer.IsContentExists(writerState.WriterPath, cancel))
+                            if (await Writer.ShouldSkipSubtree(writerState.WriterPath, cancel))
                             {
                                 Reader.SkipSubtree(writerState.ReaderPath);
                                 WriteLog($"Skip subtree: reader: {Reader.Content.Path}");

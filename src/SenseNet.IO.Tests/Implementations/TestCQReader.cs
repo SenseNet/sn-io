@@ -66,7 +66,7 @@ namespace SenseNet.IO.Tests.Implementations
 
         public void SetReferenceUpdateTasks(IEnumerable<TransferTask> tasks, int taskCount) { throw new NotImplementedException(); }
         public Task<bool> ReadByReferenceUpdateTasksAsync(CancellationToken cancel) { throw new NotImplementedException(); }
-        public void SkipSubtree(string path)
+        public void SkipSubtree(string relativePath)
         {
             throw new NotImplementedException();
         }

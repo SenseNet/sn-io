@@ -190,6 +190,10 @@ namespace SenseNet.IO.Implementations
 
         private bool SkipContent(IContent content)
         {
+            foreach (var cutoff in _cutoffs)
+                if (content.Path.StartsWith(cutoff + "/"))
+                    return true;
+
             //TODO: find a better algorithm for marking contents to skip.
             // Currently we skip preview folders based on their names. A better solution 
             // would be to move this flag to the server and make it available in a search query
@@ -226,12 +230,14 @@ namespace SenseNet.IO.Implementations
             return true;
         }
 
-        public void SkipSubtree(string path)
+        private readonly List<string> _cutoffs = new();
+        public void SkipSubtree(string relativePath)
         {
-            //UNDONE: NotImplementedException: RepositoryReader.SkipSubtree
-            throw new NotImplementedException();
+            var absolutePath = ContentPath.GetAbsolutePath(relativePath, RepositoryRootPath);
+            // Add to _cutoffs if the new item is not a subtree of any stored item.
+            if(_cutoffs.All(c => c.Length >= absolutePath.Length || !absolutePath.StartsWith(c)))
+                _cutoffs.Add(absolutePath);
         }
-
 
         private static readonly string[] _keywords = new[]
         {
@@ -306,20 +312,36 @@ namespace SenseNet.IO.Implementations
         }
         protected virtual async Task<IContent[]> QueryBlockAsync(string rootPath, string[] contentsWithoutChildren, int skip, int top)
         {
+            //UNDONE: Use the following queries:
+            /*
+            first page:
+                /odata.svc/Root?metadata=no&
+                $orderby=Path&$top=10&enableautofilters=false&
+                query=InTree:'{RepositoryRootPath}'
+            page:
+                /odata.svc/Root?metadata=no&
+                $orderby=Path&$top=10&enableautofilters=false&
+                query=InTree:'{RepositoryRootPath}' AND Path:>'{lastContent.Path}'
+            page with cutoff:
+                /odata.svc/Root?metadata=no&
+                $orderby=Path&$top=10&enableautofilters=false&
+                query=InTree:'{RepositoryRootPath}' AND Path:>'{lastContent.Path}'
+                                                    AND NOT Path:'{cutoff[0]}/*' AND NOT Path:'{cutoff[1]}/*'
+            */
             string query;
             if (contentsWithoutChildren.Length == 0)
             {
                 query = Filter != null ? $"+InTree:'{rootPath}' +({Filter})" : $"InTree:'{rootPath}'";
-                query += $" .SORT:Path .TOP:{top} .SKIP:{skip} .AUTOFILTERS:OFF";
+                query += $" .SORT:Path .TOP:{top} .SKIP:{skip}";
             }
             else if (contentsWithoutChildren.Length == 1 && contentsWithoutChildren[0] == string.Empty)
             {
-                query = $"Path:'{rootPath}' .AUTOFILTERS:OFF";
+                query = $"Path:'{rootPath}'";
             }
             else
             {
                 var paths = $"('{string.Join("' '", contentsWithoutChildren.Select(x => RepositoryRootPath + '/' + x))}')";
-                query = $"Path:{paths} (+InTree:'{rootPath}' -InTree:{paths}) .SORT:Path .TOP:{top} .SKIP:{skip} .AUTOFILTERS:OFF";
+                query = $"Path:{paths} (+InTree:'{rootPath}' -InTree:{paths}) .SORT:Path .TOP:{top} .SKIP:{skip}";
             }
 
             var queryResult = await QueryAsync(query).ConfigureAwait(false);
@@ -331,6 +353,7 @@ namespace SenseNet.IO.Implementations
             {
                 Path = "/Root",
                 ContentQuery = queryText,
+                AutoFilters = FilterStatus.Disabled,
                 Parameters = {{"$format", "export"}}
             };
             try

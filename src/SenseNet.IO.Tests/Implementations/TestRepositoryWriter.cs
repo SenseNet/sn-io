@@ -83,12 +83,11 @@ namespace SenseNet.IO.Tests.Implementations
             return Task.FromResult(state);
         }
 
-        public Task<bool> IsContentExists(string path, CancellationToken cancel = default)
+        public Task<bool> ShouldSkipSubtree(string path, CancellationToken cancel = default)
         {
             var rootPath = ContainerPath == "/" ? "/Root" : ContainerPath;
             var absolutePath = ContentPath.GetAbsolutePath(path, rootPath);
-            return Task.FromResult(Tree.ContainsKey(absolutePath));
-            throw new NotImplementedException();
+            return Task.FromResult(!Tree.ContainsKey(absolutePath));
         }
 
         private void CopyFieldsAndPermissions(IContent source, ContentNode target)

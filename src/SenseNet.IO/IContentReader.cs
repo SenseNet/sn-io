@@ -77,6 +77,6 @@ namespace SenseNet.IO
 
         Task<bool> ReadByReferenceUpdateTasksAsync(CancellationToken cancel);
 
-        void SkipSubtree(string path);
+        void SkipSubtree(string relativePath);
     }
 }

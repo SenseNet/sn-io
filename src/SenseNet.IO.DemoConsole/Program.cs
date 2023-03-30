@@ -44,8 +44,8 @@ public class Program
 
         var sw = Stopwatch.StartNew();
         
-        await ImportAsync();
-        //await ExportAsync();
+        //await ImportAsync();
+        await Export2Async();
 
         sw.Stop();
 
@@ -83,7 +83,16 @@ public class Program
                         repoWriterArgs =>
                         {
                             context.Configuration.GetSection("sensenet:repotarget").Bind(repoWriterArgs);
-                        });
+                        })
+                    .ConfigureSenseNetRepository("target", options =>
+                    {
+                        context.Configuration.GetSection("sensenet:repotarget").Bind(options);
+                    })
+                    .ConfigureSenseNetRepository("source", options =>
+                    {
+                        context.Configuration.GetSection("sensenet:reposource").Bind(options);
+                        //update from command line
+                    });
             }).Build();
 
         return host;
@@ -155,5 +164,18 @@ public class Program
 
         // complete all tasks
         await Task.WhenAll(tasks);
+    }
+    private static async Task Export2Async()
+    {
+        var flowFactory = _host.Services.GetRequiredService<IExportFlowFactory>();
+
+        var flow = flowFactory.Create(readerArgs =>
+        {
+        });
+
+        await flow.TransferAsync(new Progress<TransferState>(state =>
+        {
+            // log state if necessary
+        }));
     }
 }

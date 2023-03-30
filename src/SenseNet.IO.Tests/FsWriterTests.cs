@@ -148,7 +148,7 @@ namespace SenseNet.IO.Tests
 
             public void SetReferenceUpdateTasks(IEnumerable<TransferTask> tasks, int taskCount) { }
             public Task<bool> ReadByReferenceUpdateTasksAsync(CancellationToken cancel) { return Task.FromResult(false); }
-            public void SkipSubtree(string path)
+            public void SkipSubtree(string relativePath)
             {
                 throw new NotImplementedException();
             }

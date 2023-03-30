@@ -80,9 +80,13 @@ namespace SenseNet.IO.Implementations
             var src = ToJson(content);
             using (var writer = CreateTextWriter(contentPath, false))
                 await writer.WriteAsync(src);
-            
+
             try
             {
+if (content.Path == "/Root/Content/SnRM1/ex1/F2" ||
+    content.Path == "/Root/System/Schema/ContentTypes/GenericContent/Folder" ||
+    content.Path == "/Root/System/Schema/ContentTypes/GenericContent/FieldSettingContent")
+    throw new NotSupportedException("##CustomError##");
                 await WriteAttachmentsAsync(fileDir, content, cancel);
             }
             catch (Exception ex)
@@ -105,10 +109,10 @@ namespace SenseNet.IO.Implementations
             };
         }
 
-        public Task<bool> IsContentExists(string path, CancellationToken cancel = default)
+        public Task<bool> ShouldSkipSubtree(string path, CancellationToken cancel = default)
         {
-            //UNDONE: NotImplementedException: FsWriter.IsContentExists
-            throw new NotImplementedException();
+            // All file system errors are fatal (e.g. PathTooLongException).
+            return Task.FromResult(true);
         }
 
         public async Task<WriterState> WriteFlattenedAsync(string path, IContent content, CancellationToken cancel = default)
