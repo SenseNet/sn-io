@@ -124,6 +124,7 @@ namespace SenseNet.IO.Tests
                 int p0, p1;
                 string path;
                 string lastPath = null;
+                var cutoffs = new List<string>();
                 if (queryText.Contains("InTree:"))
                 {
                     // InTree:'/Root/System/Schema/ContentTypes' .TOP:10 .SKIP:0
@@ -150,25 +151,26 @@ namespace SenseNet.IO.Tests
                         p1 = queryText.Length;
                     lastPath = queryText.Substring(p0, p1 - p0).Trim('\'');
                 }
-
-
-                //var skip = 0;
-                //if (queryText.Contains(".SKIP:"))
-                //{
-                //    p0 = queryText.IndexOf(".SKIP:", SC) + 6;
-                //    p1 = queryText.IndexOf(" ", p0, SC);
-                //    if (p1 < 0)
-                //        p1 = queryText.Length;
-                //    skip = int.Parse(queryText.Substring(p0, p1 - p0));
-                //}
-
-                //var top = 0;
-                //if (queryText.Contains(".TOP:"))
-                //{
-                //    p0 = queryText.IndexOf(".TOP:", SC) + 5;
-                //    p1 = queryText.IndexOf(" ", p0, SC);
-                //    top = p0 < 0 ? 0 : int.Parse(queryText.Substring(p0, p1 - p0));
-                //}
+                if (queryText.Contains("-Path:'"))
+                {
+                    p0 = queryText.IndexOf("Path:", SC) + 5;
+                    p1 = queryText.IndexOf("/*", p0, SC);
+                    if (p1 < 0)
+                        throw new Exception("Syntax error?");
+                    cutoffs.Add(queryText.Substring(p0, p1 - p0).Trim('\''));
+                }
+                if (queryText.Contains("-Path:('"))
+                {
+                    p0 = queryText.IndexOf("Path:(", SC) + 6;
+                    p1 = queryText.IndexOf(")", p0, SC); // this works only in these tests.
+                    if (p1 < 0)
+                        throw new Exception("Syntax error?");
+                    var pathString = queryText.Substring(p0, p1 - p0);
+                    var pathArray = pathString.Split(' ')
+                        .Select(x => x.Trim('\''))
+                        .Select(x => x.Remove(x.Length - 1)); // remove trailing "*" but the "/" remains.
+                    cutoffs.AddRange(pathArray);
+                }
 
                 IContent[] items;
                 if (queryText.Contains("+(+TypeIs:File +InTree:(/Root/Content/Docs/F1/F2 /Root/Content/Docs/F1/F3))"))
@@ -200,6 +202,7 @@ namespace SenseNet.IO.Tests
                     .Where(x => x.Key == path || x.Key.StartsWith(path))
                     .Where(x => exclusion.All(excluded => !x.Key.StartsWith(excluded, SC)))
                     .Where(x => lastPath == null || x.Key.CompareTo(lastPath) > 0)
+                    .Where(x => cutoffs.All(y => !x.Key.StartsWith(y)))
                     .OrderBy(x => x.Key)
                     .Take(top)
                     .Select(x => x.Value)
@@ -475,6 +478,44 @@ namespace SenseNet.IO.Tests
             expected = new[]
             {
                 "+InTree:'/Root/Content'",
+                "+InTree:'/Root/Content' +Path:>'/Root/Content/Workspace-2'",
+            };
+            actual = reader.Queries.ToArray();
+            AssertSequencesAreEqual(expected, actual);
+        }
+
+        [TestMethod]
+        public async Task RepoReader_Cutoff()
+        {
+            var sourceTree = CreateSourceTree(@"/");
+            var targetTree = CreateTree(new[] { "/Root" });
+            var targetStates = new Dictionary<string, WriterState>();
+
+            // ACTION cutoff: /Root/Content/Workspace-1
+            var reader = RepositoryReaderMock.Create(CreateRepositoryCollection(), sourceTree, "/Root/Content", null, 3);
+            var writer = new TestRepositoryWriter(targetTree, targetStates, "/Root",
+                badContentPaths: new []{ "/Root/Content/Workspace-1" });
+            var flow = new SemanticContentFlow(reader, writer, GetLogger<ContentFlow>());
+            var progress = new TestProgress();
+            await flow.TransferAsync(progress);
+
+            // ASSERT
+            var expected = new[]
+            {
+                    @"/Root",
+                    @"/Root/Content",
+                    @"/Root/Content/Workspace-2",
+                };
+
+            var actual = targetTree.Keys
+                .OrderBy(x => x)
+                .ToArray();
+            AssertSequencesAreEqual(expected, actual);
+
+            expected = new[]
+            {
+                "+InTree:'/Root/Content'",
+                "+InTree:'/Root/Content' -Path:'/Root/Content/Workspace-1/*' +Path:>'/Root/Content/Workspace-1/DocLib-1'",
                 "+InTree:'/Root/Content' +Path:>'/Root/Content/Workspace-2'",
             };
             actual = reader.Queries.ToArray();

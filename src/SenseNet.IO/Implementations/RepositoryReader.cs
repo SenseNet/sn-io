@@ -326,13 +326,27 @@ namespace SenseNet.IO.Implementations
                 query=InTree:'{RepositoryRootPath}' AND Path:>'{lastContent.Path}'
                                                     AND NOT Path:'{cutoff[0]}/*' AND NOT Path:'{cutoff[1]}/*'
             */
+
+            // Remove irrelevant cutoffs
+            if (lastPath != null)
+            {
+                for (int i = _cutoffs.Count - 1; i >= 0; i--)
+                    if (!lastPath.StartsWith(_cutoffs[i]) &&
+                        string.Compare(lastPath, _cutoffs[i], StringComparison.Ordinal) > 0)
+                        _cutoffs.RemoveAt(i);
+            }
+
+
             string query;
             var orderByPath = true;
+            var cutoffClause = GetCutoffClause();
             if (contentsWithoutChildren.Length == 0)
             {
                 query = $"+InTree:'{rootPath}'";
                 if (Filter != null)
                     query += $" +({Filter})";
+                if (cutoffClause != null)
+                    query += $" {cutoffClause}";
                 if (lastPath != null)
                     query += $" +Path:>'{lastPath}'";
             }
@@ -346,6 +360,8 @@ namespace SenseNet.IO.Implementations
             {
                 var paths = $"('{string.Join("' '", contentsWithoutChildren.Select(x => RepositoryRootPath + '/' + x))}')";
                 query = $"+(Path:{paths} (+InTree:'{rootPath}' -InTree:{paths}))";
+                if (cutoffClause != null)
+                    query += $" {cutoffClause}";
                 if (lastPath != null)
                     query += $" +Path:>'{lastPath}'";
             }
@@ -353,6 +369,19 @@ namespace SenseNet.IO.Implementations
             var queryResult = await QueryAsync(query, orderByPath, top, cancel).ConfigureAwait(false);
             return queryResult;
         }
+        private string GetCutoffClause()
+        {
+            if (_cutoffs.Count == 0)
+                return null;
+
+            // AND NOT Path:'{cutoff[0]}/*' AND NOT Path:'{cutoff[1]}/*'
+            // -Path:'{cutoff[0]}/*'
+            // -Path:('{cutoff[0]}/*' '{cutoff[1]}/*')
+            return _cutoffs.Count == 1
+                ? $"-Path:'{_cutoffs[0]}/*'"
+                : $"-Path:({string.Join(" ", _cutoffs.Select(x => $"'{x}/*'"))})";
+        }
+
         protected virtual async Task<IContent[]> QueryAsync(string queryText, bool orderByPath, int top, CancellationToken cancel)
         {
             var request = new QueryContentRequest
