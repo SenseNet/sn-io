@@ -105,7 +105,7 @@ namespace SenseNet.IO.Implementations
             };
         }
 
-        public Task<bool> ShouldSkipSubtree(string path, CancellationToken cancel = default)
+        public Task<bool> ShouldSkipSubtreeAsync(string path, CancellationToken cancel = default)
         {
             // All file system errors are fatal (e.g. PathTooLongException).
             return Task.FromResult(true);

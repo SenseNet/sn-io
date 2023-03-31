@@ -50,6 +50,6 @@ namespace SenseNet.IO
         /// <param name="path">Absolute or relative repository path.</param>
         /// <param name="cancel">An optional token to monitor for cancellation requests.</param>
         /// <returns>A Task that represents the asynchronous operation and wraps a bool value.</returns>
-        Task<bool> ShouldSkipSubtree(string path, CancellationToken cancel = default);
+        Task<bool> ShouldSkipSubtreeAsync(string path, CancellationToken cancel = default);
     }
 }

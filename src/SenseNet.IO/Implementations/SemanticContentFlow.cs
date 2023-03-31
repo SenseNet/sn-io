@@ -171,7 +171,7 @@ namespace SenseNet.IO.Implementations
                     writerState = await WriteAsync(progress, false, cancel);
                     if (writerState.Action == WriterAction.Failed)
                     {
-                        if (await Writer.ShouldSkipSubtree(writerState.WriterPath, cancel))
+                        if (await Writer.ShouldSkipSubtreeAsync(writerState.WriterPath, cancel))
                         {
                             Reader.SkipSubtree(writerState.ReaderPath);
                             WriteLog($"Skip subtree: reader: {Reader.Content.Path}");

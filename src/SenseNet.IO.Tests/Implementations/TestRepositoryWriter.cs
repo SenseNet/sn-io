@@ -83,7 +83,7 @@ namespace SenseNet.IO.Tests.Implementations
             return Task.FromResult(state);
         }
 
-        public Task<bool> ShouldSkipSubtree(string path, CancellationToken cancel = default)
+        public Task<bool> ShouldSkipSubtreeAsync(string path, CancellationToken cancel = default)
         {
             var rootPath = ContainerPath == "/" ? "/Root" : ContainerPath;
             var absolutePath = ContentPath.GetAbsolutePath(path, rootPath);
