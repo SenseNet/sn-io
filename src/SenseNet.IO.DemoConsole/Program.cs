@@ -83,7 +83,16 @@ public class Program
                         repoWriterArgs =>
                         {
                             context.Configuration.GetSection("sensenet:repotarget").Bind(repoWriterArgs);
-                        });
+                        })
+                    .ConfigureSenseNetRepository("target", options =>
+                    {
+                        context.Configuration.GetSection("sensenet:repotarget").Bind(options);
+                    })
+                    .ConfigureSenseNetRepository("source", options =>
+                    {
+                        context.Configuration.GetSection("sensenet:reposource").Bind(options);
+                        //update from command line
+                    });
             }).Build();
 
         return host;
@@ -122,7 +131,7 @@ public class Program
         await Task.WhenAll(tasks);
 
         var elapsed = timer.Elapsed;
-        var contentCount = states.Sum(s => s.ContentCount);
+        var contentCount = states.Sum(s => s.CurrentCount);
         logger.LogInformation($"IMPORT FINISHED: " +
                               $"parallelism: {count}, " +
                               $"imported content: {contentCount}, " +

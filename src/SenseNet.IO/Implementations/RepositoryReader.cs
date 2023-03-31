@@ -146,7 +146,7 @@ namespace SenseNet.IO.Implementations
                 if (treeState.CurrentBlock == null || treeState.CurrentBlockIndex >= treeState.CurrentBlock.Length)
                 {
                     treeState.CurrentBlock = await QueryBlockAsync(treeState.AbsolutePath, Array.Empty<string>(),
-                        treeState.BlockIndex * _blockSize, _blockSize);
+                        treeState.CurrentBlock?[^1].Path, _blockSize, cancel);
                     treeState.BlockIndex++;
                     treeState.CurrentBlockIndex = 0;
                     if (treeState.CurrentBlock == null || treeState.CurrentBlock.Length == 0)
@@ -172,7 +172,7 @@ namespace SenseNet.IO.Implementations
                 if (_currentBlock == null || _currentBlockIndex >= _currentBlock.Length)
                 {
                     _currentBlock = await QueryBlockAsync(RepositoryRootPath, contentsWithoutChildren,
-                        _blockIndex * _blockSize, _blockSize);
+                        _currentBlock?[^1].Path, _blockSize, cancel);
                     _blockIndex++;
                     _currentBlockIndex = 0;
                     if (_currentBlock == null || _currentBlock.Length == 0)
@@ -190,6 +190,10 @@ namespace SenseNet.IO.Implementations
 
         private bool SkipContent(IContent content)
         {
+            foreach (var cutoff in _cutoffs)
+                if (content.Path.StartsWith(cutoff + "/"))
+                    return true;
+
             //TODO: find a better algorithm for marking contents to skip.
             // Currently we skip preview folders based on their names. A better solution 
             // would be to move this flag to the server and make it available in a search query
@@ -226,6 +230,14 @@ namespace SenseNet.IO.Implementations
             return true;
         }
 
+        private readonly List<string> _cutoffs = new();
+        public void SkipSubtree(string relativePath)
+        {
+            var absolutePath = ContentPath.GetAbsolutePath(relativePath, RepositoryRootPath);
+            // Add to _cutoffs if the new item is not a subtree of any stored item.
+            if(_cutoffs.All(c => c.Length >= absolutePath.Length || !absolutePath.StartsWith(c)))
+                _cutoffs.Add(absolutePath);
+        }
 
         private static readonly string[] _keywords = new[]
         {
@@ -298,38 +310,78 @@ namespace SenseNet.IO.Implementations
                 throw new SnException(0, "RepositoryReader: cannot get count of contents.", e);
             }
         }
-        protected virtual async Task<IContent[]> QueryBlockAsync(string rootPath, string[] contentsWithoutChildren, int skip, int top)
+        protected virtual async Task<IContent[]> QueryBlockAsync(string rootPath, string[] contentsWithoutChildren,
+            string lastPath, int top, CancellationToken cancel)
         {
+            // Remove irrelevant cutoffs
+            if (lastPath != null)
+            {
+                for (int i = _cutoffs.Count - 1; i >= 0; i--)
+                    if (!lastPath.StartsWith(_cutoffs[i]) &&
+                        string.Compare(lastPath, _cutoffs[i], StringComparison.Ordinal) > 0)
+                        _cutoffs.RemoveAt(i);
+            }
+
+            // Build query
             string query;
+            var orderByPath = true;
+            var cutoffClause = GetCutoffClause();
             if (contentsWithoutChildren.Length == 0)
             {
-                query = Filter != null ? $"+InTree:'{rootPath}' +({Filter})" : $"InTree:'{rootPath}'";
-                query += $" .SORT:Path .TOP:{top} .SKIP:{skip} .AUTOFILTERS:OFF";
+                query = $"+InTree:'{rootPath}'";
+                if (Filter != null)
+                    query += $" +({Filter})";
+                if (cutoffClause != null)
+                    query += $" {cutoffClause}";
+                if (lastPath != null)
+                    query += $" +Path:>'{lastPath}'";
             }
             else if (contentsWithoutChildren.Length == 1 && contentsWithoutChildren[0] == string.Empty)
             {
-                query = $"Path:'{rootPath}' .AUTOFILTERS:OFF";
+                query = $"Path:'{rootPath}'";
+                top = 0;
+                orderByPath = false;
             }
             else
             {
                 var paths = $"('{string.Join("' '", contentsWithoutChildren.Select(x => RepositoryRootPath + '/' + x))}')";
-                query = $"Path:{paths} (+InTree:'{rootPath}' -InTree:{paths}) .SORT:Path .TOP:{top} .SKIP:{skip} .AUTOFILTERS:OFF";
+                query = $"+(Path:{paths} (+InTree:'{rootPath}' -InTree:{paths}))";
+                if (cutoffClause != null)
+                    query += $" {cutoffClause}";
+                if (lastPath != null)
+                    query += $" +Path:>'{lastPath}'";
             }
 
-            var queryResult = await QueryAsync(query).ConfigureAwait(false);
+            var queryResult = await QueryAsync(query, orderByPath, top, cancel).ConfigureAwait(false);
             return queryResult;
         }
-        protected virtual async Task<IContent[]> QueryAsync(string queryText)
+        private string GetCutoffClause()
         {
-            var request = new LoadCollectionRequest
+            if (_cutoffs.Count == 0)
+                return null;
+
+            return _cutoffs.Count == 1
+                ? $"-Path:'{_cutoffs[0]}/*'"
+                : $"-Path:({string.Join(" ", _cutoffs.Select(x => $"'{x}/*'"))})";
+        }
+
+        protected virtual async Task<IContent[]> QueryAsync(string queryText, bool orderByPath, int top, CancellationToken cancel)
+        {
+            var request = new QueryContentRequest
             {
                 Path = "/Root",
                 ContentQuery = queryText,
+                AutoFilters = FilterStatus.Disabled,
                 Parameters = {{"$format", "export"}}
             };
+            if (top > 0)
+                request.Top = top;
+            if (orderByPath)
+                request.OrderBy = new[] {"Path"};
+
             try
             {
-                var result = await _repository.LoadCollectionAsync(request, CancellationToken.None)
+                var result = await _repository.QueryAsync(request, cancel)
                     .ConfigureAwait(false);
                 var transformed = result.Select(x => new RepositoryReaderContent(x)).ToArray();
                 // ReSharper disable once CoVariantArrayConversion

@@ -80,7 +80,7 @@ namespace SenseNet.IO.Implementations
             var src = ToJson(content);
             using (var writer = CreateTextWriter(contentPath, false))
                 await writer.WriteAsync(src);
-            
+
             try
             {
                 await WriteAttachmentsAsync(fileDir, content, cancel);
@@ -104,6 +104,13 @@ namespace SenseNet.IO.Implementations
                 Action = action,
             };
         }
+
+        public Task<bool> ShouldSkipSubtreeAsync(string path, CancellationToken cancel = default)
+        {
+            // All file system errors are fatal (e.g. PathTooLongException).
+            return Task.FromResult(true);
+        }
+
         public async Task<WriterState> WriteFlattenedAsync(string path, IContent content, CancellationToken cancel = default)
         {
             if (!IsDirectoryExists(OutputDirectory))

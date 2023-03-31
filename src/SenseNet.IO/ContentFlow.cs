@@ -62,13 +62,11 @@ namespace SenseNet.IO
         }
         private void WriteLog(WriterState state)
         {
-            using (var writer = new StringWriter())
-            {
-                writer.WriteLine($"{state.Action,-8} {state.WriterPath}");
-                foreach (var message in state.Messages)
-                    writer.WriteLine($"         {message.Replace("The server returned an error (HttpStatus: InternalServerError): ", "")}");
-                WriteLog(writer.GetStringBuilder().ToString().Trim());
-            }
+            using var writer = new StringWriter();
+            writer.WriteLine($"{state.Action,-8} {state.WriterPath}");
+            foreach (var message in state.Messages)
+                writer.WriteLine($"         {message.Replace("The server returned an error (HttpStatus: InternalServerError): ", "")}");
+            WriteLog(writer.GetStringBuilder().ToString().Trim());
         }
         protected void WriteLog(Exception e)
         {

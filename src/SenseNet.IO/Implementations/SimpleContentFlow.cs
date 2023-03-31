@@ -26,7 +26,7 @@ namespace SenseNet.IO.Implementations
             _rootName = Writer.RootName ?? Reader.RootName;
             try
             {
-                if (await Reader.ReadAllAsync(new string[0], cancel))
+                if (await Reader.ReadAllAsync(Array.Empty<string>(), cancel))
                 {
                     if (Writer.RootName != null)
                         Rename(Reader.Content, _rootName);
@@ -34,10 +34,22 @@ namespace SenseNet.IO.Implementations
                     _currentBatchAction = "Transfer contents";
                     WriteLog($"------------ {_currentBatchAction.ToUpper()} ------------");
 
-                    await WriteAsync(progress, false, cancel);
-                    while (await Reader.ReadAllAsync(new string[0], cancel))
+                    var writerState = await WriteAsync(progress, false, cancel);
+                    if (writerState.Action == WriterAction.MissingParent)
+                        return;
+
+                    while (await Reader.ReadAllAsync(Array.Empty<string>(), cancel))
                     {
-                        await WriteAsync(progress, false, cancel);
+                        writerState = await WriteAsync(progress, false, cancel);
+                        if (writerState.Action == WriterAction.Failed)
+                        {
+                            if (await Writer.ShouldSkipSubtreeAsync(writerState.WriterPath, cancel))
+                            {
+                                Reader.SkipSubtree(writerState.ReaderPath);
+                                WriteLog($"Skip subtree: reader: {Reader.Content.Path}");
+                                WriteLog($"Skip subtree: writer: {writerState.WriterPath}");
+                            }
+                        }
                     }
                 }
             }
@@ -51,7 +63,7 @@ namespace SenseNet.IO.Implementations
             WriteSummaryToLog(_contentCount, Reader.EstimatedCount, 0, _errorCount, timer.Elapsed);
         }
 
-        private async Task WriteAsync(IProgress<TransferState> progress, bool updateReferences, CancellationToken cancel = default)
+        private async Task<WriterState> WriteAsync(IProgress<TransferState> progress, bool updateReferences, CancellationToken cancel = default)
         {
             var readerPath = Reader.RelativePath;
             var writerPath = ContentPath.Combine(_rootName, readerPath);
@@ -59,10 +71,11 @@ namespace SenseNet.IO.Implementations
             state.ReaderPath = readerPath;
             state.WriterPath = writerPath;
             Progress(ref _contentCount, state, updateReferences, progress);
+            return state;
         }
         private void Progress(ref int count, WriterState state, bool updateReferences, IProgress<TransferState> progress = null)
         {
-            if(state.Action == WriterAction.Failed)
+            if (state.Action == WriterAction.MissingParent || state.Action == WriterAction.Failed)
                 _errorCount++;
 
             WriteLogAndTask(state, updateReferences);

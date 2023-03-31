@@ -34,6 +34,29 @@ namespace SenseNet.IO.Tests
             protected override IEnumerable<TransferTask> LoadTasks() { return TransferTasks.ToArray(); }
         }
 
+        private class SimpleContentFlowMock : SimpleContentFlow
+        {
+            public List<string> Log { get; } = new List<string>();
+            public List<TransferTask> TransferTasks { get; } = new List<TransferTask>();
+
+            public SimpleContentFlowMock(IContentReader reader, IContentWriter writer) : base(reader, writer, GetLogger<ContentFlow>()) { }
+            protected override void WriteLog(string entry, LogLevel level = LogLevel.Trace) { Log.Add(entry); }
+
+            protected override void WriteTask(WriterState state)
+            {
+                TransferTasks.Add(new TransferTask
+                {
+                    ReaderPath = state.ReaderPath,
+                    WriterPath = state.WriterPath,
+                    BrokenReferences = state.BrokenReferences.ToArray(),
+                    RetryPermissions = state.RetryPermissions
+                });
+            }
+            protected override int LoadTaskCount() { return TransferTasks.Count; }
+            protected override IEnumerable<TransferTask> LoadTasks() { return TransferTasks.ToArray(); }
+
+        }
+
         /* ----------------------------------------------------------------------- q:\io\Root */
 
         [TestMethod]
@@ -1014,6 +1037,261 @@ namespace SenseNet.IO.Tests
             actual = flow.Log.ToArray();
             AssertLogsAreEqual(expected, actual);
         }
+
+        /* =========================================================================================== CUTOFF TESTS */
+
+        [TestMethod]
+        public async Task ContentFlow5_Root_Error_Create_Cutoff()
+        {
+            var sourceTree = CreateSourceTree(@"\");
+            var targetTree = CreateTree(new[] { "/Root" });
+            var targetStates = new Dictionary<string, WriterState>();
+
+            // ACTION
+            var reader = new TestContentReader(@"q:\io\Root", sourceTree);
+            var writer = new TestRepositoryWriter(targetTree, targetStates,
+                badContentPaths: new[] {"/Root/Content/Workspace-1/DocLib-1", "/Root/IMS/Public" });
+            var flow = new SemanticContentFlowMock(reader, writer);
+            var progress = new TestProgress();
+            await flow.TransferAsync(progress);
+
+            // ASSERT
+            var expected = new[]
+            {
+                "------------ TRANSFER CONTENT TYPES ------------",
+                "Created  /Root/System/Schema/ContentTypes/ContentType-1",
+                "Created  /Root/System/Schema/ContentTypes/ContentType-1/ContentType-3",
+                "Created  /Root/System/Schema/ContentTypes/ContentType-1/ContentType-4",
+                "Created  /Root/System/Schema/ContentTypes/ContentType-1/ContentType-5",
+                "Created  /Root/System/Schema/ContentTypes/ContentType-1/ContentType-5/ContentType-6",
+                "Created  /Root/System/Schema/ContentTypes/ContentType-2",
+                "------------ TRANSFER SETTINGS ------------",
+                "Created  /Root/System/Settings/Settings-1.settings",
+                "Created  /Root/System/Settings/Settings-2.settings",
+                "Created  /Root/System/Settings/Settings-3.settings",
+                "------------ TRANSFER ASPECT DEFINITIONS ------------",
+                "Created  /Root/System/Schema/Aspects/Aspect-1",
+                "Created  /Root/System/Schema/Aspects/Aspect-2",
+                "------------ TRANSFER CONTENTS ------------",
+                "Updated  /Root",
+                "Created  /Root/(apps)",
+                "Created  /Root/Content",
+                "Created  /Root/Content/Workspace-1",
+                "Failed   /Root/Content/Workspace-1/DocLib-1\r\n         ErrorMessage1",
+                "Skip subtree: reader: q:\\io\\Root\\Content\\Workspace-1\\DocLib-1",
+                "Skip subtree: writer: /Root/Content/Workspace-1/DocLib-1",
+                "Created  /Root/Content/Workspace-2",
+                "Created  /Root/IMS",
+                "Created  /Root/IMS/BuiltIn",
+                "Created  /Root/IMS/BuiltIn/Portal",
+                "Created  /Root/IMS/BuiltIn/Portal/Group-3",
+                "Created  /Root/IMS/BuiltIn/Portal/User-3",
+                "Failed   /Root/IMS/Public\r\n         ErrorMessage1",
+                "Skip subtree: reader: q:\\io\\Root\\IMS\\Public",
+                "Skip subtree: writer: /Root/IMS/Public",
+                "Updated  /Root/System",
+                "Updated  /Root/System/Schema",
+                "Updated  /Root/System/Schema/Aspects",
+                "Updated  /Root/System/Schema/ContentTypes",
+                "Updated  /Root/System/Settings"
+            };
+            var actual = flow.Log.ToArray();
+            AssertLogsAreEqual(expected, actual);
+        }
+        [TestMethod]
+        public async Task ContentFlow5_Root_Error_Update_NoCutoff()
+        {
+            var sourceTree = CreateSourceTree(@"\");
+            var targetTree = CreateTree(new[]
+            {
+                "/Root",
+                "/Root/(apps)",
+                "/Root/Content",
+                "/Root/Content/Workspace-1",
+                "/Root/Content/Workspace-1/DocLib-1",
+                "/Root/Content/Workspace-1/DocLib-1/Folder-1",
+                "/Root/Content/Workspace-1/DocLib-1/Folder-1/File-1.xlsx",
+                "/Root/Content/Workspace-1/DocLib-1/Folder-1/File-2.docx",
+                "/Root/Content/Workspace-1/DocLib-1/Folder-2",
+                "/Root/Content/Workspace-2",
+                "/Root/IMS",
+                "/Root/IMS/BuiltIn",
+                "/Root/IMS/BuiltIn/Portal",
+                "/Root/IMS/BuiltIn/Portal/Group-3",
+                "/Root/IMS/BuiltIn/Portal/User-3",
+                "/Root/IMS/Public",
+                "/Root/IMS/Public/User-4",
+                "/Root/IMS/Public/Group-4",
+                "/Root/System",
+                "/Root/System/Settings",
+                "/Root/System/Settings/Settings-1.settings",
+                "/Root/System/Settings/Settings-2.settings",
+                "/Root/System/Settings/Settings-3.settings",
+                "/Root/System/Schema",
+                "/Root/System/Schema/Aspects",
+                "/Root/System/Schema/Aspects/Aspect-1",
+                "/Root/System/Schema/Aspects/Aspect-2",
+                "/Root/System/Schema/ContentTypes",
+                "/Root/System/Schema/ContentTypes/ContentType-1",
+                "/Root/System/Schema/ContentTypes/ContentType-1/ContentType-3",
+                "/Root/System/Schema/ContentTypes/ContentType-1/ContentType-4",
+                "/Root/System/Schema/ContentTypes/ContentType-1/ContentType-5",
+                "/Root/System/Schema/ContentTypes/ContentType-1/ContentType-5/ContentType-6",
+                "/Root/System/Schema/ContentTypes/ContentType-2",
+            });
+            var targetStates = new Dictionary<string, WriterState>();
+
+            // ACTION
+            var reader = new TestContentReader(@"q:\io\Root", sourceTree);
+            var writer = new TestRepositoryWriter(targetTree, targetStates,
+                badContentPaths: new[] { "/Root/Content/Workspace-1/DocLib-1", "/Root/IMS/Public" });
+            var flow = new SemanticContentFlowMock(reader, writer);
+            var progress = new TestProgress();
+            await flow.TransferAsync(progress);
+
+            // ASSERT
+            var expected = new[]
+            {
+                "------------ TRANSFER CONTENT TYPES ------------",
+                "Updated  /Root/System/Schema/ContentTypes/ContentType-1",
+                "Updated  /Root/System/Schema/ContentTypes/ContentType-1/ContentType-3",
+                "Updated  /Root/System/Schema/ContentTypes/ContentType-1/ContentType-4",
+                "Updated  /Root/System/Schema/ContentTypes/ContentType-1/ContentType-5",
+                "Updated  /Root/System/Schema/ContentTypes/ContentType-1/ContentType-5/ContentType-6",
+                "Updated  /Root/System/Schema/ContentTypes/ContentType-2",
+                "------------ TRANSFER SETTINGS ------------",
+                "Updated  /Root/System/Settings/Settings-1.settings",
+                "Updated  /Root/System/Settings/Settings-2.settings",
+                "Updated  /Root/System/Settings/Settings-3.settings",
+                "------------ TRANSFER ASPECT DEFINITIONS ------------",
+                "Updated  /Root/System/Schema/Aspects/Aspect-1",
+                "Updated  /Root/System/Schema/Aspects/Aspect-2",
+                "------------ TRANSFER CONTENTS ------------",
+                "Updated  /Root",
+                "Updated  /Root/(apps)",
+                "Updated  /Root/Content",
+                "Updated  /Root/Content/Workspace-1",
+                "Failed   /Root/Content/Workspace-1/DocLib-1\r\n         ErrorMessage1",
+                "Updated  /Root/Content/Workspace-1/DocLib-1/Folder-1",
+                "Updated  /Root/Content/Workspace-1/DocLib-1/Folder-1/File-1.xlsx",
+                "Updated  /Root/Content/Workspace-1/DocLib-1/Folder-1/File-2.docx",
+                "Updated  /Root/Content/Workspace-1/DocLib-1/Folder-2",
+                "Updated  /Root/Content/Workspace-2",
+                "Updated  /Root/IMS",
+                "Updated  /Root/IMS/BuiltIn",
+                "Updated  /Root/IMS/BuiltIn/Portal",
+                "Updated  /Root/IMS/BuiltIn/Portal/Group-3",
+                "Updated  /Root/IMS/BuiltIn/Portal/User-3",
+                "Failed   /Root/IMS/Public\r\n         ErrorMessage1",
+                "Updated  /Root/IMS/Public/Group-4",
+                "Updated  /Root/IMS/Public/User-4",
+                "Updated  /Root/System",
+                "Updated  /Root/System/Schema",
+                "Updated  /Root/System/Schema/Aspects",
+                "Updated  /Root/System/Schema/ContentTypes",
+                "Updated  /Root/System/Settings"
+            };
+            var actual = flow.Log.ToArray();
+            AssertLogsAreEqual(expected, actual);
+        }
+
+        [TestMethod]
+        public async Task ContentFlow5_RootContent_Error_Create_Cutoff()
+        {
+            var sourceTree = CreateSourceTree(@"\");
+            var targetTree = CreateTree(new[] { "/Root" });
+            var targetStates = new Dictionary<string, WriterState>();
+
+            // ACTION
+            var reader = new TestContentReader(@"q:\io\Root\Content", sourceTree);
+            var writer = new TestRepositoryWriter(targetTree, targetStates, "/Root",
+                badContentPaths: new[] { "/Root/Content/Workspace-1/DocLib-1", "/Root/IMS/Public" });
+            var flow = new SimpleContentFlowMock(reader, writer);
+            var progress = new TestProgress();
+            await flow.TransferAsync(progress);
+
+            // ASSERT
+            var expected = new[]
+            {
+                "------------ TRANSFER CONTENTS ------------",
+                "Created  Content",
+                "Created  Content/Workspace-1",
+                "Failed   Content/Workspace-1/DocLib-1\r\n         ErrorMessage1",
+                "Skip subtree: reader: q:\\io\\Root\\Content\\Workspace-1\\DocLib-1",
+                "Skip subtree: writer: Content/Workspace-1/DocLib-1",
+                "Created  Content/Workspace-2",
+            };
+            var actual = flow.Log.ToArray();
+            AssertLogsAreEqual(expected, actual);
+        }
+        [TestMethod]
+        public async Task ContentFlow5_RootContent_Error_Update_NoCutoff()
+        {
+            var sourceTree = CreateSourceTree(@"\");
+            var targetTree = CreateTree(new[]
+            {
+                "/Root",
+                "/Root/(apps)",
+                "/Root/Content",
+                "/Root/Content/Workspace-1",
+                "/Root/Content/Workspace-1/DocLib-1",
+                "/Root/Content/Workspace-1/DocLib-1/Folder-1",
+                "/Root/Content/Workspace-1/DocLib-1/Folder-1/File-1.xlsx",
+                "/Root/Content/Workspace-1/DocLib-1/Folder-1/File-2.docx",
+                "/Root/Content/Workspace-1/DocLib-1/Folder-2",
+                "/Root/Content/Workspace-2",
+                "/Root/IMS",
+                "/Root/IMS/BuiltIn",
+                "/Root/IMS/BuiltIn/Portal",
+                "/Root/IMS/BuiltIn/Portal/Group-3",
+                "/Root/IMS/BuiltIn/Portal/User-3",
+                "/Root/IMS/Public",
+                "/Root/IMS/Public/User-4",
+                "/Root/IMS/Public/Group-4",
+                "/Root/System",
+                "/Root/System/Settings",
+                "/Root/System/Settings/Settings-1.settings",
+                "/Root/System/Settings/Settings-2.settings",
+                "/Root/System/Settings/Settings-3.settings",
+                "/Root/System/Schema",
+                "/Root/System/Schema/Aspects",
+                "/Root/System/Schema/Aspects/Aspect-1",
+                "/Root/System/Schema/Aspects/Aspect-2",
+                "/Root/System/Schema/ContentTypes",
+                "/Root/System/Schema/ContentTypes/ContentType-1",
+                "/Root/System/Schema/ContentTypes/ContentType-1/ContentType-3",
+                "/Root/System/Schema/ContentTypes/ContentType-1/ContentType-4",
+                "/Root/System/Schema/ContentTypes/ContentType-1/ContentType-5",
+                "/Root/System/Schema/ContentTypes/ContentType-1/ContentType-5/ContentType-6",
+                "/Root/System/Schema/ContentTypes/ContentType-2",
+            });
+            var targetStates = new Dictionary<string, WriterState>();
+
+            // ACTION
+            var reader = new TestContentReader(@"q:\io\Root\Content", sourceTree);
+            var writer = new TestRepositoryWriter(targetTree, targetStates, "/Root",
+                badContentPaths: new[] { "/Root/Content/Workspace-1/DocLib-1", "/Root/IMS/Public" });
+            var flow = new SimpleContentFlowMock(reader, writer);
+            var progress = new TestProgress();
+            await flow.TransferAsync(progress);
+
+            // ASSERT
+            var expected = new[]
+            {
+                "------------ TRANSFER CONTENTS ------------",
+                "Updated  Content",
+                "Updated  Content/Workspace-1",
+                "Failed   Content/Workspace-1/DocLib-1\r\n         ErrorMessage1",
+                "Updated  Content/Workspace-1/DocLib-1/Folder-1",
+                "Updated  Content/Workspace-1/DocLib-1/Folder-1/File-1.xlsx",
+                "Updated  Content/Workspace-1/DocLib-1/Folder-1/File-2.docx",
+                "Updated  Content/Workspace-1/DocLib-1/Folder-2",
+                "Updated  Content/Workspace-2",
+            };
+            var actual = flow.Log.ToArray();
+            AssertLogsAreEqual(expected, actual);
+        }
+
 
         /* =========================================================================================== TOOLS */
 

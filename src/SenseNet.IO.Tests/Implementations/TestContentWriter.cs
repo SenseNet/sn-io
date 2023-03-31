@@ -53,5 +53,10 @@ namespace SenseNet.IO.Tests.Implementations
 
             return Task.FromResult(new WriterState{WriterPath = absolutePath, Action = WriterAction.Created});
         }
+
+        public Task<bool> ShouldSkipSubtreeAsync(string path, CancellationToken cancel = default)
+        {
+            throw new System.NotImplementedException();
+        }
     }
 }

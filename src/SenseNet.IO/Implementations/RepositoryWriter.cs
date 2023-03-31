@@ -89,6 +89,14 @@ namespace SenseNet.IO.Implementations
             return await WriteContentAsync(repositoryPath, content, cancel);
         }
 
+        public async Task<bool> ShouldSkipSubtreeAsync(string path, CancellationToken cancel = default)
+        {
+            //TODO: ? ContainerPath can be "/"? See TestRepositoryWriter.IsContentExists()
+            if (!path.StartsWith("/"))
+                path = ContentPath.Combine(ContainerPath, path);
+            return !await _repository.IsContentExistsAsync(path, cancel).ConfigureAwait(false);
+        }
+
         private async Task<WriterState> WriteContentTypeAsync(string repositoryPath, IContent content, CancellationToken cancel)
         {
             var attachments = await content.GetAttachmentsAsync();
@@ -179,7 +187,7 @@ namespace SenseNet.IO.Implementations
 
                 if (existing)
                 {
-                    _logger.LogTrace("Skip importing existing folder without metadata: {repositoryPath}", repositoryPath);
+                    _logger.LogTrace("Skip update of existing folder without metadata: {repositoryPath}", repositoryPath);
 
                     return new WriterState
                     {
@@ -234,11 +242,10 @@ namespace SenseNet.IO.Implementations
             {
                 _logger.LogError(e, $"Error during importing {repositoryPath}: " +
                                     $"{e.Message}. {e.ErrorData?.ErrorCode} {e.StatusCode}");
-
                 return new WriterState
                 {
                     WriterPath = repositoryPath,
-                    Action = WriterAction.Failed,
+                    Action = IsParentNotFoundException(repositoryPath, e) ? WriterAction.MissingParent :  WriterAction.Failed,
                     Messages = new[] {e.Message}
                 };
             }
@@ -290,6 +297,14 @@ namespace SenseNet.IO.Implementations
                 Messages = messages,
                 Action = action
             };
+        }
+
+        private bool IsParentNotFoundException(string path, Exception exception)
+        {
+            return exception.Message.Equals($"The server returned an error (HttpStatus: InternalServerError): " +
+                                            $"Cannot create content {ContentPath.GetName(path)}, " +
+                                            $"parent not found: {ContentPath.GetParentPath(path)}",
+                StringComparison.OrdinalIgnoreCase);
         }
 
         private WriterAction ParseWriterAction(string src, bool needToUpdateReferences)
