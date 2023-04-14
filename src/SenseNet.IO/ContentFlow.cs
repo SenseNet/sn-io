@@ -57,6 +57,12 @@ namespace SenseNet.IO
         protected void WriteLogAndTask(WriterState state, bool updateReferences)
         {
             WriteLog(state);
+            if (updateReferences && state.BrokenReferences.Length > 0)
+            {
+                var plural = state.BrokenReferences.Length > 1 ? "these fields" : "this field";
+                var fieldNames = string.Join(", ", state.BrokenReferences);
+                WriteLog($"    Warning: At least one referred content is not available in {plural}: {fieldNames}");
+            }
             if (!updateReferences && state.UpdateRequired)
                 WriteTask(state);
         }
