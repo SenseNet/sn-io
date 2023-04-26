@@ -106,16 +106,25 @@ namespace SenseNet.IO.Implementations
             if (binary != null)
             {
                 await using var stream = binary.Stream;
-                await Content.UploadAsync("/Root/System/Schema/ContentTypes", content.Name, stream, "ContentType",
-                    server: _repository.Server);
+                await _repository.UploadAsync(new UploadRequest
+                {
+                    ParentPath = "/Root/System/Schema/ContentTypes",
+                    ContentName = content.Name,
+                    ContentType = "ContentType"
+                }, stream, cancel).ConfigureAwait(false);
             }
 
             // Upload other binaries if there are.
             foreach (var attachment in attachments.Where(a => a.FieldName != "Binary"))
             {
                 await using var stream = attachment.Stream;
-                await Content.UploadAsync("/Root/System/Schema/ContentTypes", content.Name, stream, "ContentType",
-                    attachment.FieldName, server: _repository.Server);
+                await _repository.UploadAsync(new UploadRequest
+                {
+                    ParentPath = "/Root/System/Schema/ContentTypes",
+                    ContentName = content.Name,
+                    ContentType = "ContentType",
+                    PropertyName = attachment.FieldName
+                }, stream, cancel).ConfigureAwait(false);
             }
 
             // Remove attachments from field set.
@@ -257,13 +266,12 @@ namespace SenseNet.IO.Implementations
                 try
                 {
                     await using var stream = attachment.Stream;
-                    await Retrier.RetryAsync(50, 3000, async () =>
-                        {
-                            stream?.Seek(0, SeekOrigin.Begin);
-                            await Content.UploadAsync(parentPath, content.Name, stream,
-                                propertyName: attachment.FieldName, server: _repository.Server);
-                        },
-                        (i, exception) => exception.CheckRetryConditionOrThrow(i));
+                    await _repository.UploadAsync(new UploadRequest
+                    {
+                        ParentPath = parentPath,
+                        ContentName = content.Name,
+                        PropertyName = attachment.FieldName
+                    }, stream, cancel).ConfigureAwait(false);
                 }
                 catch (ClientException ex)
                 {
