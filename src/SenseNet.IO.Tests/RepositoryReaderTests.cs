@@ -1,17 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
-using System.Resources;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json.Linq;
 using SenseNet.Client;
-using SenseNet.Extensions.DependencyInjection;
 //using SenseNet.Client;
 using SenseNet.IO.Implementations;
 using SenseNet.IO.Tests.Implementations;
@@ -24,6 +22,9 @@ namespace SenseNet.IO.Tests
         #region Nested classes NullRepository, TestRepositoryCollection, RepositoryReaderMock
         private class NullRepository : IRepository
         {
+            public Task ProcessWebRequestResponseAsync(string relativeUrl, HttpMethod method, Dictionary<string, IEnumerable<string>> additionalHeaders,
+                Action<HttpClientHandler, HttpClient, HttpRequestMessage> requestProcessor, Func<HttpResponseMessage, CancellationToken, Task> responseProcessor, CancellationToken cancel) => throw new NotImplementedException();
+
             public ServerContext Server { get; set; }
             public RegisteredContentTypes GlobalContentTypes { get; }
 
@@ -44,21 +45,38 @@ namespace SenseNet.IO.Tests
             public Task<T> LoadContentAsync<T>(int id, CancellationToken cancel) where T : Content => throw new NotImplementedException();
             public Task<T> LoadContentAsync<T>(string path, CancellationToken cancel) where T : Content => throw new NotImplementedException();
             public Task<T> LoadContentAsync<T>(LoadContentRequest requestData, CancellationToken cancel) where T : Content => throw new NotImplementedException();
-            public Task<IEnumerable<Content>> LoadCollectionAsync(LoadCollectionRequest requestData, CancellationToken cancel) => throw new NotImplementedException();
-            public Task<IEnumerable<T>> LoadCollectionAsync<T>(LoadCollectionRequest requestData, CancellationToken cancel) where T : Content => throw new NotImplementedException();
+            public Task<IContentCollection<Content>> LoadCollectionAsync(LoadCollectionRequest requestData, CancellationToken cancel) => throw new NotImplementedException();
+            public Task<IContentCollection<T>> LoadCollectionAsync<T>(LoadCollectionRequest requestData, CancellationToken cancel) where T : Content => throw new NotImplementedException();
+
             public Task<int> GetContentCountAsync(LoadCollectionRequest requestData, CancellationToken cancel) => throw new NotImplementedException();
             public Task<bool> IsContentExistsAsync(string path, CancellationToken cancel) => throw new NotImplementedException();
-            public Task<IEnumerable<Content>> QueryForAdminAsync(QueryContentRequest requestData, CancellationToken cancel) => throw new NotImplementedException();
-            public Task<IEnumerable<T>> QueryForAdminAsync<T>(QueryContentRequest requestData, CancellationToken cancel) where T : Content => throw new NotImplementedException();
-            public Task<IEnumerable<Content>> QueryAsync(QueryContentRequest requestData, CancellationToken cancel) => throw new NotImplementedException();
-            public Task<IEnumerable<T>> QueryAsync<T>(QueryContentRequest requestData, CancellationToken cancel) where T : Content => throw new NotImplementedException();
+            public Task<IContentCollection<Content>> QueryForAdminAsync(QueryContentRequest requestData, CancellationToken cancel) => throw new NotImplementedException();
+            public Task<IContentCollection<T>> QueryForAdminAsync<T>(QueryContentRequest requestData, CancellationToken cancel) where T : Content => throw new NotImplementedException();
+            public Task<IContentCollection<Content>> QueryAsync(QueryContentRequest requestData, CancellationToken cancel) => throw new NotImplementedException();
+            public Task<IContentCollection<T>> QueryAsync<T>(QueryContentRequest requestData, CancellationToken cancel) where T : Content => throw new NotImplementedException();
             public Task<int> QueryCountForAdminAsync(QueryContentRequest requestData, CancellationToken cancel) => throw new NotImplementedException();
             public Task<int> QueryCountAsync(QueryContentRequest requestData, CancellationToken cancel) => throw new NotImplementedException();
+            
+            public Task<UploadResult> UploadAsync(UploadRequest request, Stream stream, CancellationToken cancel) => throw new NotImplementedException();
+            public Task<UploadResult> UploadAsync(UploadRequest request, Stream stream, Action<int> progressCallback, CancellationToken cancel) => throw new NotImplementedException();
+            public Task<UploadResult> UploadAsync(UploadRequest request, string fileText, CancellationToken cancel) => throw new NotImplementedException();
+
+            public Task<string> GetBlobToken(int id, CancellationToken cancel, string version = null, string propertyName = null) => throw new NotImplementedException();
+            public Task<string> GetBlobToken(string path, CancellationToken cancel, string version = null, string propertyName = null) => throw new NotImplementedException();
+
             public Task DeleteContentAsync(string path, bool permanent, CancellationToken cancel) => throw new NotImplementedException();
             public Task DeleteContentAsync(string[] paths, bool permanent, CancellationToken cancel) => throw new NotImplementedException();
             public Task DeleteContentAsync(int id, bool permanent, CancellationToken cancel) => throw new NotImplementedException();
             public Task DeleteContentAsync(int[] ids, bool permanent, CancellationToken cancel) => throw new NotImplementedException();
             public Task DeleteContentAsync(object[] idsOrPaths, bool permanent, CancellationToken cancel) => throw new NotImplementedException();
+            public Task<T> GetResponseAsync<T>(ODataRequest requestData, HttpMethod method, CancellationToken cancel) => throw new NotImplementedException();
+            public Task<dynamic> GetResponseJsonAsync(ODataRequest requestData, HttpMethod method, CancellationToken cancel) => throw new NotImplementedException();
+            public Task<string> GetResponseStringAsync(ODataRequest requestData, HttpMethod method, CancellationToken cancel) => throw new NotImplementedException();
+            public Task<string> GetResponseStringAsync(Uri uri, HttpMethod method, string postData, Dictionary<string, IEnumerable<string>> additionalHeaders,
+                CancellationToken cancel) => throw new NotImplementedException();
+            public Task DownloadAsync(DownloadRequest request, Func<Stream, StreamProperties, Task> responseProcessor, CancellationToken cancel) => throw new NotImplementedException();
+            public Task ProcessWebResponseAsync(string relativeUrl, HttpMethod method, Dictionary<string, IEnumerable<string>> additionalHeaders,
+                HttpContent httpContent, Func<HttpResponseMessage, CancellationToken, Task> responseProcessor, CancellationToken cancel) => throw new NotImplementedException();
         }
         private class TestRepositoryCollection : IRepositoryCollection
         {
@@ -66,6 +84,7 @@ namespace SenseNet.IO.Tests
             public TestRepositoryCollection(IRepository instance) { _instance = instance; }
             public Task<IRepository> GetRepositoryAsync(CancellationToken cancel) => Task.FromResult(_instance);
             public Task<IRepository> GetRepositoryAsync(string name, CancellationToken cancel) => Task.FromResult(_instance);
+            public Task<IRepository> GetRepositoryAsync(RepositoryArgs args, CancellationToken cancel) => Task.FromResult(_instance);
         }
         private class RepositoryReaderMock : RepositoryReader
         {
