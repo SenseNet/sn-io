@@ -1,5 +1,4 @@
 ﻿using System;
-using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Threading;
@@ -244,7 +243,7 @@ namespace SenseNet.IO.Implementations
 
                         resultString = await RESTCaller.GetResponseStringAsync(request, HttpMethod.Post, body, _repository.Server);
                     },
-                    (i, exception) => exception.CheckRetryConditionOrThrow(i));
+                    (i, exception) => exception.CheckRetryConditionOrThrow(i), cancel);
 
             }
             catch (ClientException e)
@@ -256,6 +255,16 @@ namespace SenseNet.IO.Implementations
                     WriterPath = repositoryPath,
                     Action = IsParentNotFoundException(repositoryPath, e) ? WriterAction.MissingParent :  WriterAction.Failed,
                     Messages = new[] {e.Message}
+                };
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, $"Error during importing {repositoryPath}: {e.Message}.");
+                return new WriterState
+                {
+                    WriterPath = repositoryPath,
+                    Action = IsParentNotFoundException(repositoryPath, e) ? WriterAction.MissingParent : WriterAction.Failed,
+                    Messages = new[] { e.Message }
                 };
             }
 
@@ -283,6 +292,18 @@ namespace SenseNet.IO.Implementations
                         WriterPath = repositoryPath,
                         Action = WriterAction.Failed,
                         Messages = new[] { ex.Message }
+                    };
+                }
+                catch (Exception e)
+                {
+                    _logger.LogError(e, $"Error during {attachment.FieldName} attachment upload for {repositoryPath}: " +
+                                        $"{e.Message}.");
+
+                    return new WriterState
+                    {
+                        WriterPath = repositoryPath,
+                        Action = WriterAction.Failed,
+                        Messages = new[] { e.Message }
                     };
                 }
             }
