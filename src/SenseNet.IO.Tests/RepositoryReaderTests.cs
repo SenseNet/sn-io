@@ -69,6 +69,10 @@ namespace SenseNet.IO.Tests
             public Task DeleteContentAsync(int id, bool permanent, CancellationToken cancel) => throw new NotImplementedException();
             public Task DeleteContentAsync(int[] ids, bool permanent, CancellationToken cancel) => throw new NotImplementedException();
             public Task DeleteContentAsync(object[] idsOrPaths, bool permanent, CancellationToken cancel) => throw new NotImplementedException();
+
+            public Task<Content> GetCurrentUserAsync(CancellationToken cancel) => throw new NotImplementedException();
+            public Task<Content> GetCurrentUserAsync(string[] select, string[] expand, CancellationToken cancel) => throw new NotImplementedException();
+
             public Task<T> GetResponseAsync<T>(ODataRequest requestData, HttpMethod method, CancellationToken cancel) => throw new NotImplementedException();
             public Task<dynamic> GetResponseJsonAsync(ODataRequest requestData, HttpMethod method, CancellationToken cancel) => throw new NotImplementedException();
             public Task<string> GetResponseStringAsync(ODataRequest requestData, HttpMethod method, CancellationToken cancel) => throw new NotImplementedException();
