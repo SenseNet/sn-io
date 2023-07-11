@@ -280,8 +280,15 @@ namespace SenseNet.IO.Implementations
 
             // Upload binaries if there are.
             var parentPath = ContentPath.GetParentPath(repositoryPath);
-            foreach (var attachment in attachments.Where(a => a.Stream != null))
+            foreach (var attachment in attachments)
             {
+                if (attachment.Stream == null)
+                {
+                    _logger.LogWarning("Attachment {fileName} of field {attachmentName} for {repositoryPath} is null", 
+                        attachment.FileName, attachment.FieldName, repositoryPath);
+                    continue;
+                }
+
                 try
                 {
                     await using var stream = attachment.Stream;
