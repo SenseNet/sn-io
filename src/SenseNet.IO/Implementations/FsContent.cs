@@ -55,7 +55,7 @@ namespace SenseNet.IO.Implementations
                         FieldName = "Binary",
                         FileName = System.IO.Path.GetFileName(_defaultAttachmentPath),
                         // ReSharper disable once AssignNullToNotNullAttribute
-                        Stream = CreateFileStream(_defaultAttachmentPath, FileMode.Open)
+                        Stream = IsFileExists(_defaultAttachmentPath) ? CreateFileStream(_defaultAttachmentPath, FileMode.Open) : null
                     }
                 });
             }

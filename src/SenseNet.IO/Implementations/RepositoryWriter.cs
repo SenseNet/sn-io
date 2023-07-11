@@ -102,7 +102,7 @@ namespace SenseNet.IO.Implementations
 
             // "Binary" field of a ContentType need to uploaded first.
             var binary = attachments.FirstOrDefault(a => a.FieldName == "Binary");
-            if (binary != null)
+            if (binary?.Stream != null)
             {
                 await using var stream = binary.Stream;
                 await _repository.UploadAsync(new UploadRequest
@@ -112,9 +112,19 @@ namespace SenseNet.IO.Implementations
                     ContentType = "ContentType"
                 }, stream, cancel).ConfigureAwait(false);
             }
+            else
+            {
+                // in case of content types, there is no point to continue if the binary is missing
+                return new WriterState
+                {
+                    Action = WriterAction.Failed,
+                    WriterPath = repositoryPath,
+                    Messages = new[] { $"ContentType {content.Name} does not have a Binary attachment." }
+                };
+            }
 
             // Upload other binaries if there are.
-            foreach (var attachment in attachments.Where(a => a.FieldName != "Binary"))
+            foreach (var attachment in attachments.Where(a => a.FieldName != "Binary" && a.Stream != null))
             {
                 await using var stream = attachment.Stream;
                 await _repository.UploadAsync(new UploadRequest
