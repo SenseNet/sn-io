@@ -48,15 +48,21 @@ namespace SenseNet.IO.CLI
             }
         }
 
+#if DEBUG
+        private const string CompileMode = "DEBUG";
+#elif RELEASE
+        private const string CompileMode = "RELEASE";
+#endif
+
         public string HeadToDisplay()
         {
-            return $"SnIO {GetVerb().ToString().ToUpper()} v{GetVersion()}\r\n" +
+            return $"SnIO {GetVerb().ToString().ToUpper()} v{GetVersion()} {CompileMode}\r\n" +
                    $"  SOURCE: {GetProviderName(Reader)} ({Reader.ParamsToDisplay()}),\r\n" +
                    $"  TARGET: {GetProviderName(Writer)} ({Writer.ParamsToDisplay()})";
         }
         public string HeadToLog()
         {
-            return $"SnIO {GetVerb().ToString().ToUpper()} v{GetVersion()}: " +
+            return $"SnIO {GetVerb().ToString().ToUpper()} v{GetVersion()} {CompileMode}: " +
                    $"SOURCE: {GetProviderName(Reader)} ({Reader.ParamsToDisplay()}), " +
                    $"TARGET: {GetProviderName(Writer)} ({Writer.ParamsToDisplay()})";
         }
