@@ -11,6 +11,7 @@ using Microsoft.Extensions.Logging;
 using SenseNet.Extensions.DependencyInjection;
 using SenseNet.IO.Implementations;
 using Serilog;
+using Serilog.Events;
 
 namespace SenseNet.IO.CLI
 {
@@ -72,11 +73,16 @@ namespace SenseNet.IO.CLI
                 {
                     configurationBuilder.SetBasePath(Directory.GetCurrentDirectory());
                     if (settingsFile != null)
+                    {
                         configurationBuilder.AddJsonStream(settingsFile);
+                    }
                     else
+                    {
                         configurationBuilder.AddJsonFile("providerSettings.json", true);
-                    configurationBuilder
-                        .AddCommandLine(args);
+                        configurationBuilder.AddJsonFile("snio.json", true);
+                    }
+
+                    configurationBuilder.AddCommandLine(args);
                 })
                 .ConfigureServices((hostBuilderContext, serviceCollection) =>
                 {
@@ -184,7 +190,21 @@ namespace SenseNet.IO.CLI
                 .ConfigureLogging((hostBuilder, loggingBuilder) =>
                 {
                     loggingBuilder.ClearProviders();
-                    loggingBuilder.AddSerilog(new LoggerConfiguration()
+
+                    var loggerConfig = new LoggerConfiguration();
+
+                    // check if there is any configuration for writing to Serilog sinks
+                    var writeToSection = hostBuilder.Configuration.GetSection("Serilog:WriteTo");
+                    if (writeToSection == null || !writeToSection.GetChildren().Any())
+                    {
+                        // default logging configuration
+                        loggerConfig = loggerConfig
+                            .MinimumLevel.Verbose()
+                            .WriteTo
+                            .File("logs/snio-.log", LogEventLevel.Verbose, rollingInterval: RollingInterval.Day);
+                    }
+
+                    loggingBuilder.AddSerilog(loggerConfig
                         .ReadFrom.Configuration(hostBuilder.Configuration)
                         .CreateLogger());
                 })
