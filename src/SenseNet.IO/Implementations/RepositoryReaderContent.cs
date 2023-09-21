@@ -29,9 +29,7 @@ namespace SenseNet.IO.Implementations
         public string Type { get; }
         public PermissionInfo Permissions { get; set; }
 
-        //TODO: implement new API (IsFolder field?)
-        public bool IsFolder =>
-            throw new NotImplementedException("IsFolder is not implemented in RepositoryReaderContent.");
+        public bool IsFolder => true;
 
         public bool HasData => _fields?.Any() ?? false;
 
