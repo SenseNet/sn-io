@@ -9,15 +9,29 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using SenseNet.Client;
 using SenseNet.Tools;
+using SenseNet.Tools.Configuration;
 
 namespace SenseNet.IO.Implementations
 {
+    [OptionsClass(sectionName: "repositoryWriter")]
     public class RepositoryWriterArgs
     {
+        /// <summary>
+        /// Repository url.
+        /// </summary>
         public string Url { get; set; }
+        /// <summary>
+        /// Content path in the repository. Default: /
+        /// </summary>
         public string Path { get; set; }
+        /// <summary>
+        /// Target name under the container. Default: name of the reader's root.
+        /// </summary>
         public string Name { get; set; }
         public RepositoryAuthenticationOptions Authentication { get; set; } = new();
+        /// <summary>
+        /// Number of bytes sent to the server in one chunk during upload operations. Default: 10 MB
+        /// </summary>
         public int UploadChunkSize { get; set; }
 
         internal RepositoryWriterArgs Clone()

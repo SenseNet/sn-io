@@ -5,11 +5,16 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Options;
+using SenseNet.Tools.Configuration;
 
 namespace SenseNet.IO.Implementations
 {
+    [OptionsClass(sectionName: "fsReader")]
     public class FsReaderArgs
     {
+        /// <summary>
+        /// Source file system folder path.
+        /// </summary>
         public string Path { get; set; }
 
         internal FsReaderArgs Clone()
