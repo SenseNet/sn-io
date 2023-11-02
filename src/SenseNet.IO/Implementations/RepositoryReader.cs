@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using SenseNet.Client;
+using SenseNet.Tools.Configuration;
 
 namespace SenseNet.IO.Implementations
 {
@@ -26,11 +27,25 @@ namespace SenseNet.IO.Implementations
             };
         }
     }
+
+    [OptionsClass(sectionName: "repositoryReader")]
     public class RepositoryReaderArgs
     {
+        /// <summary>
+        /// Repository url.
+        /// </summary>
         public string Url { get; set; }
+        /// <summary>
+        /// Content path in the repository. Default: /Root
+        /// </summary>
         public string Path { get; set; }
+        /// <summary>
+        /// Number of loaded contents per request. Default: 10.
+        /// </summary>
         public int? BlockSize { get; set; }
+        /// <summary>
+        /// Content query filter for reading contents from the repository.
+        /// </summary>
         public string Filter { get; set; }
         public RepositoryAuthenticationOptions Authentication { get; set; } = new();
 

@@ -6,13 +6,24 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
+using SenseNet.Tools.Configuration;
 
 namespace SenseNet.IO.Implementations
 {
+    [OptionsClass(sectionName: "fsWriter")]
     public class FsWriterArgs
     {
+        /// <summary>
+        /// Target file system folder path.
+        /// </summary>
         public string Path { get; set; }
+        /// <summary>
+        /// File or folder name in the file system. Default: name of the reader's root.
+        /// </summary>
         public string Name { get; set; }
+        /// <summary>
+        /// Write everything in a single directory. Default: false.
+        /// </summary>
         public bool? Flatten { get; set; }
 
         internal FsWriterArgs Clone()
