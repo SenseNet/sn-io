@@ -65,6 +65,8 @@ namespace SenseNet.IO.CLI
         }
         private static IHost CreateHost(string[] args, Stream settingsFile = null)
         {
+            var configPath = GetCustomConfigurationPath(ref args);
+
             var appArguments = new ArgumentParser().Parse(args);
 
             var host = Host.CreateDefaultBuilder()
@@ -78,8 +80,7 @@ namespace SenseNet.IO.CLI
                     }
                     else
                     {
-                        configurationBuilder.AddJsonFile("providerSettings.json", true);
-                        configurationBuilder.AddJsonFile("snio.json", true);
+                        ManageConfigurationFiles(hostBuilderContext, configurationBuilder, configPath);
                     }
 
                     configurationBuilder.AddCommandLine(args);
@@ -212,6 +213,54 @@ namespace SenseNet.IO.CLI
 
             return host;
         }
+        private static string GetCustomConfigurationPath(ref string[] args)
+        {
+            for (int i = 0; i < args.Length; i++)
+            {
+                if (args[i].Equals("-CONFIGURATION", StringComparison.OrdinalIgnoreCase) ||
+                    args[i].Equals("-CONFIG", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (i >= args.Length - 1)
+                        throw new ArgumentException("Missing configuration path");
+                    var result = args[i + 1];
+
+                    var argList = args.ToList();
+                    argList.RemoveAt(i + 1);
+                    argList.RemoveAt(i);
+                    args = argList.ToArray();
+
+                    return result;
+                }
+            }
+
+            return null;
+        }
+        private static void ManageConfigurationFiles(HostBuilderContext hostBuilderContext, IConfigurationBuilder configurationBuilder, string customConfigPath)
+        {
+            configurationBuilder.AddJsonFile("providerSettings.json", true);
+            configurationBuilder.AddJsonFile("snio.json", true);
+
+            if (customConfigPath == null)
+            {
+                return;
+            }
+            if (Directory.Exists(customConfigPath))
+            {
+                var fullPath = Path.GetFullPath(customConfigPath);
+                var file1 = Path.Combine(fullPath, "providerSettings.json");
+                var file2 = Path.Combine(fullPath, "snio.json");
+                configurationBuilder.AddJsonFile(file1, true);
+                configurationBuilder.AddJsonFile(file2, true);
+                return;
+            }
+            if (File.Exists(customConfigPath))
+            {
+                var file = Path.GetFullPath(customConfigPath);
+                configurationBuilder.AddJsonFile(file, false);
+                return;
+            }
+            throw new ArgumentException("Custom configuration file or directory does not exist.");
+        }
 
         #region HelpScreen
 
@@ -283,7 +332,7 @@ namespace SenseNet.IO.CLI
         private static readonly Dictionary<string, string> HelpHeads = new()
         {
             {"General", @$"Manages content transfer in the sensenet ecosystem.
-USAGE: SnIO <VERB> [-SOURCE [Source arguments]] [-TARGET [Target arguments]]
+USAGE: SnIO <VERB> [-SOURCE [Source arguments]] [-TARGET [Target arguments]] [-CONFIG[URATION] <file-or-directory>]
        SnIO <VERB> [?|-?|-help]
        SnIO [?|-?|-help]
 
@@ -301,6 +350,10 @@ COPY arguments
 {HelpArguments["COPY"]}
 SYNC arguments
 {HelpArguments["SYNC"]}
+CONFIG or CONFIGURATION <file-or-directory>]
+       Add the given custom configuration file
+       or add the 'providerSettings.json' and 'snio.json' from the given directory.
+
 "},
             {"EXPORT", @"Transfers content tree from a sensenet repository to a filesystem directory.
 USAGE: SnIO EXPORT [-SOURCE [Source arguments]] [-TARGET [Target arguments]]
