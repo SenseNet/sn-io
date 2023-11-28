@@ -102,6 +102,7 @@ namespace SenseNet.IO.Implementations
         private static readonly string[] EmptyAttachmentNames = new string[0];
 
         private Dictionary<string, string> _attachmentNames;
+
         public string[] GetPreprocessedAttachmentNames()
         {
             if (_metaFilePath == null)
@@ -113,14 +114,17 @@ namespace SenseNet.IO.Implementations
             var names = new Dictionary<string, string>();
             var metaFile = (JObject) deserialized;
             var fields = (JObject) metaFile["Fields"];
-            foreach (var field in fields)
+            if (fields != null)
             {
-                var token = (JToken) field.Value;
-                if (token is JObject fieldObject)
+                foreach (var field in fields)
                 {
-                    var subToken = fieldObject["Attachment"];
-                    if(subToken != null && subToken.Type == JTokenType.String)
-                        names.Add(field.Key, subToken.Value<string>());
+                    var token = (JToken) field.Value;
+                    if (token is JObject fieldObject)
+                    {
+                        var subToken = fieldObject["Attachment"];
+                        if (subToken != null && subToken.Type == JTokenType.String)
+                            names.Add(field.Key, subToken.Value<string>());
+                    }
                 }
             }
 
