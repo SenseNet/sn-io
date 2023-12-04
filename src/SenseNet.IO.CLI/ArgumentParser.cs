@@ -180,7 +180,7 @@ namespace SenseNet.IO.CLI
         }
         protected virtual RepositoryWriterArgs ParseRepositoryWriterArgs(string[] args)
         {
-            // [[-URL] Url]] [[-PATH ]Path]] [[-NAME ]Name]] [[-APIKEY ]ApiKey]
+            // [[-URL] Url]] [[-PATH ]Path]] [[-NAME ]Name]] [-CREATEONLY] [[-APIKEY ]ApiKey]
             // [[-CLIENTID ]ClientId] [[-CLIENTSECRET ]ClientSecret]
             var result = new RepositoryWriterArgs();
             var parsedArgs = ParseSequence(args);
@@ -208,19 +208,25 @@ namespace SenseNet.IO.CLI
                         throw new ArgumentParserException("Invalid RepositoryWriter arguments.");
                     result.Name = arg.Value;
                 }
-                else if (arg.Key == "3" || arg.Key.Equals("APIKEY", Cmp))
+                else if (arg.Key == "3" || arg.Key.Equals("CREATEONLY", Cmp))
+                {
+                    if (result.CreateOnly)
+                        throw new ArgumentParserException("Invalid RepositoryWriter arguments.");
+                    result.CreateOnly = true;
+                }
+                else if (arg.Key == "4" || arg.Key.Equals("APIKEY", Cmp))
                 {
                     if (result.Authentication.ApiKey != null)
                         throw new ArgumentParserException("Invalid RepositoryWriter arguments.");
                     result.Authentication.ApiKey = arg.Value;
                 }
-                else if (arg.Key == "4" || arg.Key.Equals("CLIENTID", Cmp))
+                else if (arg.Key == "5" || arg.Key.Equals("CLIENTID", Cmp))
                 {
                     if (result.Authentication.ClientId != null)
                         throw new ArgumentParserException("Invalid RepositoryReader arguments.");
                     result.Authentication.ClientId = arg.Value;
                 }
-                else if (arg.Key == "5" || arg.Key.Equals("CLIENTSECRET", Cmp))
+                else if (arg.Key == "6" || arg.Key.Equals("CLIENTSECRET", Cmp))
                 {
                     if (result.Authentication.ClientSecret != null)
                         throw new ArgumentParserException("Invalid RepositoryReader arguments.");

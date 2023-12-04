@@ -96,6 +96,8 @@ namespace SenseNet.IO.CLI
                 settings.Path = args.Path;
             if (args.Name != null)
                 settings.Name = args.Name;
+            if (args.CreateOnly)
+                settings.CreateOnly = true;
             if (args.Authentication.ApiKey != null)
                 settings.Authentication.ApiKey = args.Authentication.ApiKey;
             if (args.Authentication.ClientId != null)
@@ -151,7 +153,10 @@ namespace SenseNet.IO.CLI
         }
         public static string ParamsToDisplay(this RepositoryWriterArgs args)
         {
-            return $"Url: {args.Url}, Path: {args.Path ?? "/"}{(args.Name == null ? string.Empty : $", Name: {args.Name}")}";
+            return $"Url: {args.Url}, " +
+                   $"Path: {args.Path ?? "/"}" +
+                   $"{(args.Name == null ? string.Empty : $", Name: {args.Name}")}" +
+                   $"{(args.CreateOnly ? ", CreateOnly" : string.Empty)}";
         }
     }
 }
