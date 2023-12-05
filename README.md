@@ -122,7 +122,7 @@ The target container will be created if it does not exist. If it does, the trans
 
 ### Source parameters
 1. **PATH**: Fully qualified path of the file system entry to read.
-2. **SKIP**: Relative repository-style paths of skipped subtrees in one string separated by comma or semicolon, e.g. `"Content/F1;IMS/BuiltIn"`
+2. **SKIP**: Relative repository-style path list of skipped subtrees, e.g. `"Content/F1","IMS/BuiltIn","System/Schema/ContentTypes"`
 
 ### Target parameters
 1. **URL**: Url of the target sensenet repository, e.g. 'https://example.sensenet.cloud'.

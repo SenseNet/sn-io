@@ -292,7 +292,7 @@ namespace SenseNet.IO.CLI
         private static readonly Dictionary<string, string> AtomicArguments = new()
         {
             {"FsReader", @"    [-PATH] <Fully qualified path of the filesystem entry to read.>
-    [-SKIP <Comma or semicolon separated list of skipped subtree relative paths e.g. 'Content/F1;IMS/BuiltIn'.>]"},
+    [-SKIP <String array containing relative paths of the skipped subtrees e.g. ""Content/F1"",""IMS/BuiltIn"".>]"},
             {"FsWriter", @"    [-PATH] <Fully qualified path of a target filesystem directory.>
     [-NAME] [Name of the target tree root if it is different from the source name.]
     [-FLATTEN] Boolean switch. If exists, all content will be written into the target directory without any folder structure."},

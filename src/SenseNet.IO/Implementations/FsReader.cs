@@ -17,7 +17,7 @@ namespace SenseNet.IO.Implementations
         /// </summary>
         public string Path { get; set; }
         /// <summary>
-        /// A string containing a comma or semicolon separate list of skipped relative paths.
+        /// A string array containing relative paths of the skipped subtrees.
         /// </summary>
         public string[] Skip { get; set; }
 
