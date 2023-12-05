@@ -18,6 +18,7 @@ namespace SenseNet.IO.Implementations
 
         public string Name { get; set; }
         public string Path { get; }
+        public bool CutOff { get; set; }
         public string Type { get; }
         public PermissionInfo Permissions { get; set; }
         public bool IsFolder => true; // always a folder

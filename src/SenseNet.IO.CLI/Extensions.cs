@@ -22,6 +22,8 @@ namespace SenseNet.IO.CLI
             // rewrite
             if (args.Path != null)
                 settings.Path = args.Path;
+            if (args.Skip != null)
+                settings.Skip = args.Skip;
         }
         public static void RewriteSettings(this FsWriterArgs args, FsWriterArgs settings)
         {
@@ -96,6 +98,8 @@ namespace SenseNet.IO.CLI
                 settings.Path = args.Path;
             if (args.Name != null)
                 settings.Name = args.Name;
+            if (args.CreateOnly)
+                settings.CreateOnly = true;
             if (args.Authentication.ApiKey != null)
                 settings.Authentication.ApiKey = args.Authentication.ApiKey;
             if (args.Authentication.ClientId != null)
@@ -134,7 +138,11 @@ namespace SenseNet.IO.CLI
         }
         public static string ParamsToDisplay(this FsReaderArgs args)
         {
-            return $"Path: {args.Path}";
+            var skip = args.Skip == null || args.Skip.Length == 0
+                ? string.Empty
+                : ", Skip: " + string.Join("; ", args.Skip);
+
+            return $"Path: {args.Path}{skip}";
         }
         public static string ParamsToDisplay(this FsWriterArgs args)
         {
@@ -151,7 +159,10 @@ namespace SenseNet.IO.CLI
         }
         public static string ParamsToDisplay(this RepositoryWriterArgs args)
         {
-            return $"Url: {args.Url}, Path: {args.Path ?? "/"}{(args.Name == null ? string.Empty : $", Name: {args.Name}")}";
+            return $"Url: {args.Url}, " +
+                   $"Path: {args.Path ?? "/"}" +
+                   $"{(args.Name == null ? string.Empty : $", Name: {args.Name}")}" +
+                   $"{(args.CreateOnly ? ", CreateOnly" : string.Empty)}";
         }
     }
 }

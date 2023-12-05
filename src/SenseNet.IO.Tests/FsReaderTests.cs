@@ -25,8 +25,8 @@ namespace SenseNet.IO.Tests
             public FsContentMock(Func<string, bool> isFileExists,
                 Func<string, TextReader> createStreamReader,
                 Func<string, FileMode, Stream> createFileStream,
-                string name, string relativePath, string metaFilePath, bool isDirectory, string defaultAttachmentPath = null)
-                : base(name, relativePath, metaFilePath, isDirectory, defaultAttachmentPath)
+                string name, string relativePath, string metaFilePath, bool isDirectory, bool cutOff, string defaultAttachmentPath = null)
+                : base(name, relativePath, metaFilePath, isDirectory, cutOff, defaultAttachmentPath)
             {
                 _isFileExists = isFileExists;
                 _createStreamReader = createStreamReader;
@@ -79,8 +79,9 @@ namespace SenseNet.IO.Tests
             protected override FsContent CreateFsContent(string name, string relativePath, string metaFilePath, bool isDirectory,
                 string defaultAttachmentPath = null)
             {
+                //TODO: Get "cutOff" from parameter
                 return new FsContentMock(_fsContentIsFileExists, _fsContentCreateStreamReader, _fsContentCreateFileStream,
-                    name, relativePath, metaFilePath, isDirectory, defaultAttachmentPath);
+                    name, relativePath, metaFilePath, isDirectory, false, defaultAttachmentPath);
             }
 
             protected override bool IsFileExists(string fsPath)

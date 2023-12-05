@@ -19,6 +19,7 @@ namespace SenseNet.IO
 
         public string Path { get; set; }
         public string Name { get; set; }
+        public bool CutOff { get; set; }
         public string Type { get; set; }
         public PermissionInfo Permissions { get; set; }
         public bool IsFolder => throw new NotImplementedException("IsFolder is not implemented in IoContent.");

@@ -33,6 +33,10 @@ namespace SenseNet.IO.Implementations
         /// Number of bytes sent to the server in one chunk during upload operations. Default: 10 MB
         /// </summary>
         public int UploadChunkSize { get; set; }
+        /// <summary>
+        /// True if only the creation is allowed and updates are omitted.
+        /// </summary>
+        public bool CreateOnly { get; set; }
 
         internal RepositoryWriterArgs Clone()
         {
@@ -42,6 +46,7 @@ namespace SenseNet.IO.Implementations
                 Path = Path,
                 Name = Name,
                 UploadChunkSize = UploadChunkSize,
+                CreateOnly = CreateOnly,
                 Authentication = Authentication?.Clone() ?? new RepositoryAuthenticationOptions()
             };
         }
@@ -97,9 +102,28 @@ namespace SenseNet.IO.Implementations
             await InitializeAsync();
 
             var repositoryPath = ContentPath.Combine(ContainerPath, path);
+
+            string skipReason;
+            if(null != (skipReason = await ApplyFilters(repositoryPath, cancel)))
+                return new WriterState
+                {
+                    Action = WriterAction.Skipped,
+                    WriterPath = repositoryPath,
+                    Messages = new[] { skipReason }
+                };
+
             if (content.Type == "ContentType")
                 return await WriteContentTypeAsync(repositoryPath, content, cancel);
             return await WriteContentAsync(repositoryPath, content, cancel);
+        }
+        private async Task<string> ApplyFilters(string repositoryPath, CancellationToken cancel)
+        {
+            if (Args.CreateOnly)
+            {
+                if(await _repository.IsContentExistsAsync(repositoryPath, cancel))
+                    return "Existing content.";
+            }
+            return null;
         }
 
         public async Task<bool> ShouldSkipSubtreeAsync(string path, CancellationToken cancel = default)

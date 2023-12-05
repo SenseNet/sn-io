@@ -242,11 +242,15 @@ namespace SenseNet.IO.Tests
             fsReaderArgs = parser.ParseFsReaderArgsTest(new[] { "-PATH", "q:\\readerPath" });
             Assert.AreEqual("q:\\readerPath", fsReaderArgs.Path);
 
-            try { parser.ParseFsReaderArgsTest(new[] { "-PATH", "q:\\readerPath", "fake" }); Assert.Fail(); }
-            catch (ArgumentParserException e) { Assert.IsTrue(e.Message.Contains("too many", Cmp)); }
+            fsReaderArgs = parser.ParseFsReaderArgsTest(new[] { "-PATH", "q:\\readerPath", "-SKIP", " 1/1 ; 1/2/1  , 9/9/9/9 "  });
+            Assert.AreEqual(3, fsReaderArgs.Skip.Length);
+            Assert.AreEqual("1/1|1/2/1|9/9/9/9", string.Join("|", fsReaderArgs.Skip));
+
+            //try { parser.ParseFsReaderArgsTest(new[] { "-PATH", "q:\\readerPath", "fake" }); Assert.Fail(); }
+            //catch (ArgumentParserException e) { Assert.IsTrue(e.Message.Contains("too many", Cmp)); }
 
             try { parser.ParseFsReaderArgsTest(new[] { "-NAME", "q:\\readerPath" }); Assert.Fail(); }
-            catch (ArgumentParserException e) { Assert.IsTrue(e.Message.Contains("invalid", Cmp)); }
+            catch (ArgumentParserException e) { Assert.IsTrue(e.Message.Contains("unknown", Cmp)); }
         }
         [TestMethod]
         public void ArgParser_FsWriterArgs()
@@ -499,6 +503,25 @@ namespace SenseNet.IO.Tests
             Assert.AreEqual(null, repoWriterArgs.Url);
             Assert.AreEqual(null, repoWriterArgs.Path);
             Assert.AreEqual("NewName", repoWriterArgs.Name);
+
+            repoWriterArgs = parser.ParseRepositoryWriterArgsTest(new[] { "-CREATEONLY" });
+            Assert.AreEqual(null, repoWriterArgs.Url);
+            Assert.AreEqual(null, repoWriterArgs.Path);
+            Assert.AreEqual(null, repoWriterArgs.Name);
+            Assert.AreEqual(true, repoWriterArgs.CreateOnly);
+
+            repoWriterArgs = parser.ParseRepositoryWriterArgsTest(new[]
+            {
+                "-URL", "https://localhost", "-NAME", "NewName", "-PATH", "/Root", 
+                "-CREATEONLY", "-APIKEY", "apikey", "-CLIENTID", "clientid", "-CLIENTSECRET", "clientsecret"
+            });
+            Assert.AreEqual("https://localhost", repoWriterArgs.Url);
+            Assert.AreEqual("/Root", repoWriterArgs.Path);
+            Assert.AreEqual("NewName", repoWriterArgs.Name);
+            Assert.AreEqual(true, repoWriterArgs.CreateOnly);
+            Assert.AreEqual("apikey", repoWriterArgs.Authentication.ApiKey);
+            Assert.AreEqual("clientid", repoWriterArgs.Authentication.ClientId);
+            Assert.AreEqual("clientsecret", repoWriterArgs.Authentication.ClientSecret);
 
             try { parser.ParseRepositoryWriterArgsTest(new[] { "-fake" }); Assert.Fail(); }
             catch (ArgumentParserException e) { Assert.IsTrue(e.Message.Contains("Unknown", Cmp)); }

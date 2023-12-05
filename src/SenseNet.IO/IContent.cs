@@ -9,6 +9,7 @@ namespace SenseNet.IO
 
         public string Name { get; set; }
         public string Path { get; }
+        public bool CutOff { get; set; }
         public string Type { get; }
         public PermissionInfo Permissions { get; set; }
 

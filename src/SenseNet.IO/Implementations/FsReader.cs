@@ -16,12 +16,17 @@ namespace SenseNet.IO.Implementations
         /// Source file system folder path.
         /// </summary>
         public string Path { get; set; }
+        /// <summary>
+        /// A string array containing relative paths of the skipped subtrees.
+        /// </summary>
+        public string[] Skip { get; set; }
 
         internal FsReaderArgs Clone()
         {
             return new FsReaderArgs
             {
-                Path = Path
+                Path = Path,
+                Skip = Skip,
             };
         }
     }
@@ -59,6 +64,10 @@ namespace SenseNet.IO.Implementations
 
             if (ReaderRootPath == null)
                 throw new ArgumentException("FsReader: empty root path.");
+
+            if(Args.Skip != null)
+                foreach (var item in Args.Skip)
+                    SkipSubtree(item);
 
             EstimatedCount = IsDirectoryExists(ReaderRootPath) || IsFileExists(ReaderRootPath) || IsFileExists(ReaderRootPath + ".Content") ? 1 : 0;
             Task.Run(() => GetContentCount(ReaderRootPath));
@@ -127,7 +136,7 @@ namespace SenseNet.IO.Implementations
             var repositoryPath = "/" + relativePath;
             var metaFilePath = Path.GetFullPath(Path.Combine(ReaderRootPath, relativePath)) + ".Content";
             var name = ContentPath.GetName(repositoryPath);
-            var content = new FsContent(name, relativePath, metaFilePath, false);
+            var content = new FsContent(name, relativePath, metaFilePath, false, false);
             content.InitializeMetadata(task.BrokenReferences, task.RetryPermissions);
             _content = content;
 
@@ -167,8 +176,14 @@ namespace SenseNet.IO.Implementations
                 return MoveToFirst(state);
 
             if (!NeedToSkip(Content.Path))
+            {
                 if (MoveToFirstChild(state))
                     return true;
+            }
+            else
+            {
+                int q = 1;
+            }
 
             if (MoveToNextSibling(state))
                 return true;
@@ -237,10 +252,12 @@ namespace SenseNet.IO.Implementations
         {
             string GetPath(string name) { return ContentPath.Combine(parentContent.Path, name); }
 
+            if(parentContent.CutOff)
+                return Array.Empty<FsContent>();
             if (!parentContent.IsDirectory)
-                return new FsContent[0];
-            var fsPath = Path.GetFullPath(Path.Combine(ReaderRootPath, parentContent.Path));
+                return Array.Empty<FsContent>();
 
+            var fsPath = Path.GetFullPath(Path.Combine(ReaderRootPath, parentContent.Path));
             var dirs = GetFsDirectories(fsPath).OrderBy(x => x).ToList();
             var filePaths = GetFsFiles(fsPath).OrderBy(x => x).ToList();
             var localContents = new List<FsContent>();
@@ -357,7 +374,8 @@ namespace SenseNet.IO.Implementations
         protected virtual FsContent CreateFsContent(string name, string relativePath, string metaFilePath, bool isDirectory,
             string defaultAttachmentPath = null)
         {
-            return new FsContent(name, relativePath, metaFilePath, isDirectory, defaultAttachmentPath);
+            return new FsContent(name, relativePath, metaFilePath, isDirectory, _cutoffs.Contains(relativePath),
+                defaultAttachmentPath);
         }
 
         protected virtual bool IsDirectoryExists(string fsPath)
