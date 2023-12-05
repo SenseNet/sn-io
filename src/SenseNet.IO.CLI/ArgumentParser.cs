@@ -67,21 +67,37 @@ namespace SenseNet.IO.CLI
 
         protected virtual FsReaderArgs ParseFsReaderArgs(string[] args)
         {
-            // [[-PATH] Path]
+            // [[-PATH] Path] [[-SKIP] PathList]
+            var result = new FsReaderArgs();
             var parsedArgs = ParseSequence(args);
 
-            if (parsedArgs.Length == 0)
-                return new FsReaderArgs();
+            if (parsedArgs.Length > 2)
+                throw new ArgumentParserException("Too many FsReader arguments.");
 
-            if (parsedArgs.Length == 1)
+            foreach (var arg in parsedArgs)
             {
-                var arg = parsedArgs[0];
-                if ((arg.Key.Equals("PATH", Cmp) || arg.Key == "0") && arg.Value != null)
-                    return new FsReaderArgs { Path = arg.Value };
-                throw new ArgumentParserException("Invalid FsReader args.");
+                if (arg.Key == "0" || arg.Key.Equals("PATH", Cmp))
+                {
+                    if (result.Path != null)
+                        throw new ArgumentParserException("Invalid FsReader arguments.");
+                    if(arg.Value == null)
+                        throw new ArgumentParserException("Invalid FsReader arguments. Missing path.");
+                    result.Path = arg.Value;
+                }
+                else if (arg.Key == "1" || arg.Key.Equals("SKIP", Cmp))
+                {
+                    if (result.Skip != null)
+                        throw new ArgumentParserException("Invalid FsReader arguments.");
+                    result.Skip = arg.Value
+                        .Split(",;".ToCharArray(), StringSplitOptions.RemoveEmptyEntries)
+                        .Select(x=>x.Trim())
+                        .ToArray();
+                }
+                else
+                    throw new ArgumentParserException("Unknown FsReader argument: " + arg.Key);
             }
+            return result;
 
-            throw new ArgumentParserException("Too many FsReader arguments.");
         }
         protected virtual FsWriterArgs ParseFsWriterArgs(string[] args)
         {
@@ -185,7 +201,7 @@ namespace SenseNet.IO.CLI
             var result = new RepositoryWriterArgs();
             var parsedArgs = ParseSequence(args);
 
-            if (parsedArgs.Length > 6)
+            if (parsedArgs.Length > 7)
                 throw new ArgumentParserException("Too many RepositoryWriter arguments.");
 
             foreach (var arg in parsedArgs)

@@ -122,16 +122,22 @@ The target container will be created if it does not exist. If it does, the trans
 
 ### Source parameters
 1. **PATH**: Fully qualified path of the file system entry to read.
+2. **SKIP**: Relative repository-style paths of skipped subtrees in one string separated by comma or semicolon, e.g. `"Content/F1;IMS/BuiltIn"`
 
 ### Target parameters
 1. **URL**: Url of the target sensenet repository, e.g. 'https://example.sensenet.cloud'.
 2. **PATH**: Repository path of the target container. Default: '/'.
 3. **NAME**: Name of the target tree root if it is different from the source name.
+4. **CREATEONLY**: Boolean switch without a parameter value. If it is provided, only the new contents are transferred, updates are omitted.
 
-### Example
+### Examples
 The following example restores a backup material. Note that the source and target names are different. Parameter names are optional because the parameters are ordered as specified.
 ```
 SnIO IMPORT -SOURCE "D:\Backup\example.sensenet.cloud\Content_2021-09-27" -TARGET "https://example.sensenet.cloud" "/Root" "Content"
+```
+If you want to skip some subtrees of a large material, you can use the SKIP parameter. In the example below, we omit a few subtrees from the import. Note that the main path is the fully qualified file-system path but the skip list contains repository-style relative paths.
+```
+SnIO IMPORT -SOURCE -PATH "D:\Backup\example.sensenet.cloud\Content_2021-09-27" -SKIP "Content/F1;System/Schema;IMS/BuiltIn" -TARGET "https://example.sensenet.cloud" "/Root" "Content"
 ```
 
 ## COPY

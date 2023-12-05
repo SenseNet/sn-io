@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -8,6 +9,7 @@ using Newtonsoft.Json.Linq;
 
 namespace SenseNet.IO.Implementations
 {
+    [DebuggerDisplay("{Path} | {Type}")]
     public class FsContent : IContent
     {
         private JObject _rawContent;
@@ -24,6 +26,7 @@ namespace SenseNet.IO.Implementations
 
         public string Name { get; set; }
         public string Path { get; set; }
+        public bool CutOff { get; set; }
 
         private string _type;
         public string Type
@@ -86,13 +89,15 @@ namespace SenseNet.IO.Implementations
         /// <param name="metaFilePath">*.Content file or null.</param>
         /// <param name="isDirectory">True if represents a directory.</param>
         /// <param name="relativePath">Relative repository path. The reader's root content path need to be String.Empty.</param>
+        /// <param name="cutOff">True if the subtree will be skipped.</param>
         /// <param name="defaultAttachmentPath">Path if the content is represented as a raw file (e.g. "readme.txt").</param>
-        public FsContent(string name, string relativePath, string metaFilePath, bool isDirectory, string defaultAttachmentPath = null)
+        public FsContent(string name, string relativePath, string metaFilePath, bool isDirectory, bool cutOff, string defaultAttachmentPath = null)
         {
             Name = name;
             IsDirectory = isDirectory;
             Path = relativePath;
             _metaFilePath = metaFilePath;
+            CutOff = cutOff;
             _defaultAttachmentPath = defaultAttachmentPath;
         }
 

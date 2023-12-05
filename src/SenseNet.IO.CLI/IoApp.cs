@@ -56,15 +56,15 @@ namespace SenseNet.IO.CLI
 
         public string HeadToDisplay()
         {
-            return $"SnIO {GetVerb().ToString().ToUpper()} v{GetVersion()} {CompileMode}\r\n" +
-                   $"  SOURCE: {GetProviderName(Reader)} ({Reader.ParamsToDisplay()}),\r\n" +
+            return $"SnIO {GetVerb().ToString().ToUpper()} v{GetVersion()} {CompileMode}{Environment.NewLine}" +
+                   $"  SOURCE: {GetProviderName(Reader)} ({Reader.ParamsToDisplay()}),{Environment.NewLine}" +
                    $"  TARGET: {GetProviderName(Writer)} ({Writer.ParamsToDisplay()})";
         }
         public string HeadToLog()
         {
-            return $"SnIO {GetVerb().ToString().ToUpper()} v{GetVersion()} {CompileMode}: " +
-                   $"SOURCE: {GetProviderName(Reader)} ({Reader.ParamsToDisplay()}), " +
-                   $"TARGET: {GetProviderName(Writer)} ({Writer.ParamsToDisplay()})";
+            return $"SnIO {GetVerb().ToString().ToUpper()} v{GetVersion()} {CompileMode}{Environment.NewLine}" +
+                   $"  SOURCE: {GetProviderName(Reader)} ({Reader.ParamsToDisplay()}),{Environment.NewLine}" +
+                   $"  TARGET: {GetProviderName(Writer)} ({Writer.ParamsToDisplay()})";
         }
 
         private string GetProviderName(object provider)

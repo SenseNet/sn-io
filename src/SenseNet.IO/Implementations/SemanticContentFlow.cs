@@ -203,7 +203,9 @@ namespace SenseNet.IO.Implementations
         {
             var readerPath = Reader.RelativePath;
             var writerPath = ContentPath.Combine(Writer.ContainerPath, _rootName, readerPath);
-            var state = await Writer.WriteAsync(writerPath, Reader.Content, cancel);
+            var state = Reader.Content.CutOff
+                ? new WriterState {Action = WriterAction.CutOff, WriterPath = writerPath/*, Messages = new[] {"--cutoff--"}*/}
+                : await Writer.WriteAsync(writerPath, Reader.Content, cancel);
             state.ReaderPath = readerPath;
             state.WriterPath = writerPath;
             Progress(ref _contentCount, state, updateReferences, progress);
