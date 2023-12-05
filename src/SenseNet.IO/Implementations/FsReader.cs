@@ -312,11 +312,6 @@ namespace SenseNet.IO.Implementations
                 container.Add(content);
             }
 
-            // skip subtrees
-            //var filtered = container
-            //    .Except(container.Where(x => _cutoffs.Contains(x.Path)))
-            //    .ToArray();
-
             return container.ToArray();
         }
 
