@@ -79,6 +79,15 @@ namespace SenseNet.IO.Tests
             public Task<string> GetResponseStringAsync(Uri uri, HttpMethod method, string postData, Dictionary<string, IEnumerable<string>> additionalHeaders,
                 CancellationToken cancel) => throw new NotImplementedException();
             public Task DownloadAsync(DownloadRequest request, Func<Stream, StreamProperties, Task> responseProcessor, CancellationToken cancel) => throw new NotImplementedException();
+            public Task<T> InvokeFunctionAsync<T>(OperationRequest request, CancellationToken cancel) => throw new NotImplementedException();
+
+            public Task InvokeActionAsync(OperationRequest request, CancellationToken cancel) => throw new NotImplementedException();
+
+            public Task<T> InvokeActionAsync<T>(OperationRequest request, CancellationToken cancel) => throw new NotImplementedException();
+
+            public Task ProcessOperationResponseAsync(OperationRequest request, HttpMethod method, Action<string> responseProcessor,
+                CancellationToken cancel) => throw new NotImplementedException();
+
             public Task ProcessWebResponseAsync(string relativeUrl, HttpMethod method, Dictionary<string, IEnumerable<string>> additionalHeaders,
                 HttpContent httpContent, Func<HttpResponseMessage, CancellationToken, Task> responseProcessor, CancellationToken cancel) => throw new NotImplementedException();
         }
