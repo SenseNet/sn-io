@@ -361,6 +361,8 @@ namespace SenseNet.IO.Implementations
             {
                 var paths = $"('{string.Join("' '", contentsWithoutChildren.Select(x => RepositoryRootPath + '/' + x))}')";
                 query = $"+(Path:{paths} (+InTree:'{rootPath}' -InTree:{paths}))";
+                if (Filter != null)
+                    query += $" +({Filter})";
                 if (cutoffClause != null)
                     query += $" {cutoffClause}";
                 if (lastPath != null)
