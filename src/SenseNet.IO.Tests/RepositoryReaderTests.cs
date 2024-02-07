@@ -545,6 +545,46 @@ namespace SenseNet.IO.Tests
             AssertSequencesAreEqual(expected, actual);
         }
 
+        [TestMethod]
+        public async Task RepoReader_Root_Filter()
+        {
+            var sourceTree = CreateSourceTree(@"/");
+            var targetTree = CreateTree(new[] { "/Root", "/Root/IMS" });
+            var targetStates = new Dictionary<string, WriterState>();
+
+            // ACTION
+            var filter = "+ModificationDate:>'2001-01-01'";
+            var reader = RepositoryReaderMock.Create(CreateRepositoryCollection(), sourceTree, "/Root", filter, 99999);
+            var writer = new TestRepositoryWriter(targetTree, targetStates);
+            var flow = new SemanticContentFlow(reader, writer, GetLogger<ContentFlow>());
+            var progress = new TestProgress();
+            await flow.TransferAsync(progress);
+
+            // ASSERT
+            var expected = sourceTree.Keys
+                //.Select(x => x.Substring("q:\\io".Length).Replace('\\', '/'))
+                .OrderBy(x => x)
+                .ToArray();
+            var actual = targetTree.Keys
+                .OrderBy(x => x)
+                .ToArray();
+            AssertSequencesAreEqual(expected, actual);
+
+            expected = new[]
+            {
+                "+InTree:'/Root/System/Schema/ContentTypes' +(+ModificationDate:>'2001-01-01')",
+                "+InTree:'/Root/System/Schema/ContentTypes' +(+ModificationDate:>'2001-01-01') +Path:>'/Root/System/Schema/ContentTypes/ContentType-2'",
+                "+InTree:'/Root/System/Settings' +(+ModificationDate:>'2001-01-01')",
+                "+InTree:'/Root/System/Settings' +(+ModificationDate:>'2001-01-01') +Path:>'/Root/System/Settings/Settings-3.settings'",
+                "+InTree:'/Root/System/Schema/Aspects' +(+ModificationDate:>'2001-01-01')",
+                "+InTree:'/Root/System/Schema/Aspects' +(+ModificationDate:>'2001-01-01') +Path:>'/Root/System/Schema/Aspects/Aspect-2'",
+                "+(Path:('/Root/System/Schema/ContentTypes' '/Root/System/Settings' '/Root/System/Schema/Aspects') (+InTree:'/Root' -InTree:('/Root/System/Schema/ContentTypes' '/Root/System/Settings' '/Root/System/Schema/Aspects'))) +(+ModificationDate:>'2001-01-01')",
+                "+(Path:('/Root/System/Schema/ContentTypes' '/Root/System/Settings' '/Root/System/Schema/Aspects') (+InTree:'/Root' -InTree:('/Root/System/Schema/ContentTypes' '/Root/System/Settings' '/Root/System/Schema/Aspects'))) +(+ModificationDate:>'2001-01-01') +Path:>'/Root/System/Settings/Settings-3.settings'",
+            };
+            actual = reader.Queries.ToArray();
+            AssertSequencesAreEqual(expected, actual);
+        }
+
         /* =========================================================================================== UPDATE REFERENCES TESTS */
 
         [TestMethod]
