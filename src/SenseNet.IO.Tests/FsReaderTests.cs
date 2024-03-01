@@ -4,6 +4,8 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json.Linq;
@@ -25,8 +27,8 @@ namespace SenseNet.IO.Tests
             public FsContentMock(Func<string, bool> isFileExists,
                 Func<string, TextReader> createStreamReader,
                 Func<string, FileMode, Stream> createFileStream,
-                string name, string relativePath, string metaFilePath, bool isDirectory, bool cutOff, string defaultAttachmentPath = null)
-                : base(name, relativePath, metaFilePath, isDirectory, cutOff, defaultAttachmentPath)
+                string name, string relativePath, string metaFilePath, bool isDirectory, bool cutOff, ILogger logger, string defaultAttachmentPath = null)
+                : base(name, relativePath, metaFilePath, isDirectory, cutOff, logger, defaultAttachmentPath)
             {
                 _isFileExists = isFileExists;
                 _createStreamReader = createStreamReader;
@@ -65,7 +67,7 @@ namespace SenseNet.IO.Tests
                 Func<string, bool> fsContentIsFileExists,
                 Func<string, TextReader> fsContentCreateStreamReader,
                 Func<string, FileMode, Stream> fsContentCreateFileStream
-                ) : base(Options.Create(new FsReaderArgs { Path = fsRootPath }))
+                ) : base(Options.Create(new FsReaderArgs { Path = fsRootPath }), NullLogger<FsReader>.Instance)
             {
                 _isFileExists = isFileExists;
                 _isDirectoryExists = isDirectoryExists;
@@ -81,7 +83,7 @@ namespace SenseNet.IO.Tests
             {
                 //TODO: Get "cutOff" from parameter
                 return new FsContentMock(_fsContentIsFileExists, _fsContentCreateStreamReader, _fsContentCreateFileStream,
-                    name, relativePath, metaFilePath, isDirectory, false, defaultAttachmentPath);
+                    name, relativePath, metaFilePath, isDirectory, false, NullLogger.Instance, defaultAttachmentPath);
             }
 
             protected override bool IsFileExists(string fsPath)

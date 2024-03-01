@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -82,6 +83,8 @@ namespace SenseNet.IO.Implementations
             return Task.FromResult(attachments.ToArray());
         }
 
+        private ILogger _logger;
+
         /// <summary>
         /// Initializes a new <see cref="FsContent"/> instance.
         /// </summary>
@@ -90,14 +93,16 @@ namespace SenseNet.IO.Implementations
         /// <param name="isDirectory">True if represents a directory.</param>
         /// <param name="relativePath">Relative repository path. The reader's root content path need to be String.Empty.</param>
         /// <param name="cutOff">True if the subtree will be skipped.</param>
+        /// <param name="logger">A logger instance.</param>
         /// <param name="defaultAttachmentPath">Path if the content is represented as a raw file (e.g. "readme.txt").</param>
-        public FsContent(string name, string relativePath, string metaFilePath, bool isDirectory, bool cutOff, string defaultAttachmentPath = null)
+        public FsContent(string name, string relativePath, string metaFilePath, bool isDirectory, bool cutOff, ILogger logger, string defaultAttachmentPath = null)
         {
             Name = name;
             IsDirectory = isDirectory;
             Path = relativePath;
             _metaFilePath = metaFilePath;
             CutOff = cutOff;
+            _logger = logger;
             _defaultAttachmentPath = defaultAttachmentPath;
         }
 
@@ -146,8 +151,16 @@ namespace SenseNet.IO.Implementations
                 return;
             }
 
-            var deserialized = JsonSerializer.CreateDefault()
-                .Deserialize(new JsonTextReader(CreateStreamReader(_metaFilePath)));
+            object deserialized = null;
+            try
+            {
+                deserialized = JsonSerializer.CreateDefault()
+                    .Deserialize(new JsonTextReader(CreateStreamReader(_metaFilePath)));
+            }
+            catch (Exception e)
+            {
+                throw new Exception("Cannot parse the metafile: " + _metaFilePath, e);
+            }
 
             var metaFile = (JObject)deserialized;
             if (metaFile == null)
