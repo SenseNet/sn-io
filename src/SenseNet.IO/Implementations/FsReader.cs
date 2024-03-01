@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using SenseNet.Tools.Configuration;
 
@@ -44,7 +45,9 @@ namespace SenseNet.IO.Implementations
 
         public FsReaderArgs ReaderOptions => Args;
 
-        public FsReader(IOptions<FsReaderArgs> args)
+        private ILogger<FsReader> _logger;
+
+        public FsReader(IOptions<FsReaderArgs> args, ILogger<FsReader> logger)
         {
             if (args?.Value == null)
                 throw new ArgumentNullException(nameof(args));
@@ -53,6 +56,8 @@ namespace SenseNet.IO.Implementations
             // deal with relative paths like '..\\..\\MyFolder'
             if (!string.IsNullOrEmpty(Args.Path))
                 Args.Path = Path.GetFullPath(Args.Path);
+
+            _logger = logger;
         }
 
         private bool _initialized;
@@ -136,7 +141,7 @@ namespace SenseNet.IO.Implementations
             var repositoryPath = "/" + relativePath;
             var metaFilePath = Path.GetFullPath(Path.Combine(ReaderRootPath, relativePath)) + ".Content";
             var name = ContentPath.GetName(repositoryPath);
-            var content = new FsContent(name, relativePath, metaFilePath, false, false);
+            var content = new FsContent(name, relativePath, metaFilePath, false, false, _logger);
             content.InitializeMetadata(task.BrokenReferences, task.RetryPermissions);
             _content = content;
 
@@ -374,7 +379,7 @@ namespace SenseNet.IO.Implementations
         protected virtual FsContent CreateFsContent(string name, string relativePath, string metaFilePath, bool isDirectory,
             string defaultAttachmentPath = null)
         {
-            return new FsContent(name, relativePath, metaFilePath, isDirectory, _cutoffs.Contains(relativePath),
+            return new FsContent(name, relativePath, metaFilePath, isDirectory, _cutoffs.Contains(relativePath), _logger,
                 defaultAttachmentPath);
         }
 
