@@ -49,6 +49,26 @@ namespace SenseNet.IO.Tests
             public Task<IContentCollection<T>> LoadCollectionAsync<T>(LoadCollectionRequest requestData, CancellationToken cancel) where T : Content => throw new NotImplementedException();
 
             public Task<int> GetContentCountAsync(LoadCollectionRequest requestData, CancellationToken cancel) => throw new NotImplementedException();
+            public Task<Content> LoadReferenceAsync(LoadReferenceRequest requestData, CancellationToken cancel)
+            {
+                throw new NotImplementedException();
+            }
+
+            public Task<TContent> LoadReferenceAsync<TContent>(LoadReferenceRequest requestData, CancellationToken cancel) where TContent : Content
+            {
+                throw new NotImplementedException();
+            }
+
+            public Task<IContentCollection<Content>> LoadReferencesAsync(LoadReferenceRequest requestData, CancellationToken cancel)
+            {
+                throw new NotImplementedException();
+            }
+
+            public Task<IContentCollection<TContent>> LoadReferencesAsync<TContent>(LoadReferenceRequest requestData, CancellationToken cancel) where TContent : Content
+            {
+                throw new NotImplementedException();
+            }
+
             public Task<bool> IsContentExistsAsync(string path, CancellationToken cancel) => throw new NotImplementedException();
             public Task<IContentCollection<Content>> QueryForAdminAsync(QueryContentRequest requestData, CancellationToken cancel) => throw new NotImplementedException();
             public Task<IContentCollection<T>> QueryForAdminAsync<T>(QueryContentRequest requestData, CancellationToken cancel) where T : Content => throw new NotImplementedException();
@@ -80,10 +100,28 @@ namespace SenseNet.IO.Tests
                 CancellationToken cancel) => throw new NotImplementedException();
             public Task DownloadAsync(DownloadRequest request, Func<Stream, StreamProperties, Task> responseProcessor, CancellationToken cancel) => throw new NotImplementedException();
             public Task<T> InvokeFunctionAsync<T>(OperationRequest request, CancellationToken cancel) => throw new NotImplementedException();
+            public Task<T> InvokeContentFunctionAsync<T>(OperationRequest request, CancellationToken cancel) where T : Content
+            {
+                throw new NotImplementedException();
+            }
+
+            public Task<IContentCollection<T>> InvokeContentCollectionFunctionAsync<T>(OperationRequest request, CancellationToken cancel) where T : Content
+            {
+                throw new NotImplementedException();
+            }
 
             public Task InvokeActionAsync(OperationRequest request, CancellationToken cancel) => throw new NotImplementedException();
 
             public Task<T> InvokeActionAsync<T>(OperationRequest request, CancellationToken cancel) => throw new NotImplementedException();
+            public Task<T> InvokeContentActionAsync<T>(OperationRequest request, CancellationToken cancel) where T : Content
+            {
+                throw new NotImplementedException();
+            }
+
+            public Task<IContentCollection<T>> InvokeContentCollectionActionAsync<T>(OperationRequest request, CancellationToken cancel) where T : Content
+            {
+                throw new NotImplementedException();
+            }
 
             public Task ProcessOperationResponseAsync(OperationRequest request, HttpMethod method, Action<string> responseProcessor,
                 CancellationToken cancel) => throw new NotImplementedException();
