@@ -142,7 +142,7 @@ namespace SenseNet.IO.Implementations
             var metaFilePath = Path.GetFullPath(Path.Combine(ReaderRootPath, relativePath)) + ".Content";
             var name = ContentPath.GetName(repositoryPath);
             var content = new FsContent(name, relativePath, metaFilePath, false, false, _logger);
-            content.InitializeMetadata(task.BrokenReferences, task.RetryPermissions);
+            content.InitializeMetadata(task.BrokenReferences, !task.RetryPermissions);
             _content = content;
 
             return Task.FromResult(true);
