@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -11,6 +12,7 @@ using SenseNet.Client;
 
 namespace SenseNet.IO.Implementations
 {
+    [DebuggerDisplay("{Path}")]
     public class RepositoryReaderContent : IContent
     {
         private static readonly string[] FieldBlackList = new[]
