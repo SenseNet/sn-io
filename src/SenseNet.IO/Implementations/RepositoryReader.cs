@@ -161,7 +161,7 @@ namespace SenseNet.IO.Implementations
                 if (treeState.CurrentBlock == null || treeState.CurrentBlockIndex >= treeState.CurrentBlock.Length)
                 {
                     treeState.CurrentBlock = await QueryBlockAsync(treeState.AbsolutePath, Array.Empty<string>(),
-                        treeState.CurrentBlock?[^1].Path, _blockSize, cancel);
+                        treeState.CurrentBlock?[^1].Path, _blockSize, treeState.BlockIndex * _blockSize, cancel);
                     treeState.BlockIndex++;
                     treeState.CurrentBlockIndex = 0;
                     if (treeState.CurrentBlock == null || treeState.CurrentBlock.Length == 0)
@@ -187,7 +187,7 @@ namespace SenseNet.IO.Implementations
                 if (_currentBlock == null || _currentBlockIndex >= _currentBlock.Length)
                 {
                     _currentBlock = await QueryBlockAsync(RepositoryRootPath, contentsWithoutChildren,
-                        _currentBlock?[^1].Path, _blockSize, cancel);
+                        _currentBlock?[^1].Path, _blockSize, _blockIndex * _blockSize, cancel);
                     _blockIndex++;
                     _currentBlockIndex = 0;
                     if (_currentBlock == null || _currentBlock.Length == 0)
@@ -326,7 +326,7 @@ namespace SenseNet.IO.Implementations
             }
         }
         protected virtual async Task<IContent[]> QueryBlockAsync(string rootPath, string[] contentsWithoutChildren,
-            string lastPath, int top, CancellationToken cancel)
+            string lastPath, int top, int skip, CancellationToken cancel)
         {
             // Remove irrelevant cutoffs
             if (lastPath != null)
@@ -348,8 +348,6 @@ namespace SenseNet.IO.Implementations
                     query += $" +({Filter})";
                 if (cutoffClause != null)
                     query += $" {cutoffClause}";
-                if (lastPath != null)
-                    query += $" +Path:>'{lastPath}'";
             }
             else if (contentsWithoutChildren.Length == 1 && contentsWithoutChildren[0] == string.Empty)
             {
@@ -365,11 +363,8 @@ namespace SenseNet.IO.Implementations
                     query += $" +({Filter})";
                 if (cutoffClause != null)
                     query += $" {cutoffClause}";
-                if (lastPath != null)
-                    query += $" +Path:>'{lastPath}'";
             }
-
-            var queryResult = await QueryAsync(query, orderByPath, top, cancel).ConfigureAwait(false);
+            var queryResult = await QueryAsync(query, orderByPath, top, skip, cancel).ConfigureAwait(false);
             return queryResult;
         }
         private string GetCutoffClause()
@@ -382,7 +377,7 @@ namespace SenseNet.IO.Implementations
                 : $"-Path:({string.Join(" ", _cutoffs.Select(x => $"'{x}/*'"))})";
         }
 
-        protected virtual async Task<IContent[]> QueryAsync(string queryText, bool orderByPath, int top, CancellationToken cancel)
+        protected virtual async Task<IContent[]> QueryAsync(string queryText, bool orderByPath, int top, int skip, CancellationToken cancel)
         {
             var request = new QueryContentRequest
             {
@@ -393,6 +388,8 @@ namespace SenseNet.IO.Implementations
             };
             if (top > 0)
                 request.Top = top;
+            if (skip > 0)
+                request.Skip = skip;
             if (orderByPath)
                 request.OrderBy = new[] {"Path"};
 

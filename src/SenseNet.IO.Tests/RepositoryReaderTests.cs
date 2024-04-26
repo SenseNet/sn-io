@@ -164,7 +164,7 @@ namespace SenseNet.IO.Tests
             {
                 return Task.FromResult(_sourceTree.Count);
             }
-            protected override Task<IContent[]> QueryAsync(string queryText, bool orderByPath, int top, CancellationToken cancel)
+            protected override Task<IContent[]> QueryAsync(string queryText, bool orderByPath, int top, int skip, CancellationToken cancel)
             {
                 Queries.Add(queryText);
 
