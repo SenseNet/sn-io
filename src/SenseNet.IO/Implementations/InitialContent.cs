@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace SenseNet.IO.Implementations
@@ -31,7 +32,7 @@ namespace SenseNet.IO.Implementations
             Type = type;
         }
 
-        public Task<Attachment[]> GetAttachmentsAsync()
+        public Task<Attachment[]> GetAttachmentsAsync(CancellationToken cancel)
         {
             return Task.FromResult(Array.Empty<Attachment>());
         }

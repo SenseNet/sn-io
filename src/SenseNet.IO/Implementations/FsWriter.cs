@@ -175,7 +175,7 @@ namespace SenseNet.IO.Implementations
 
         private async Task WriteAttachmentsAsync(string metaFileDir, IContent content, CancellationToken cancel)
         {
-            var attachments = await content.GetAttachmentsAsync();
+            var attachments = await content.GetAttachmentsAsync(cancel);
             foreach (var attachment in attachments.Where(a => a.Stream != null))
             {
                 var attachmentPath = Path.Combine(metaFileDir, attachment.FileName);

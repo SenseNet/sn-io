@@ -2,7 +2,7 @@
   "profiles": {
     "SenseNet.IO.CLI": {
       "commandName": "Project",
-      "commandLineArgs": "EXPORT -SOURCE -PATH /Root/IMS",
+      "commandLineArgs": "EXPORT --DISPLAY:LEVEL Verbose -SOURCE \"https://snbooking.sensenet.cloud/\" \"/Root\" -CLIENTID \"cYXY6wSOzXpreooq\" -CLIENTSECRET \"u1yXSA1JTVLajnREu9Qkcs5di6zweHUOQh7EMwJQeJIUDmG2OQL9YsFuluED3xu1\" -TARGET \"D:\\dev\\_snio\\snbooking.sensenet.cloud\\export\"",
       "environmentVariables": {
         "DOTNET_ENVIRONMENT": "Development"
       }

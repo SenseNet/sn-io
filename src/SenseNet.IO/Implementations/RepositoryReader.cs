@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -115,7 +116,7 @@ namespace SenseNet.IO.Implementations
         }
 
         private bool _initializedInternal;
-        private async Task InitializeInternalAsync()
+        private async Task InitializeInternalAsync(CancellationToken cancel)
         {
             if (_initializedInternal)
                 return;
@@ -132,7 +133,7 @@ namespace SenseNet.IO.Implementations
                 _repository.Server.Logger = _logger;
 
             // Get tree size before first read
-            EstimatedCount = await GetCountAsync();
+            EstimatedCount = await GetCountAsync(cancel);
         }
         private class TreeState
         {
@@ -144,7 +145,7 @@ namespace SenseNet.IO.Implementations
         private Dictionary<string, TreeState> _treeStates = new();
         public async Task<bool> ReadSubTreeAsync(string relativePath, CancellationToken cancel = default)
         {
-            await InitializeInternalAsync();
+            await InitializeInternalAsync(cancel);
 
             if (!_treeStates.TryGetValue(relativePath, out var treeState))
             {
@@ -179,7 +180,7 @@ namespace SenseNet.IO.Implementations
         private int _currentBlockIndex;
         public async Task<bool> ReadAllAsync(string[] contentsWithoutChildren, CancellationToken cancel = default)
         {
-            await InitializeInternalAsync();
+            await InitializeInternalAsync(cancel);
 
             do
             {
@@ -292,15 +293,18 @@ namespace SenseNet.IO.Implementations
 
         /* =================================================================================== TESTABLE METHODS FOR MOCKS */
 
-        protected virtual async Task<int> GetCountAsync()
+        protected virtual async Task<int> GetCountAsync(CancellationToken cancel)
         {
             string result;
             if (string.IsNullOrEmpty(Filter))
             {
                 try
                 {
-                    result = await RESTCaller.GetResponseStringAsync(RepositoryRootPath, "GetContentCountInTree",
-                        server: _repository.Server);
+//result = await RESTCaller.GetResponseStringAsync(RepositoryRootPath, "GetContentCountInTree",
+//    server: _repository.Server);
+                    result = await _repository.GetResponseStringAsync(
+                        new ODataRequest(_repository.Server) {Path = RepositoryRootPath, ActionName = "GetContentCountInTree"},
+                        HttpMethod.Get, cancel);
                     return int.TryParse(result, out var count1) ? count1 : default;
                 }
                 catch (Exception e)
@@ -317,7 +321,8 @@ namespace SenseNet.IO.Implementations
                     ActionName = "GetContentCountInTree",
                     ContentQuery = Filter
                 };
-                result = await RESTCaller.GetResponseStringAsync(req, server: _repository.Server);
+//result = await RESTCaller.GetResponseStringAsync(req, server: _repository.Server);
+                result = await _repository.GetResponseStringAsync(req, HttpMethod.Get, cancel);
                 return int.TryParse(result, out var count2) ? count2 : default;
             }
             catch (Exception e)

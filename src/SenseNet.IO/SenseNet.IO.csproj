@@ -24,7 +24,7 @@
 	</PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="SenseNet.Client" Version="3.0.7" />
+    <PackageReference Include="SenseNet.Client" Version="4.0.0" />
   </ItemGroup>
 
 </Project>

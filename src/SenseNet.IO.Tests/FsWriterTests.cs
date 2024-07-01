@@ -92,7 +92,7 @@ namespace SenseNet.IO.Tests
                 _attachments = attachments;
             }
 
-            public Task<Attachment[]> GetAttachmentsAsync()
+            public Task<Attachment[]> GetAttachmentsAsync(CancellationToken cancel)
             {
                 foreach (var attachment in _attachments)
                 {

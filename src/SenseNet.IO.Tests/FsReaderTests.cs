@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -105,6 +106,8 @@ namespace SenseNet.IO.Tests
         }
         #endregion
 
+        private readonly CancellationToken _cancel = CancellationToken.None;
+
         [TestMethod]
         public async Task FsReader_Read_RootFileOnly()
         {
@@ -142,7 +145,7 @@ namespace SenseNet.IO.Tests
             Assert.AreEqual("Root", content.Name);
             Assert.AreEqual("PortalRoot", content.Type);
             Assert.AreEqual(0, content.FieldNames.Length);
-            Assert.AreEqual(0, (await content.GetAttachmentsAsync()).Length);
+            Assert.AreEqual(0, (await content.GetAttachmentsAsync(_cancel)).Length);
             Assert.AreEqual(true, content.Permissions.IsInherited);
             Assert.AreEqual(1, content.Permissions.Entries.Length);
         }
@@ -184,7 +187,7 @@ namespace SenseNet.IO.Tests
             Assert.AreEqual("Root", content.Name);
             Assert.AreEqual("PortalRoot", content.Type);
             Assert.AreEqual(0, content.FieldNames.Length);
-            Assert.AreEqual(0, (await content.GetAttachmentsAsync()).Length);
+            Assert.AreEqual(0, (await content.GetAttachmentsAsync(_cancel)).Length);
             Assert.AreEqual(true, content.Permissions.IsInherited);
             Assert.AreEqual(1, content.Permissions.Entries.Length);
         }
@@ -230,7 +233,7 @@ namespace SenseNet.IO.Tests
             Assert.AreEqual(1, content.FieldNames.Length);
             Assert.AreEqual("Type", content.FieldNames[0]);
             Assert.AreEqual("ContentType1", content["Type"]);
-            Assert.AreEqual(0, (await content.GetAttachmentsAsync()).Length);
+            Assert.AreEqual(0, (await content.GetAttachmentsAsync(_cancel)).Length);
             Assert.AreEqual(true, content.Permissions.IsInherited);
             Assert.AreEqual(1, content.Permissions.Entries.Length);
         }
@@ -276,7 +279,7 @@ namespace SenseNet.IO.Tests
             Assert.AreEqual(1, content.FieldNames.Length);
             Assert.AreEqual("Type", content.FieldNames[0]);
             Assert.AreEqual("ContentType_Irrelevant", content["Type"]);
-            Assert.AreEqual(0, (await content.GetAttachmentsAsync()).Length);
+            Assert.AreEqual(0, (await content.GetAttachmentsAsync(_cancel)).Length);
             Assert.AreEqual(true, content.Permissions.IsInherited);
             Assert.AreEqual(1, content.Permissions.Entries.Length);
         }
@@ -320,7 +323,7 @@ namespace SenseNet.IO.Tests
             Assert.AreEqual("Root", content.Name);
             Assert.AreEqual("PortalRoot", content.Type);
             Assert.AreEqual(0, content.FieldNames.Length);
-            Assert.AreEqual(0, (await content.GetAttachmentsAsync()).Length);
+            Assert.AreEqual(0, (await content.GetAttachmentsAsync(_cancel)).Length);
             Assert.AreEqual(null, content.Permissions);
 
             Assert.AreEqual("F1", contents[1].Key);
@@ -328,7 +331,7 @@ namespace SenseNet.IO.Tests
             Assert.AreEqual("F1", content.Name);
             Assert.AreEqual("Folder", content.Type);
             Assert.AreEqual(0, content.FieldNames.Length);
-            Assert.AreEqual(0, (await content.GetAttachmentsAsync()).Length);
+            Assert.AreEqual(0, (await content.GetAttachmentsAsync(_cancel)).Length);
             Assert.AreEqual(null, content.Permissions);
 
             Assert.AreEqual("F2", contents[2].Key);
@@ -336,7 +339,7 @@ namespace SenseNet.IO.Tests
             Assert.AreEqual("F2", content.Name);
             Assert.AreEqual("Folder", content.Type);
             Assert.AreEqual(0, content.FieldNames.Length);
-            Assert.AreEqual(0, (await content.GetAttachmentsAsync()).Length);
+            Assert.AreEqual(0, (await content.GetAttachmentsAsync(_cancel)).Length);
             Assert.AreEqual(null, content.Permissions);
         }
         [TestMethod]
@@ -389,7 +392,7 @@ namespace SenseNet.IO.Tests
             Assert.AreEqual(1, content.FieldNames.Length);
             Assert.AreEqual("Binary", content.FieldNames[0]);
             Assert.AreEqual("F1.txt", ((JObject)content["Binary"])["Attachment"]?.Value<string>());
-            var attachments = await content.GetAttachmentsAsync();
+            var attachments = await content.GetAttachmentsAsync(_cancel);
             Assert.AreEqual(1, attachments.Length);
             Assert.AreEqual("Binary", attachments[0].FieldName);
             Assert.AreEqual("F1.txt", attachments[0].FileName);
@@ -452,7 +455,7 @@ namespace SenseNet.IO.Tests
             Assert.AreEqual("F1.txt", ((JObject)content["Binary"])["Attachment"]?.Value<string>());
             Assert.AreEqual("Bin2", content.FieldNames[1]);
             Assert.AreEqual("F1.txt.Bin2", ((JObject)content["Bin2"])["Attachment"]?.Value<string>());
-            var attachments = await content.GetAttachmentsAsync();
+            var attachments = await content.GetAttachmentsAsync(_cancel);
             Assert.AreEqual(2, attachments.Length);
             Assert.AreEqual("Binary", attachments[0].FieldName);
             Assert.AreEqual("F1.txt", attachments[0].FileName);

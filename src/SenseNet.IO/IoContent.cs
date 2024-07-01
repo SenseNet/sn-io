@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace SenseNet.IO
@@ -25,7 +26,7 @@ namespace SenseNet.IO
         public bool IsFolder => throw new NotImplementedException("IsFolder is not implemented in IoContent.");
         public bool HasData => _fields.Any();
 
-        public Task<Attachment[]> GetAttachmentsAsync()
+        public Task<Attachment[]> GetAttachmentsAsync(CancellationToken cancel)
         {
             throw new NotImplementedException();
         }
