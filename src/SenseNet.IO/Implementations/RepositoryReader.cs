@@ -184,8 +184,18 @@ namespace SenseNet.IO.Implementations
 
             do
             {
+                if (_cutoffChanged)
+                {
+                    // Query the last block again with the new cutoff path
+                    _currentBlock = await QueryBlockAsync(RepositoryRootPath, contentsWithoutChildren,
+                        _currentBlock?[^1].Path, _blockSize, (_blockIndex - 1) * _blockSize, cancel);
+                    // Serve the content from the last position again
+                    _currentBlockIndex--;
+                    // Changes processed
+                    _cutoffChanged = false;
+                }
                 //TODO: Raise performance: read the next block (background)
-                if (_currentBlock == null || _currentBlockIndex >= _currentBlock.Length)
+                else if (_currentBlock == null || _currentBlockIndex >= _currentBlock.Length)
                 {
                     _currentBlock = await QueryBlockAsync(RepositoryRootPath, contentsWithoutChildren,
                         _currentBlock?[^1].Path, _blockSize, _blockIndex * _blockSize, cancel);
@@ -247,12 +257,16 @@ namespace SenseNet.IO.Implementations
         }
 
         private readonly List<string> _cutoffs = new();
+        private bool _cutoffChanged;
         public void SkipSubtree(string relativePath)
         {
             var absolutePath = ContentPath.GetAbsolutePath(relativePath, RepositoryRootPath);
             // Add to _cutoffs if the new item is not a subtree of any stored item.
-            if(_cutoffs.All(c => c.Length >= absolutePath.Length || !absolutePath.StartsWith(c)))
+            if (_cutoffs.All(c => c.Length >= absolutePath.Length || !absolutePath.StartsWith(c)))
+            {
                 _cutoffs.Add(absolutePath);
+                _cutoffChanged = true;
+            }
         }
 
         private static readonly string[] _keywords = new[]
@@ -333,15 +347,6 @@ namespace SenseNet.IO.Implementations
         protected virtual async Task<IContent[]> QueryBlockAsync(string rootPath, string[] contentsWithoutChildren,
             string lastPath, int top, int skip, CancellationToken cancel)
         {
-            // Remove irrelevant cutoffs
-            if (lastPath != null)
-            {
-                for (int i = _cutoffs.Count - 1; i >= 0; i--)
-                    if (!lastPath.StartsWith(_cutoffs[i]) &&
-                        string.Compare(lastPath, _cutoffs[i], StringComparison.Ordinal) > 0)
-                        _cutoffs.RemoveAt(i);
-            }
-
             // Build query
             string query;
             var orderByPath = true;

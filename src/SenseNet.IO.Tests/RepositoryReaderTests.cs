@@ -588,9 +588,9 @@ namespace SenseNet.IO.Tests
 
             expected = new[]
             {
-                "+InTree:'/Root/Content'",
-                "+InTree:'/Root/Content' -Path:'/Root/Content/Workspace-1/*' +Path:>'/Root/Content/Workspace-1/DocLib-1'",
-                "+InTree:'/Root/Content' +Path:>'/Root/Content/Workspace-2'",
+                "+InTree:'/Root/Content' | top:3, skip:0",
+                "+InTree:'/Root/Content' -Path:'/Root/Content/Workspace-1/*' | top:3, skip:0",
+                "+InTree:'/Root/Content' -Path:'/Root/Content/Workspace-1/*' | top:3, skip:3",
             };
             actual = reader.Queries.ToArray();
             AssertSequencesAreEqual(expected, actual);
