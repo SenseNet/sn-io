@@ -181,28 +181,24 @@ namespace SenseNet.IO.Implementations
                 .ToDictionary(fieldName => fieldName, fieldName => content[fieldName]);
 
             // Send "import" message
-            var body = "models=" + JsonConvert.SerializeObject(new[]
+            var body = new
+            {
+                path = repositoryPath,
+                data = new
                 {
-                    new
-                    {
-                        path = repositoryPath,
-                        data = new
-                        {
-                            ContentType = content.Type,
-                            ContentName = content.Name,
-                            Fields = fields,
-                            content.Permissions
-                        }
-                    }
+                    ContentType = content.Type,
+                    ContentName = content.Name,
+                    Fields = fields,
+                    content.Permissions
                 }
-            );
+            };
 
             // {path, name, type, action, brokenReferences, retryPermissions, messages };
             string resultString;
             try
             {
                 resultString = await _repository.InvokeActionAsync<string>(
-                    new OperationRequest {Path= "/Root",OperationName = "Import"}, cancel);
+                    new OperationRequest {Path= "/Root",OperationName = "Import", PostData = body}, cancel);
             }
             catch (Exception e)
             {
@@ -260,21 +256,17 @@ namespace SenseNet.IO.Implementations
                 .ToDictionary(fieldName => fieldName, fieldName => content[fieldName]);
 
             // Send "import" message
-            var body = "models=" + JsonConvert.SerializeObject(new[]
+            var body = new
+            {
+                path = repositoryPath,
+                data = new
                 {
-                    new
-                    {
-                        path = repositoryPath,
-                        data = new
-                        {
-                            ContentType = content.Type,
-                            ContentName = content.Name,
-                            Fields = fields,
-                            content.Permissions
-                        }
-                    }
+                    ContentType = content.Type,
+                    ContentName = content.Name,
+                    Fields = fields,
+                    content.Permissions
                 }
-            );
+            };
 
             // {path, name, type, action, brokenReferences, retryPermissions, messages };
             string resultString = null;
@@ -283,7 +275,7 @@ namespace SenseNet.IO.Implementations
                 await Retrier.RetryAsync(50, 3000, async () =>
                     {
                         resultString = await _repository.InvokeActionAsync<string>(
-                            new OperationRequest { Path = "/Root", OperationName = "Import" }, cancel);
+                            new OperationRequest {Path = "/Root", OperationName = "Import", PostData = body}, cancel);
                     },
                     (i, exception) => exception.CheckRetryConditionOrThrow(i), cancel);
 
