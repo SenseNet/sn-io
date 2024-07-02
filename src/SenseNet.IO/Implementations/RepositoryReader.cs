@@ -314,8 +314,6 @@ namespace SenseNet.IO.Implementations
             {
                 try
                 {
-//result = await RESTCaller.GetResponseStringAsync(RepositoryRootPath, "GetContentCountInTree",
-//    server: _repository.Server);
                     result = await _repository.GetResponseStringAsync(
                         new ODataRequest(_repository.Server) {Path = RepositoryRootPath, ActionName = "GetContentCountInTree"},
                         HttpMethod.Get, cancel);
@@ -335,7 +333,6 @@ namespace SenseNet.IO.Implementations
                     ActionName = "GetContentCountInTree",
                     ContentQuery = Filter
                 };
-//result = await RESTCaller.GetResponseStringAsync(req, server: _repository.Server);
                 result = await _repository.GetResponseStringAsync(req, HttpMethod.Get, cancel);
                 return int.TryParse(result, out var count2) ? count2 : default;
             }
