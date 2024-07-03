@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Linq;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Http;
 using SenseNet.IO;
 using SenseNet.IO.Implementations;
 
@@ -46,6 +48,7 @@ namespace SenseNet.Extensions.DependencyInjection
         {
             services
                 .AddSenseNetClient()
+                .RemoveAll<IHttpMessageHandlerBuilderFilter>()
 
                 .AddTransient<IFilesystemReader, FsReader>()
                 .AddTransient<IFilesystemWriter, FsWriter>()

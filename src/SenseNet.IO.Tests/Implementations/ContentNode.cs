@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace SenseNet.IO.Tests.Implementations
@@ -27,7 +28,7 @@ namespace SenseNet.IO.Tests.Implementations
         public bool IsFolder => throw new NotImplementedException();
         public bool HasData => throw new NotImplementedException();
 
-        public Task<Attachment[]> GetAttachmentsAsync()
+        public Task<Attachment[]> GetAttachmentsAsync(CancellationToken cancel)
         {
             throw new System.NotImplementedException();
         }

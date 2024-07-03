@@ -24,6 +24,7 @@ namespace SenseNet.IO.Implementations
 
         private readonly Dictionary<string, object> _fields;
         private readonly ServerContext _server;
+        private readonly IRepository _repository;
 
         public string[] FieldNames { get; }
         public string Name { get; set; }
@@ -45,6 +46,7 @@ namespace SenseNet.IO.Implementations
         public RepositoryReaderContent(Content content)
         {
             _server = content.Server;
+            _repository = content.Repository;
 
             Name = ((JToken)content["ContentName"]).Value<string>();
             Type = ((JToken)content["ContentType"]).Value<string>();
@@ -75,7 +77,7 @@ namespace SenseNet.IO.Implementations
             return value;
         }
 
-        public async Task<Attachment[]> GetAttachmentsAsync()
+        public async Task<Attachment[]> GetAttachmentsAsync(CancellationToken cancel = default)
         {
             var result = new List<Attachment>();
             foreach (var fieldName in FieldNames)
@@ -94,7 +96,7 @@ namespace SenseNet.IO.Implementations
                                 FileName = GetAttachmentName(fieldName),
                                 FieldName = fieldName,
                                 ContentType = contentType,
-                                Stream = await GetStream(uri)
+                                Stream = await GetStream(uri, cancel)
                             });
                         }
                     }
@@ -115,20 +117,21 @@ namespace SenseNet.IO.Implementations
             return attachmentName;
         }
 
-        public async Task<Stream> GetStream(string url)
+        public async Task<Stream> GetStream(string url, CancellationToken cancel)
         {
-            var absoluteUrl = _server.Url + url;
             MemoryStream result = null;
             try
             {
                 //TODO: return a stream that can handle huge files by downloading segments
                 // later, instead of storing the whole file in memory.
-                await RESTCaller.ProcessWebResponseAsync(absoluteUrl, HttpMethod.Get, _server, response =>
+                await _repository.ProcessWebResponseAsync(url, HttpMethod.Get, null, null, 
+                    async (response, cancel) =>
                 {
                     result = new MemoryStream();
-                    response.Content.ReadAsStream().CopyTo(result);
+                    var stream = await response.Content.ReadAsStreamAsync(cancel);
+                    await stream.CopyToAsync(result, cancel);
                     result.Seek(0, SeekOrigin.Begin);
-                }, CancellationToken.None);
+                }, cancel);
             }
             catch (Exception e)
             {

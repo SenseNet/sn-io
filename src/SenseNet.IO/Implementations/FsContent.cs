@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -48,7 +49,7 @@ namespace SenseNet.IO.Implementations
         public bool HasData => !string.IsNullOrEmpty(_metaFilePath);
 
         private readonly string _defaultAttachmentPath;
-        public Task<Attachment[]> GetAttachmentsAsync()
+        public Task<Attachment[]> GetAttachmentsAsync(CancellationToken cancel)
         {
             if (_defaultAttachmentPath != null)
             {

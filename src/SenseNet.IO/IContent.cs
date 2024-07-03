@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Threading;
+using System.Threading.Tasks;
 
 namespace SenseNet.IO
 {
@@ -16,6 +17,6 @@ namespace SenseNet.IO
         public bool IsFolder { get; }
         public bool HasData { get; }
 
-        Task<Attachment[]> GetAttachmentsAsync();
+        Task<Attachment[]> GetAttachmentsAsync(CancellationToken cancel);
     }
 }

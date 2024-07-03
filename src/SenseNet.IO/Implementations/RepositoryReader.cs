@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -115,7 +116,7 @@ namespace SenseNet.IO.Implementations
         }
 
         private bool _initializedInternal;
-        private async Task InitializeInternalAsync()
+        private async Task InitializeInternalAsync(CancellationToken cancel)
         {
             if (_initializedInternal)
                 return;
@@ -132,7 +133,7 @@ namespace SenseNet.IO.Implementations
                 _repository.Server.Logger = _logger;
 
             // Get tree size before first read
-            EstimatedCount = await GetCountAsync();
+            EstimatedCount = await GetCountAsync(cancel);
         }
         private class TreeState
         {
@@ -144,7 +145,7 @@ namespace SenseNet.IO.Implementations
         private Dictionary<string, TreeState> _treeStates = new();
         public async Task<bool> ReadSubTreeAsync(string relativePath, CancellationToken cancel = default)
         {
-            await InitializeInternalAsync();
+            await InitializeInternalAsync(cancel);
 
             if (!_treeStates.TryGetValue(relativePath, out var treeState))
             {
@@ -179,12 +180,22 @@ namespace SenseNet.IO.Implementations
         private int _currentBlockIndex;
         public async Task<bool> ReadAllAsync(string[] contentsWithoutChildren, CancellationToken cancel = default)
         {
-            await InitializeInternalAsync();
+            await InitializeInternalAsync(cancel);
 
             do
             {
+                if (_cutoffChanged)
+                {
+                    // Query the last block again with the new cutoff path
+                    _currentBlock = await QueryBlockAsync(RepositoryRootPath, contentsWithoutChildren,
+                        _currentBlock?[^1].Path, _blockSize, (_blockIndex - 1) * _blockSize, cancel);
+                    // Serve the content from the last position again
+                    _currentBlockIndex--;
+                    // Changes processed
+                    _cutoffChanged = false;
+                }
                 //TODO: Raise performance: read the next block (background)
-                if (_currentBlock == null || _currentBlockIndex >= _currentBlock.Length)
+                else if (_currentBlock == null || _currentBlockIndex >= _currentBlock.Length)
                 {
                     _currentBlock = await QueryBlockAsync(RepositoryRootPath, contentsWithoutChildren,
                         _currentBlock?[^1].Path, _blockSize, _blockIndex * _blockSize, cancel);
@@ -246,12 +257,16 @@ namespace SenseNet.IO.Implementations
         }
 
         private readonly List<string> _cutoffs = new();
+        private bool _cutoffChanged;
         public void SkipSubtree(string relativePath)
         {
             var absolutePath = ContentPath.GetAbsolutePath(relativePath, RepositoryRootPath);
             // Add to _cutoffs if the new item is not a subtree of any stored item.
-            if(_cutoffs.All(c => c.Length >= absolutePath.Length || !absolutePath.StartsWith(c)))
+            if (_cutoffs.All(c => c.Length >= absolutePath.Length || !absolutePath.StartsWith(c)))
+            {
                 _cutoffs.Add(absolutePath);
+                _cutoffChanged = true;
+            }
         }
 
         private static readonly string[] _keywords = new[]
@@ -292,15 +307,16 @@ namespace SenseNet.IO.Implementations
 
         /* =================================================================================== TESTABLE METHODS FOR MOCKS */
 
-        protected virtual async Task<int> GetCountAsync()
+        protected virtual async Task<int> GetCountAsync(CancellationToken cancel)
         {
             string result;
             if (string.IsNullOrEmpty(Filter))
             {
                 try
                 {
-                    result = await RESTCaller.GetResponseStringAsync(RepositoryRootPath, "GetContentCountInTree",
-                        server: _repository.Server);
+                    result = await _repository.GetResponseStringAsync(
+                        new ODataRequest(_repository.Server) {Path = RepositoryRootPath, ActionName = "GetContentCountInTree"},
+                        HttpMethod.Get, cancel);
                     return int.TryParse(result, out var count1) ? count1 : default;
                 }
                 catch (Exception e)
@@ -317,7 +333,7 @@ namespace SenseNet.IO.Implementations
                     ActionName = "GetContentCountInTree",
                     ContentQuery = Filter
                 };
-                result = await RESTCaller.GetResponseStringAsync(req, server: _repository.Server);
+                result = await _repository.GetResponseStringAsync(req, HttpMethod.Get, cancel);
                 return int.TryParse(result, out var count2) ? count2 : default;
             }
             catch (Exception e)
@@ -328,15 +344,6 @@ namespace SenseNet.IO.Implementations
         protected virtual async Task<IContent[]> QueryBlockAsync(string rootPath, string[] contentsWithoutChildren,
             string lastPath, int top, int skip, CancellationToken cancel)
         {
-            // Remove irrelevant cutoffs
-            if (lastPath != null)
-            {
-                for (int i = _cutoffs.Count - 1; i >= 0; i--)
-                    if (!lastPath.StartsWith(_cutoffs[i]) &&
-                        string.Compare(lastPath, _cutoffs[i], StringComparison.Ordinal) > 0)
-                        _cutoffs.RemoveAt(i);
-            }
-
             // Build query
             string query;
             var orderByPath = true;

@@ -136,7 +136,7 @@ namespace SenseNet.IO.Implementations
 
         private async Task<WriterState> WriteContentTypeAsync(string repositoryPath, IContent content, CancellationToken cancel)
         {
-            var attachments = await content.GetAttachmentsAsync();
+            var attachments = await content.GetAttachmentsAsync(cancel);
 
             // "Binary" field of a ContentType need to uploaded first.
             var binary = attachments.FirstOrDefault(a => a.FieldName == "Binary");
@@ -181,30 +181,24 @@ namespace SenseNet.IO.Implementations
                 .ToDictionary(fieldName => fieldName, fieldName => content[fieldName]);
 
             // Send "import" message
-            var body = "models=" + JsonConvert.SerializeObject(new[]
+            var body = new
+            {
+                path = repositoryPath,
+                data = new
                 {
-                    new
-                    {
-                        path = repositoryPath,
-                        data = new
-                        {
-                            ContentType = content.Type,
-                            ContentName = content.Name,
-                            Fields = fields,
-                            content.Permissions
-                        }
-                    }
+                    ContentType = content.Type,
+                    ContentName = content.Name,
+                    Fields = fields,
+                    content.Permissions
                 }
-            );
+            };
 
             // {path, name, type, action, brokenReferences, retryPermissions, messages };
             string resultString;
             try
             {
-                resultString = await RESTCaller.GetResponseStringAsync(
-                    new ODataRequest(_repository.Server)
-                        { IsCollectionRequest = false, Path = "/Root", ActionName = "Import" }, HttpMethod.Post, body,
-                    _repository.Server);
+                resultString = await _repository.InvokeActionAsync<string>(
+                    new OperationRequest {Path= "/Root",OperationName = "Import", PostData = body}, cancel);
             }
             catch (Exception e)
             {
@@ -253,7 +247,7 @@ namespace SenseNet.IO.Implementations
                 }
             }
 
-            var attachments = await content.GetAttachmentsAsync();
+            var attachments = await content.GetAttachmentsAsync(cancel);
 
             // Remove attachments from field set.
             var attachmentNames = attachments.Select(x => x.FieldName).ToArray();
@@ -262,21 +256,17 @@ namespace SenseNet.IO.Implementations
                 .ToDictionary(fieldName => fieldName, fieldName => content[fieldName]);
 
             // Send "import" message
-            var body = "models=" + JsonConvert.SerializeObject(new[]
+            var body = new
+            {
+                path = repositoryPath,
+                data = new
                 {
-                    new
-                    {
-                        path = repositoryPath,
-                        data = new
-                        {
-                            ContentType = content.Type,
-                            ContentName = content.Name,
-                            Fields = fields,
-                            content.Permissions
-                        }
-                    }
+                    ContentType = content.Type,
+                    ContentName = content.Name,
+                    Fields = fields,
+                    content.Permissions
                 }
-            );
+            };
 
             // {path, name, type, action, brokenReferences, retryPermissions, messages };
             string resultString = null;
@@ -284,12 +274,8 @@ namespace SenseNet.IO.Implementations
             {
                 await Retrier.RetryAsync(50, 3000, async () =>
                     {
-                        var request = new ODataRequest(_repository.Server)
-                        {
-                            IsCollectionRequest = false, Path = "/Root", ActionName = "Import"
-                        };
-
-                        resultString = await RESTCaller.GetResponseStringAsync(request, HttpMethod.Post, body, _repository.Server);
+                        resultString = await _repository.InvokeActionAsync<string>(
+                            new OperationRequest {Path = "/Root", OperationName = "Import", PostData = body}, cancel);
                     },
                     (i, exception) => exception.CheckRetryConditionOrThrow(i), cancel);
 
