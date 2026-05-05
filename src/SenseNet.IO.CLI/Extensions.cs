@@ -25,6 +25,16 @@ namespace SenseNet.IO.CLI
             if (args.Skip != null)
                 settings.Skip = args.Skip;
         }
+        public static void RewriteSettings(this FsXmlReaderArgs args, FsXmlReaderArgs settings)
+        {
+            // rewrite from command line args (they override config file values)
+            if (args.Path != null)
+                settings.Path = args.Path;
+            if (args.Skip != null)
+                settings.Skip = args.Skip;
+            if (args.ExcludedFields != null)
+                settings.ExcludedFields = args.ExcludedFields;
+        }
         public static void RewriteSettings(this FsWriterArgs args, FsWriterArgs settings)
         {
             // workaround for "Null configuration elements deserialized as empty strings" https://github.com/dotnet/runtime/issues/36510

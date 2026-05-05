@@ -12,9 +12,9 @@ namespace SenseNet.IO.CLI
         public IAppArguments Parse(string[] args)
         {
             if (args.Length == 0)
-                throw new ArgumentParserException("Missing verb (EXPORT, IMPORT, COPY, SYNC or TRANSFER)");
+                throw new ArgumentParserException("Missing verb (EXPORT, IMPORT, IMPORTXML, COPY, COPYXML, SYNC or TRANSFER)");
             if (!Enum.TryParse<Verb>(args[0], true, out var verb))
-                throw new ArgumentParserException($"Invalid verb '{args[0]}'. Valid values are EXPORT, IMPORT, COPY, SYNC or TRANSFER");
+                throw new ArgumentParserException($"Invalid verb '{args[0]}'. Valid values are EXPORT, IMPORT, IMPORTXML, COPY, COPYXML, SYNC or TRANSFER");
 
             var sourceSection = args
                 .SkipWhile(x => !x.Equals("-source", Cmp))
@@ -46,10 +46,22 @@ namespace SenseNet.IO.CLI
                         ReaderArgs = ParseFsReaderArgs(sourceArgs),
                         WriterArgs = ParseRepositoryWriterArgs(targetArgs)
                     };
+                case Verb.ImportXml:
+                    return new ImportXmlArguments
+                    {
+                        ReaderArgs = ParseFsXmlReaderArgs(sourceArgs),
+                        WriterArgs = ParseRepositoryWriterArgs(targetArgs)
+                    };
                 case Verb.Copy:
                     return new CopyArguments
                     {
                         ReaderArgs = ParseFsReaderArgs(sourceArgs),
+                        WriterArgs = ParseFsWriterArgs(targetArgs)
+                    };
+                case Verb.CopyXml:
+                    return new CopyXmlArguments
+                    {
+                        ReaderArgs = ParseFsXmlReaderArgs(sourceArgs),
                         WriterArgs = ParseFsWriterArgs(targetArgs)
                     };
                 case Verb.Sync:
@@ -250,6 +262,49 @@ namespace SenseNet.IO.CLI
                 }
                 else
                     throw new ArgumentParserException("Unknown RepositoryWriter argument: " + arg.Key);
+            }
+            return result;
+        }
+
+        protected virtual FsXmlReaderArgs ParseFsXmlReaderArgs(string[] args)
+        {
+            // [[-PATH] Path] [[-SKIP] PathList] [[-EXCLUDEFIELDS] FieldList]
+            var result = new FsXmlReaderArgs();
+            var parsedArgs = ParseSequence(args);
+
+            if (parsedArgs.Length > 3)
+                throw new ArgumentParserException("Too many FsXmlReader arguments.");
+
+            foreach (var arg in parsedArgs)
+            {
+                if (arg.Key == "0" || arg.Key.Equals("PATH", Cmp))
+                {
+                    if (result.Path != null)
+                        throw new ArgumentParserException("Invalid FsXmlReader arguments.");
+                    if(arg.Value == null)
+                        throw new ArgumentParserException("Invalid FsXmlReader arguments. Missing path.");
+                    result.Path = arg.Value;
+                }
+                else if (arg.Key == "1" || arg.Key.Equals("SKIP", Cmp))
+                {
+                    if (result.Skip != null)
+                        throw new ArgumentParserException("Invalid FsXmlReader arguments.");
+                    result.Skip = arg.Value
+                        .Split(",;".ToCharArray(), StringSplitOptions.RemoveEmptyEntries)
+                        .Select(x=>x.Trim())
+                        .ToArray();
+                }
+                else if (arg.Key == "2" || arg.Key.Equals("EXCLUDEFIELDS", Cmp))
+                {
+                    if (result.ExcludedFields != null)
+                        throw new ArgumentParserException("Invalid FsXmlReader arguments.");
+                    result.ExcludedFields = arg.Value
+                        .Split(",;".ToCharArray(), StringSplitOptions.RemoveEmptyEntries)
+                        .Select(x=>x.Trim())
+                        .ToArray();
+                }
+                else
+                    throw new ArgumentParserException("Unknown FsXmlReader argument: " + arg.Key);
             }
             return result;
         }

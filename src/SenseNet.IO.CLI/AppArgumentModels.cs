@@ -6,7 +6,9 @@ namespace SenseNet.IO.CLI
     {
         Export,
         Import,
+        ImportXml,
         Copy,
+        CopyXml,
         Sync,
         Transfer
     };
@@ -30,10 +32,24 @@ namespace SenseNet.IO.CLI
         public RepositoryWriterArgs WriterArgs { get; set; }
     }
 
+    public class ImportXmlArguments : IAppArguments
+    {
+        public Verb Verb => Verb.ImportXml;
+        public FsXmlReaderArgs ReaderArgs { get; set; }
+        public RepositoryWriterArgs WriterArgs { get; set; }
+    }
+
     public class CopyArguments : IAppArguments
     {
         public Verb Verb => Verb.Copy;
         public FsReaderArgs ReaderArgs { get; set; }
+        public FsWriterArgs WriterArgs { get; set; }
+    }
+
+    public class CopyXmlArguments : IAppArguments
+    {
+        public Verb Verb => Verb.CopyXml;
+        public FsXmlReaderArgs ReaderArgs { get; set; }
         public FsWriterArgs WriterArgs { get; set; }
     }
 
