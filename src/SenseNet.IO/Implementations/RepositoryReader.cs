@@ -14,17 +14,39 @@ namespace SenseNet.IO.Implementations
 {
     public class RepositoryAuthenticationOptions
     {
+        public string Type { get; set; }
         public string ClientId { get; set; }
         public string ClientSecret { get; set; }
         public string ApiKey { get; set; }
+        public string Username { get; set; }
+        public string Password { get; set; }
+        public string Domain { get; set; }
+        public string LoginPath { get; set; }
+        public string LoginUserNameField { get; set; }
+        public string LoginPasswordField { get; set; }
+        public string LoginDomainField { get; set; }
+        public string HeaderName { get; set; }
+        public string HeaderValue { get; set; }
+        public string Cookie { get; set; }
 
         internal RepositoryAuthenticationOptions Clone()
         {
             return new RepositoryAuthenticationOptions
             {
+                Type = Type,
                 ClientId = ClientId,
                 ClientSecret = ClientSecret,
-                ApiKey = ApiKey
+                ApiKey = ApiKey,
+                Username = Username,
+                Password = Password,
+                Domain = Domain,
+                LoginPath = LoginPath,
+                LoginUserNameField = LoginUserNameField,
+                LoginPasswordField = LoginPasswordField,
+                LoginDomainField = LoginDomainField,
+                HeaderName = HeaderName,
+                HeaderValue = HeaderValue,
+                Cookie = Cookie
             };
         }
     }
@@ -48,6 +70,10 @@ namespace SenseNet.IO.Implementations
         /// Content query filter for reading contents from the repository.
         /// </summary>
         public string Filter { get; set; }
+        /// <summary>
+        /// Comma separated OData expand field list for legacy repository reads.
+        /// </summary>
+        public string Expand { get; set; }
         public RepositoryAuthenticationOptions Authentication { get; set; } = new();
 
         internal RepositoryReaderArgs Clone()
@@ -58,6 +84,7 @@ namespace SenseNet.IO.Implementations
                 Path = Path,
                 BlockSize = BlockSize,
                 Filter = Filter,
+                Expand = Expand,
                 Authentication = Authentication?.Clone() ?? new RepositoryAuthenticationOptions()
             };
         }

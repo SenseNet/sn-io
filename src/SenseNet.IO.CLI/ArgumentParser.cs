@@ -149,10 +149,12 @@ namespace SenseNet.IO.CLI
         {
             // [[-URL] Url]] [[-PATH ]Path]] [[-FILTER ]Filter]] [[-BLOCKSIZE ]BlockSize]] [[-APIKEY ]ApiKey]
             // [[-CLIENTID ]ClientId] [[-CLIENTSECRET ]ClientSecret]
+            // [[-EXPAND] Expand] [[-AUTH|-AUTHTYPE] legacy|forms|basic] [[-USERNAME] UserName] [[-PASSWORD] Password] [[-DOMAIN] Domain]
+            // [[-LOGINPATH] LoginPath] [[-HEADERNAME] HeaderName] [[-HEADERVALUE] HeaderValue] [[-COOKIE] Cookie]
             var result = new RepositoryReaderArgs();
             var parsedArgs = ParseSequence(args);
 
-            if (parsedArgs.Length > 8)
+            if (parsedArgs.Length > 19)
                 throw new ArgumentParserException("Too many RepositoryReader arguments.");
 
             foreach (var arg in parsedArgs)
@@ -183,6 +185,12 @@ namespace SenseNet.IO.CLI
                         throw new ArgumentParserException("Invalid RepositoryReader argument: BlockSize: " + arg.Value);
                     result.BlockSize = intValue;
                 }
+                else if (arg.Key.Equals("EXPAND", Cmp))
+                {
+                    if (result.Expand != null)
+                        throw new ArgumentParserException("Invalid RepositoryReader arguments.");
+                    result.Expand = arg.Value;
+                }
                 else if (arg.Key == "4" || arg.Key.Equals("APIKEY", Cmp))
                 {
                     if (result.Authentication.ApiKey != null)
@@ -200,6 +208,78 @@ namespace SenseNet.IO.CLI
                     if (result.Authentication.ClientSecret != null)
                         throw new ArgumentParserException("Invalid RepositoryReader arguments.");
                     result.Authentication.ClientSecret = arg.Value;
+                }
+                else if (arg.Key == "7" || arg.Key.Equals("AUTH", Cmp) || arg.Key.Equals("AUTHTYPE", Cmp))
+                {
+                    if (result.Authentication.Type != null)
+                        throw new ArgumentParserException("Invalid RepositoryReader arguments.");
+                    result.Authentication.Type = arg.Value;
+                }
+                else if (arg.Key.Equals("LEGACY", Cmp))
+                {
+                    if (result.Authentication.Type != null)
+                        throw new ArgumentParserException("Invalid RepositoryReader arguments.");
+                    result.Authentication.Type = "legacy";
+                }
+                else if (arg.Key.Equals("USERNAME", Cmp))
+                {
+                    if (result.Authentication.Username != null)
+                        throw new ArgumentParserException("Invalid RepositoryReader arguments.");
+                    result.Authentication.Username = arg.Value;
+                }
+                else if (arg.Key.Equals("PASSWORD", Cmp))
+                {
+                    if (result.Authentication.Password != null)
+                        throw new ArgumentParserException("Invalid RepositoryReader arguments.");
+                    result.Authentication.Password = arg.Value;
+                }
+                else if (arg.Key.Equals("DOMAIN", Cmp))
+                {
+                    if (result.Authentication.Domain != null)
+                        throw new ArgumentParserException("Invalid RepositoryReader arguments.");
+                    result.Authentication.Domain = arg.Value;
+                }
+                else if (arg.Key.Equals("LOGINPATH", Cmp))
+                {
+                    if (result.Authentication.LoginPath != null)
+                        throw new ArgumentParserException("Invalid RepositoryReader arguments.");
+                    result.Authentication.LoginPath = arg.Value;
+                }
+                else if (arg.Key.Equals("LOGINUSERNAMEFIELD", Cmp))
+                {
+                    if (result.Authentication.LoginUserNameField != null)
+                        throw new ArgumentParserException("Invalid RepositoryReader arguments.");
+                    result.Authentication.LoginUserNameField = arg.Value;
+                }
+                else if (arg.Key.Equals("LOGINPASSWORDFIELD", Cmp))
+                {
+                    if (result.Authentication.LoginPasswordField != null)
+                        throw new ArgumentParserException("Invalid RepositoryReader arguments.");
+                    result.Authentication.LoginPasswordField = arg.Value;
+                }
+                else if (arg.Key.Equals("LOGINDOMAINFIELD", Cmp))
+                {
+                    if (result.Authentication.LoginDomainField != null)
+                        throw new ArgumentParserException("Invalid RepositoryReader arguments.");
+                    result.Authentication.LoginDomainField = arg.Value;
+                }
+                else if (arg.Key.Equals("HEADERNAME", Cmp))
+                {
+                    if (result.Authentication.HeaderName != null)
+                        throw new ArgumentParserException("Invalid RepositoryReader arguments.");
+                    result.Authentication.HeaderName = arg.Value;
+                }
+                else if (arg.Key.Equals("HEADERVALUE", Cmp))
+                {
+                    if (result.Authentication.HeaderValue != null)
+                        throw new ArgumentParserException("Invalid RepositoryReader arguments.");
+                    result.Authentication.HeaderValue = arg.Value;
+                }
+                else if (arg.Key.Equals("COOKIE", Cmp))
+                {
+                    if (result.Authentication.Cookie != null)
+                        throw new ArgumentParserException("Invalid RepositoryReader arguments.");
+                    result.Authentication.Cookie = arg.Value;
                 }
                 else
                     throw new ArgumentParserException("Unknown RepositoryReader argument: " + arg.Key);
@@ -309,7 +389,7 @@ namespace SenseNet.IO.CLI
             return result;
         }
 
-        private string[] _boolSwitches = new[] {"FLATTEN"};
+        private string[] _boolSwitches = new[] {"FLATTEN", "LEGACY"};
         private KeyValuePair<string, string>[] ParseSequence(string[] args)
         {
             var result = new Dictionary<string, string>();

@@ -84,6 +84,17 @@ The target file system directory will be created if it does not exist. If it doe
 2. **PATH**: Repository path of the root content of the tree to transfer. Default: '/Root'.
 3. **FILTER**: Filter the selected subtree. The filter is written in the [Content Query Language](https://docs.sensenet.com/api-docs/querying) format. Only terms and logical operators are effective, keywords (.TOP, .SKIP, .SORT etc.) are omitted.
 4. **BLOCKSIZE**: Count of items in one request. Default: 10.
+5. **EXPAND**: Comma separated OData expand field list for legacy repository export, e.g. `Owner,CreatedBy,ModifiedBy`.
+
+### Legacy repository export
+Older sensenet repositories may not support the current snauth/IdentityServer authentication flow or the `$format=export` OData format. For these sources SnIO can use the legacy repository reader. It reads the old OData JSON response and writes the same file-system export structure as the normal repository export.
+
+Use `-AUTH legacy` or `-LEGACY` with forms authentication:
+```
+SnIO EXPORT -SOURCE "https://legacy.example.com" "/Root/Sites" -AUTH legacy -USERNAME "admin" -PASSWORD "pwd" -DOMAIN "BuiltIn" -LOGINPATH "/Root/Sites/site/login" -EXPAND "Owner,CreatedBy,ModifiedBy" -TARGET "D:\Backup\legacy"
+```
+
+The legacy reader also supports `-AUTH basic`, an existing `-COOKIE` value, or a custom `-HEADERNAME`/`-HEADERVALUE` pair. The `-EXPAND` parameter is optional, but it is useful for reference fields that the old OData response would otherwise return as deferred references.
 
 ### Target parameters
 1. **PATH**: Fully qualified path of a target file system directory.
@@ -228,7 +239,8 @@ The providers have several parameters. To simplify SnIO usages, default values c
   "repositoryReader": {
     "url": "https://localhost:44362", // Source URL
     "path": null, // Source path. Default: "/Root",
-    "blockSize": null // Contents per request. Default (null, 0 or less): 10. 
+    "blockSize": null, // Contents per request. Default (null, 0 or less): 10.
+    "expand": null // Optional legacy OData $expand field list, e.g. "Owner,CreatedBy".
   },
   "repositoryWriter": {
     "url": "https://localhost:44362", // Target URL

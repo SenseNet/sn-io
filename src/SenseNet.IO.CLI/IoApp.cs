@@ -79,6 +79,8 @@ namespace SenseNet.IO.CLI
         {
             if (Reader is RepositoryReader && Writer is FsWriter)
                 return Verb.Export;
+            if (Reader is LegacyRepositoryReader && Writer is FsWriter)
+                return Verb.Export;
             if (Reader is FsReader && Writer is RepositoryWriter)
                 return Verb.Import;
             if (Reader is FsReader && Writer is FsWriter)

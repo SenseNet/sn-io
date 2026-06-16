@@ -92,26 +92,48 @@ namespace SenseNet.IO.CLI
                     {
                         case Verb.Export:
                             var exportArgs = (ExportArguments) appArguments;
-                            serviceCollection
-                                .AddSenseNetIO(configureRepositoryReader: readerArgs =>
+                            var selectedReaderArgs = new RepositoryReaderArgs();
+                            hostBuilderContext.Configuration.GetSection("repositoryReader").Bind(selectedReaderArgs);
+                            exportArgs.ReaderArgs.RewriteSettings(selectedReaderArgs);
+                            if (IsLegacyRepositoryReader(selectedReaderArgs))
+                            {
+                                serviceCollection
+                                    .Configure<RepositoryReaderArgs>(readerArgs =>
                                     {
                                         hostBuilderContext.Configuration.GetSection("repositoryReader")
                                             .Bind(readerArgs);
                                         exportArgs.ReaderArgs.RewriteSettings(readerArgs);
-                                    },
-                                    configureFilesystemWriter: writerArgs =>
+                                    })
+                                    .AddSenseNetIO(configureFilesystemWriter: writerArgs =>
                                     {
                                         hostBuilderContext.Configuration.GetSection("fsWriter").Bind(writerArgs);
                                         exportArgs.WriterArgs.RewriteSettings(writerArgs);
                                     })
-                                .AddContentFlow<RepositoryReader, FsWriter>()
-                                .ConfigureSenseNetRepository("source", options =>
-                                {
-                                    hostBuilderContext.Configuration.GetSection("repositoryReader").Bind(options);
-                                    //update from command line
-                                    exportArgs.ReaderArgs.RewriteSettings(options);
-                                })
-                                ;
+                                    .AddContentFlow<LegacyRepositoryReader, FsWriter>();
+                            }
+                            else
+                            {
+                                serviceCollection
+                                    .AddSenseNetIO(configureRepositoryReader: readerArgs =>
+                                        {
+                                            hostBuilderContext.Configuration.GetSection("repositoryReader")
+                                                .Bind(readerArgs);
+                                            exportArgs.ReaderArgs.RewriteSettings(readerArgs);
+                                        },
+                                        configureFilesystemWriter: writerArgs =>
+                                        {
+                                            hostBuilderContext.Configuration.GetSection("fsWriter").Bind(writerArgs);
+                                            exportArgs.WriterArgs.RewriteSettings(writerArgs);
+                                        })
+                                    .AddContentFlow<RepositoryReader, FsWriter>()
+                                    .ConfigureSenseNetRepository("source", options =>
+                                    {
+                                        hostBuilderContext.Configuration.GetSection("repositoryReader").Bind(options);
+                                        //update from command line
+                                        exportArgs.ReaderArgs.RewriteSettings(options);
+                                    })
+                                    ;
+                            }
                             break;
                         case Verb.Import:
                             var importArgs = (ImportArguments) appArguments;
@@ -255,6 +277,18 @@ namespace SenseNet.IO.CLI
 
             return host;
         }
+        private static bool IsLegacyRepositoryReader(RepositoryReaderArgs args)
+        {
+            var auth = args.Authentication;
+            var type = auth?.Type;
+            if (auth != null && (auth.Cookie != null || auth.HeaderName != null || auth.Username != null))
+                return true;
+            return type != null &&
+                   (type.Equals("legacy", StringComparison.OrdinalIgnoreCase) ||
+                    type.Equals("legacyforms", StringComparison.OrdinalIgnoreCase) ||
+                    type.Equals("forms", StringComparison.OrdinalIgnoreCase) ||
+                    type.Equals("basic", StringComparison.OrdinalIgnoreCase));
+        }
         private static string GetCustomConfigurationPath(ref string[] args)
         {
             for (int i = 0; i < args.Length; i++)
@@ -342,8 +376,14 @@ namespace SenseNet.IO.CLI
     [-FLATTEN] Boolean switch. If exists, all content will be written into the target directory without any folder structure."},
             {"RepositoryReader", @"    [-URL] <Url of the source sensenet repository e.g. 'https://example.sensenet.cloud'.>
     [-PATH] [Repository path of the root content of the tree to transfer. Default: '/Root'.]
-    [-FILTER] [Filter in Content Query Language e.g. ""+TypeIs:File +ModificationDate:>@@Today-2@@""]
-    [-BLOCKSIZE] [Count of items in one request. Default: 10.]"},
+    [-FILTER] [Filter in Content Query Language e.g. ""+TypeIs:File +ModificationDate:>@@Today-2@@""]    
+    [-BLOCKSIZE] [Count of items in one request. Default: 10.]
+    [-EXPAND] Comma separated OData expand field list for legacy export, e.g. ""Owner,CreatedBy,ModifiedBy"".
+    [-AUTH legacy|forms|basic] Use legacy repository authentication instead of snauth/IdentityServer.
+    [-USERNAME] [-PASSWORD] [-DOMAIN] Credentials for legacy forms/basic authentication.
+    [-LOGINPATH] Legacy forms login URL path. Default: '/sn-login'.
+    [-HEADERNAME] [-HEADERVALUE] Custom authentication header for legacy servers.
+    [-COOKIE] Existing authentication cookie value for legacy servers."},
             {"RepositoryWriter", @"    [-URL] <Url of the target sensenet repository e.g. 'https://example.sensenet.cloud'.>
     [-PATH] [Repository path of the target container. Default: '/'.]
     [-NAME] [Name of the target tree root if it is different from the source name.]

@@ -60,6 +60,8 @@ namespace SenseNet.IO.CLI
                 settings.Path = null;
             if (string.IsNullOrEmpty(settings.Filter))
                 settings.Filter = null;
+            if (string.IsNullOrEmpty(settings.Expand))
+                settings.Expand = null;
             if (settings.BlockSize < 1)
                 settings.BlockSize = null;
 
@@ -70,14 +72,38 @@ namespace SenseNet.IO.CLI
                 settings.Path = args.Path;
             if (args.Filter != null)
                 settings.Filter = args.Filter;
+            if (args.Expand != null)
+                settings.Expand = args.Expand;
             if (args.BlockSize != null)
                 settings.BlockSize = args.BlockSize;
+            if (args.Authentication.Type != null)
+                settings.Authentication.Type = args.Authentication.Type;
             if (args.Authentication.ApiKey != null)
                 settings.Authentication.ApiKey = args.Authentication.ApiKey;
             if (args.Authentication.ClientId != null)
                 settings.Authentication.ClientId = args.Authentication.ClientId;
             if (args.Authentication.ClientSecret != null)
                 settings.Authentication.ClientSecret = args.Authentication.ClientSecret;
+            if (args.Authentication.Username != null)
+                settings.Authentication.Username = args.Authentication.Username;
+            if (args.Authentication.Password != null)
+                settings.Authentication.Password = args.Authentication.Password;
+            if (args.Authentication.Domain != null)
+                settings.Authentication.Domain = args.Authentication.Domain;
+            if (args.Authentication.LoginPath != null)
+                settings.Authentication.LoginPath = args.Authentication.LoginPath;
+            if (args.Authentication.LoginUserNameField != null)
+                settings.Authentication.LoginUserNameField = args.Authentication.LoginUserNameField;
+            if (args.Authentication.LoginPasswordField != null)
+                settings.Authentication.LoginPasswordField = args.Authentication.LoginPasswordField;
+            if (args.Authentication.LoginDomainField != null)
+                settings.Authentication.LoginDomainField = args.Authentication.LoginDomainField;
+            if (args.Authentication.HeaderName != null)
+                settings.Authentication.HeaderName = args.Authentication.HeaderName;
+            if (args.Authentication.HeaderValue != null)
+                settings.Authentication.HeaderValue = args.Authentication.HeaderValue;
+            if (args.Authentication.Cookie != null)
+                settings.Authentication.Cookie = args.Authentication.Cookie;
         }
         public static void RewriteSettings(this RepositoryReaderArgs args, RepositoryOptions settings)
         {
@@ -134,6 +160,8 @@ namespace SenseNet.IO.CLI
         {
             if (reader is FsReader fsReader)
                 return ParamsToDisplay(fsReader.Args);
+            if (reader is LegacyRepositoryReader legacyRepositoryReader)
+                return ParamsToDisplay(legacyRepositoryReader.Args);
             if (reader is RepositoryReader repositoryReader)
                 return ParamsToDisplay(repositoryReader.Args);
             return string.Empty;
@@ -163,9 +191,9 @@ namespace SenseNet.IO.CLI
         }
         public static string ParamsToDisplay(this RepositoryReaderArgs args)
         {
-            if(args.Filter == null)
-                return $"Url: {args.Url}, Path: {args.Path}, BlockSize: {args.BlockSize}";
-            return $"Url: {args.Url}, Path: {args.Path}, Filter: {args.Filter}, BlockSize: {args.BlockSize}";
+            var filter = args.Filter == null ? string.Empty : $", Filter: {args.Filter}";
+            var expand = args.Expand == null ? string.Empty : $", Expand: {args.Expand}";
+            return $"Url: {args.Url}, Path: {args.Path}{filter}{expand}, BlockSize: {args.BlockSize}";
         }
         public static string ParamsToDisplay(this RepositoryWriterArgs args)
         {
