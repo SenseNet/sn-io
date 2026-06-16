@@ -136,6 +136,30 @@ namespace SenseNet.IO.CLI
                                 })
                                 ;
                             break;
+                        case Verb.ImportXml:
+                            var importXmlArgs = (ImportXmlArguments) appArguments;
+                            serviceCollection
+                                .Configure<FsXmlReaderArgs>(readerArgs =>
+                                {
+                                    hostBuilderContext.Configuration.GetSection("fsXmlReader")
+                                        .Bind(readerArgs);
+                                    importXmlArgs.ReaderArgs.RewriteSettings(readerArgs);
+                                })
+                                .AddTransient<IFilesystemReader, FsXmlReader>()
+                                .AddSenseNetIO(configureRepositoryWriter: writerArgs =>
+                                {
+                                    hostBuilderContext.Configuration.GetSection("repositoryWriter").Bind(writerArgs);
+                                    importXmlArgs.WriterArgs.RewriteSettings(writerArgs);
+                                })
+                                .AddContentFlow<FsXmlReader, RepositoryWriter>()
+                                .ConfigureSenseNetRepository("target", options =>
+                                {
+                                    hostBuilderContext.Configuration.GetSection("repositoryWriter").Bind(options);
+                                    //update from command line
+                                    importXmlArgs.WriterArgs.RewriteSettings(options);
+                                })
+                                ;
+                            break;
                         case Verb.Copy:
                             var copyArgs = (CopyArguments) appArguments;
                             serviceCollection
@@ -151,6 +175,24 @@ namespace SenseNet.IO.CLI
                                         copyArgs.WriterArgs.RewriteSettings(writerArgs);
                                     })
                                 .AddContentFlow<FsReader, FsWriter>()
+                                ;
+                            break;
+                        case Verb.CopyXml:
+                            var copyXmlArgs = (CopyXmlArguments) appArguments;
+                            serviceCollection
+                                .Configure<FsXmlReaderArgs>(readerArgs =>
+                                {
+                                    hostBuilderContext.Configuration.GetSection("fsXmlReader")
+                                        .Bind(readerArgs);
+                                    copyXmlArgs.ReaderArgs.RewriteSettings(readerArgs);
+                                })
+                                .AddTransient<IFilesystemReader, FsXmlReader>()
+                                .AddSenseNetIO(configureFilesystemWriter: writerArgs =>
+                                {
+                                    hostBuilderContext.Configuration.GetSection("fsWriter").Bind(writerArgs);
+                                    copyXmlArgs.WriterArgs.RewriteSettings(writerArgs);
+                                })
+                                .AddContentFlow<FsXmlReader, FsWriter>()
                                 ;
                             break;
                         case Verb.Sync:
@@ -218,7 +260,9 @@ namespace SenseNet.IO.CLI
             for (int i = 0; i < args.Length; i++)
             {
                 if (args[i].Equals("-CONFIGURATION", StringComparison.OrdinalIgnoreCase) ||
-                    args[i].Equals("-CONFIG", StringComparison.OrdinalIgnoreCase))
+                    args[i].Equals("-CONFIG", StringComparison.OrdinalIgnoreCase) ||
+                    args[i].Equals("--CONFIGURATION", StringComparison.OrdinalIgnoreCase) ||
+                    args[i].Equals("--CONFIG", StringComparison.OrdinalIgnoreCase))
                 {
                     if (i >= args.Length - 1)
                         throw new ArgumentException("Missing configuration path");
