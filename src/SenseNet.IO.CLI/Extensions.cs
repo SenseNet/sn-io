@@ -62,6 +62,8 @@ namespace SenseNet.IO.CLI
                 settings.Filter = null;
             if (string.IsNullOrEmpty(settings.Expand))
                 settings.Expand = null;
+            if (settings.ExcludedFields != null && settings.ExcludedFields.Length == 0)
+                settings.ExcludedFields = null;
             if (settings.BlockSize < 1)
                 settings.BlockSize = null;
 
@@ -74,6 +76,8 @@ namespace SenseNet.IO.CLI
                 settings.Filter = args.Filter;
             if (args.Expand != null)
                 settings.Expand = args.Expand;
+            if (args.ExcludedFields != null)
+                settings.ExcludedFields = args.ExcludedFields;
             if (args.BlockSize != null)
                 settings.BlockSize = args.BlockSize;
             if (args.Authentication.Type != null)
@@ -193,7 +197,10 @@ namespace SenseNet.IO.CLI
         {
             var filter = args.Filter == null ? string.Empty : $", Filter: {args.Filter}";
             var expand = args.Expand == null ? string.Empty : $", Expand: {args.Expand}";
-            return $"Url: {args.Url}, Path: {args.Path}{filter}{expand}, BlockSize: {args.BlockSize}";
+            var excludedFields = args.ExcludedFields == null || args.ExcludedFields.Length == 0
+                ? string.Empty
+                : $", ExcludeFields: {string.Join(",", args.ExcludedFields)}";
+            return $"Url: {args.Url}, Path: {args.Path}{filter}{expand}{excludedFields}, BlockSize: {args.BlockSize}";
         }
         public static string ParamsToDisplay(this RepositoryWriterArgs args)
         {

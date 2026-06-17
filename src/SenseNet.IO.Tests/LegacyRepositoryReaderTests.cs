@@ -75,6 +75,8 @@ namespace SenseNet.IO.Tests
                 "/sn-login",
                 "-EXPAND",
                 "Owner,CreatedBy,ModifiedBy",
+                "-EXCLUDEFIELDS",
+                "CustomSystemField;AnotherRuntimeField",
                 "-TARGET",
                 @"c:\export"
             };
@@ -89,6 +91,8 @@ namespace SenseNet.IO.Tests
             Assert.AreEqual("BuiltIn", parsed.ReaderArgs.Authentication.Domain);
             Assert.AreEqual("/sn-login", parsed.ReaderArgs.Authentication.LoginPath);
             Assert.AreEqual("Owner,CreatedBy,ModifiedBy", parsed.ReaderArgs.Expand);
+            CollectionAssert.AreEqual(new[] { "CustomSystemField", "AnotherRuntimeField" },
+                parsed.ReaderArgs.ExcludedFields);
             Assert.AreEqual(@"c:\export", parsed.WriterArgs.Path);
         }
 
@@ -105,9 +109,12 @@ namespace SenseNet.IO.Tests
                                 ""Type"": ""File"",
                                 ""Name"": ""readme.txt"",
                                 ""Path"": ""/Root/Sites/readme.txt"",
+                                ""BrowseUrl"": ""/Root/Sites/readme.txt"",
                                 ""DisplayName"": ""Read me"",
+                                ""CustomSystemField"": ""runtime"",
                                 ""Actions"": [],
                                 ""Icon"": ""File"",
+                                ""IsFile"": true,
                                 ""Owner"": {
                                     ""Path"": ""/Root/IMS/BuiltIn/Portal/Admin""
                                 },
@@ -147,6 +154,7 @@ namespace SenseNet.IO.Tests
                 Path = "/Root/Sites",
                 BlockSize = 10,
                 Expand = "Owner,Managers,CreatedBy",
+                ExcludedFields = new[] { "CustomSystemField" },
                 Authentication = new RepositoryAuthenticationOptions
                 {
                     Type = "legacy",
@@ -166,6 +174,10 @@ namespace SenseNet.IO.Tests
             Assert.AreEqual("Read me", reader.Content["DisplayName"]);
             Assert.IsFalse(reader.Content.FieldNames.Contains("Actions"));
             Assert.IsFalse(reader.Content.FieldNames.Contains("Icon"));
+            Assert.IsFalse(reader.Content.FieldNames.Contains("Type"));
+            Assert.IsFalse(reader.Content.FieldNames.Contains("BrowseUrl"));
+            Assert.IsFalse(reader.Content.FieldNames.Contains("IsFile"));
+            Assert.IsFalse(reader.Content.FieldNames.Contains("CustomSystemField"));
             Assert.AreEqual("/Root/IMS/BuiltIn/Portal/Admin", reader.Content["Owner"]);
             CollectionAssert.AreEqual(new[]
             {
@@ -199,6 +211,50 @@ namespace SenseNet.IO.Tests
             Assert.AreEqual("https://legacy.example.com/binary/readme.txt", handler.Requests[3].RequestUri.ToString());
         }
 
+        [TestMethod]
+        public void LegacyRepositoryContent_UsesLegacyContentTypeNames()
+        {
+            var content = new LegacyRepositoryContent(NewContent(@"
+                {
+                    ""ContentTypeName"": ""PopupContainer"",
+                    ""Name"": ""popups"",
+                    ""Path"": ""/Root/Sites/demo/popups""
+                }"), EmptyStreamLoader);
+
+            Assert.AreEqual("PopupContainer", content.Type);
+            Assert.AreEqual("popups", content.Name);
+            Assert.IsFalse(content.FieldNames.Contains("ContentTypeName"));
+        }
+
+        [TestMethod]
+        public void LegacyRepositoryContent_UsesNodeTypeName()
+        {
+            var content = new LegacyRepositoryContent(NewContent(@"
+                {
+                    ""NodeType"": {
+                        ""Name"": ""Page""
+                    },
+                    ""Name"": ""login"",
+                    ""Path"": ""/Root/Sites/demo/login""
+                }"), EmptyStreamLoader);
+
+            Assert.AreEqual("Page", content.Type);
+        }
+
+        [TestMethod]
+        public void LegacyRepositoryContent_InfersBuiltInVisitorUserType()
+        {
+            var content = new LegacyRepositoryContent(NewContent(@"
+                {
+                    ""Name"": ""Visitor"",
+                    ""Id"": 6,
+                    ""Path"": ""/Root/IMS/BuiltIn/Portal/Visitor"",
+                    ""IsFile"": false
+                }"), EmptyStreamLoader);
+
+            Assert.AreEqual("User", content.Type);
+        }
+
         private static HttpResponseMessage JsonResponse(string json)
         {
             return new HttpResponseMessage(HttpStatusCode.OK)
@@ -211,6 +267,16 @@ namespace SenseNet.IO.Tests
         {
             using var reader = new StreamReader(stream);
             return reader.ReadToEnd();
+        }
+
+        private static Newtonsoft.Json.Linq.JObject NewContent(string json)
+        {
+            return Newtonsoft.Json.Linq.JObject.Parse(json);
+        }
+
+        private static Task<Stream> EmptyStreamLoader(string url, CancellationToken cancel)
+        {
+            return Task.FromResult<Stream>(new MemoryStream());
         }
     }
 }

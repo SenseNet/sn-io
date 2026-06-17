@@ -149,12 +149,12 @@ namespace SenseNet.IO.CLI
         {
             // [[-URL] Url]] [[-PATH ]Path]] [[-FILTER ]Filter]] [[-BLOCKSIZE ]BlockSize]] [[-APIKEY ]ApiKey]
             // [[-CLIENTID ]ClientId] [[-CLIENTSECRET ]ClientSecret]
-            // [[-EXPAND] Expand] [[-AUTH|-AUTHTYPE] legacy|forms|basic] [[-USERNAME] UserName] [[-PASSWORD] Password] [[-DOMAIN] Domain]
+            // [[-EXPAND] Expand] [[-EXCLUDEFIELDS] FieldList] [[-AUTH|-AUTHTYPE] legacy|forms|basic] [[-USERNAME] UserName] [[-PASSWORD] Password] [[-DOMAIN] Domain]
             // [[-LOGINPATH] LoginPath] [[-HEADERNAME] HeaderName] [[-HEADERVALUE] HeaderValue] [[-COOKIE] Cookie]
             var result = new RepositoryReaderArgs();
             var parsedArgs = ParseSequence(args);
 
-            if (parsedArgs.Length > 19)
+            if (parsedArgs.Length > 20)
                 throw new ArgumentParserException("Too many RepositoryReader arguments.");
 
             foreach (var arg in parsedArgs)
@@ -190,6 +190,15 @@ namespace SenseNet.IO.CLI
                     if (result.Expand != null)
                         throw new ArgumentParserException("Invalid RepositoryReader arguments.");
                     result.Expand = arg.Value;
+                }
+                else if (arg.Key.Equals("EXCLUDEFIELDS", Cmp))
+                {
+                    if (result.ExcludedFields != null)
+                        throw new ArgumentParserException("Invalid RepositoryReader arguments.");
+                    result.ExcludedFields = arg.Value
+                        .Split(",;".ToCharArray(), StringSplitOptions.RemoveEmptyEntries)
+                        .Select(x => x.Trim())
+                        .ToArray();
                 }
                 else if (arg.Key == "4" || arg.Key.Equals("APIKEY", Cmp))
                 {

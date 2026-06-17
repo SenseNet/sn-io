@@ -414,7 +414,7 @@ namespace SenseNet.IO.Implementations
                     .ConfigureAwait(false);
 
                 return ExtractContents(json)
-                    .Select(x => new LegacyRepositoryContent(x, GetStreamAsync))
+                    .Select(x => new LegacyRepositoryContent(x, GetStreamAsync, Args.ExcludedFields))
                     .Cast<IContent>()
                     .ToArray();
             }

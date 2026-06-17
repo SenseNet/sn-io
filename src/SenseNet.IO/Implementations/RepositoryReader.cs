@@ -74,6 +74,10 @@ namespace SenseNet.IO.Implementations
         /// Comma separated OData expand field list for legacy repository reads.
         /// </summary>
         public string Expand { get; set; }
+        /// <summary>
+        /// Additional field names to exclude during legacy repository export.
+        /// </summary>
+        public string[] ExcludedFields { get; set; }
         public RepositoryAuthenticationOptions Authentication { get; set; } = new();
 
         internal RepositoryReaderArgs Clone()
@@ -85,6 +89,7 @@ namespace SenseNet.IO.Implementations
                 BlockSize = BlockSize,
                 Filter = Filter,
                 Expand = Expand,
+                ExcludedFields = ExcludedFields?.ToArray(),
                 Authentication = Authentication?.Clone() ?? new RepositoryAuthenticationOptions()
             };
         }

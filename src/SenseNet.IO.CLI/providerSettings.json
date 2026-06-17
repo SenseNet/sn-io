@@ -3,6 +3,7 @@
     "url": "https://localhost:44362", // Source URL
     "path": null, // Source path. Default: "/Root",
     "blockSize": null, // Contents per request. Default (null, 0 or less): 10.
+    "excludedFields": null, // Additional fields to exclude during legacy export.
     "Authentication": {
       "ClientId": "",
       "ClientSecret": "",

@@ -379,6 +379,7 @@ namespace SenseNet.IO.CLI
     [-FILTER] [Filter in Content Query Language e.g. ""+TypeIs:File +ModificationDate:>@@Today-2@@""]    
     [-BLOCKSIZE] [Count of items in one request. Default: 10.]
     [-EXPAND] Comma separated OData expand field list for legacy export, e.g. ""Owner,CreatedBy,ModifiedBy"".
+    [-EXCLUDEFIELDS] Comma separated field list to exclude in addition to the legacy export defaults.
     [-AUTH legacy|forms|basic] Use legacy repository authentication instead of snauth/IdentityServer.
     [-USERNAME] [-PASSWORD] [-DOMAIN] Credentials for legacy forms/basic authentication.
     [-LOGINPATH] Legacy forms login URL path. Default: '/sn-login'.

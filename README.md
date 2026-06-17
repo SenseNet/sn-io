@@ -85,6 +85,7 @@ The target file system directory will be created if it does not exist. If it doe
 3. **FILTER**: Filter the selected subtree. The filter is written in the [Content Query Language](https://docs.sensenet.com/api-docs/querying) format. Only terms and logical operators are effective, keywords (.TOP, .SKIP, .SORT etc.) are omitted.
 4. **BLOCKSIZE**: Count of items in one request. Default: 10.
 5. **EXPAND**: Comma separated OData expand field list for legacy repository export, e.g. `Owner,CreatedBy,ModifiedBy`.
+6. **EXCLUDEFIELDS**: Comma separated field list to exclude in addition to the legacy repository export defaults.
 
 ### Legacy repository export
 Older sensenet repositories may not support the current snauth/IdentityServer authentication flow or the `$format=export` OData format. For these sources SnIO can use the legacy repository reader. It reads the old OData JSON response and writes the same file-system export structure as the normal repository export.
@@ -95,6 +96,11 @@ SnIO EXPORT -SOURCE "https://legacy.example.com" "/Root/Sites" -AUTH legacy -USE
 ```
 
 The legacy reader also supports `-AUTH basic`, an existing `-COOKIE` value, or a custom `-HEADERNAME`/`-HEADERVALUE` pair. The `-EXPAND` parameter is optional, but it is useful for reference fields that the old OData response would otherwise return as deferred references.
+
+Legacy export filters out common non-importable system/runtime fields by default, based on the old XML export conversion list. Use `-EXCLUDEFIELDS` to add project-specific fields to this default list:
+```
+SnIO EXPORT -SOURCE "https://legacy.example.com" "/Root/Sites" -AUTH legacy -USERNAME "admin" -PASSWORD "pwd" -EXCLUDEFIELDS "CustomRuntimeField,AnotherSystemField" -TARGET "D:\Backup\legacy"
+```
 
 ### Target parameters
 1. **PATH**: Fully qualified path of a target file system directory.
@@ -240,7 +246,8 @@ The providers have several parameters. To simplify SnIO usages, default values c
     "url": "https://localhost:44362", // Source URL
     "path": null, // Source path. Default: "/Root",
     "blockSize": null, // Contents per request. Default (null, 0 or less): 10.
-    "expand": null // Optional legacy OData $expand field list, e.g. "Owner,CreatedBy".
+    "expand": null, // Optional legacy OData $expand field list, e.g. "Owner,CreatedBy".
+    "excludedFields": null // Additional fields to exclude during legacy export.
   },
   "repositoryWriter": {
     "url": "https://localhost:44362", // Target URL
