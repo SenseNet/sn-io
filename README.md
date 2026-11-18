@@ -233,7 +233,8 @@ The providers have several parameters. To simplify SnIO usages, default values c
   "repositoryWriter": {
     "url": "https://localhost:44362", // Target URL
     "path": null, // Target path. Default: "/",
-    "name": null // Target name under the container. Default: name of the reader's root.
+    "name": null, // Target name under the container. Default: name of the reader's root.
+    "excludedFields": [] // Optional field names omitted from import metadata and uploads.
   },
   "fsReader": {
     "path": "D:\\_sn-io-test\\localhost_44362\\Root" // Source root
@@ -244,6 +245,39 @@ The providers have several parameters. To simplify SnIO usages, default values c
   }
 }
 ```
+
+### Excluding fields from repository imports
+
+For IMPORT and SYNC, `repositoryWriter.excludedFields` omits the listed fields
+from outgoing metadata and binary/property uploads. The default is an empty list;
+no field is automatically excluded. Names match complete field names, ignoring
+case, without wildcards or matching nested object keys.
+
+For example, an exported composite `Image` URL projection may be unsuitable as
+input when updating an existing content. An operator can omit that projection
+while preserving the separate `ImageRef` and `ImageData` fields:
+
+```json
+{
+  "repositoryWriter": {
+    "excludedFields": ["Image"]
+  }
+}
+```
+
+Set this in `providerSettings.json`, `snio.json`, or a custom file selected with
+`-CONFIG`. The usual .NET array configuration also applies, for example
+`--repositoryWriter:ExcludedFields:0 Image` on the command line or
+`repositoryWriter__ExcludedFields__0=Image` in the environment. Relative default
+configuration files are read from the caller's current directory.
+
+Exclusions apply to deferred reference updates and content type metadata too.
+An explicitly excluded attachment is not uploaded. Excluding the required `Binary`
+field of a ContentType reports a failure before any upload or Import request.
+Excluded fields are not directly overwritten or cleared; computed fields can
+still reflect changes to their included backing fields. Content identity
+(`ContentName`/type) and permissions are separate from the field list and are not
+excluded. Source package files remain unchanged.
 
 ## Authentication
 Authenticating works the same way in case of the source and the target repository: it uses the same client/secret or API key technique other sensenet tools use. You provide the clientid and secret or api key values for the repository reader and/or writer in the configuration (or overwrite them in environment variables or command line) and let the tool get the auth token from the corresponding authority related to the sensenet content repository.

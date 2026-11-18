@@ -13,6 +13,7 @@
     "url": "https://localhost:44362", // Target URL
     "path": null, // Target path. Default: "/",
     "name": null, // Target name under the container. Default: name of the reader's root.
+    "excludedFields": [], // Optional field names omitted from import metadata and uploads.
     "Authentication": {
       "ClientId": "",
       "ClientSecret": "",

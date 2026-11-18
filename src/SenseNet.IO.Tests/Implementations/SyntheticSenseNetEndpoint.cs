@@ -52,6 +52,9 @@ namespace SenseNet.IO.Tests.Implementations
         public string[] ReferenceFields { get; set; } = Array.Empty<string>();
         public bool IncludeResponsePath { get; set; } = true;
         public string RejectUploadProperty { get; set; }
+        // Opt-in diagnostic contract: a composite Image object is accepted at creation,
+        // but rejected on update. This models the reported asymmetry, not a real schema.
+        public bool RejectCompositeImageOnUpdate { get; set; }
         public ImportRequest[] Imports => _imports.ToArray();
         public UploadRequest[] Uploads => _uploads.ToArray();
         public string[] ExistenceChecks => _existenceChecks.ToArray();
@@ -241,6 +244,11 @@ namespace SenseNet.IO.Tests.Implementations
             var actualPath = ContentPath.Combine(parent, actualName);
             var existing = _nodes.ContainsKey(actualPath);
             var fields = (JObject)data["Fields"];
+            if (RejectCompositeImageOnUpdate && existing && fields?["Image"] is JObject)
+            {
+                await RejectAsync(context, "Synthetic schema rejects composite Image on update.").ConfigureAwait(false);
+                return;
+            }
             var brokenReferences = ReferenceFields.Where(field => fields?[field] != null &&
                 GetReferencePaths(fields[field]).Any(value => !_nodes.ContainsKey(value))).ToArray();
             var identities = (data["Permissions"] as JObject)?["Entries"]?.Select(x => x.Value<string>("Identity"))
