@@ -38,6 +38,11 @@ namespace SenseNet.IO.Implementations
         /// True if only the creation is allowed and updates are omitted.
         /// </summary>
         public bool CreateOnly { get; set; }
+        /// <summary>
+        /// Field names omitted from import metadata and attachment uploads. Empty by default.
+        /// Names are matched exactly, ignoring case; content identity and permissions are unaffected.
+        /// </summary>
+        public string[] ExcludedFields { get; set; } = Array.Empty<string>();
 
         internal RepositoryWriterArgs Clone()
         {
@@ -48,6 +53,7 @@ namespace SenseNet.IO.Implementations
                 Name = Name,
                 UploadChunkSize = UploadChunkSize,
                 CreateOnly = CreateOnly,
+                ExcludedFields = ExcludedFields?.ToArray() ?? Array.Empty<string>(),
                 Authentication = Authentication?.Clone() ?? new RepositoryAuthenticationOptions()
             };
         }
@@ -108,6 +114,8 @@ namespace SenseNet.IO.Implementations
             var repositoryPath = _paths.Resolve(requestedPath);
             if (_paths.TryGetExact(requestedPath, out var actualPath))
                 content = new ImportContent(content, ContentPath.GetName(actualPath), _paths);
+            if (Args.ExcludedFields?.Length > 0)
+                content = new ImportContent(content, content.Name, _paths, excludedFields: Args.ExcludedFields);
 
             string skipReason;
             if(null != (skipReason = await ApplyFilters(repositoryPath, content, cancel)))
@@ -172,11 +180,15 @@ namespace SenseNet.IO.Implementations
             else
             {
                 // in case of content types, there is no point to continue if the binary is missing
+                foreach (var attachment in attachments)
+                    attachment.Stream?.Dispose();
                 return new WriterState
                 {
                     Action = WriterAction.Failed,
                     WriterPath = repositoryPath,
-                    Messages = new[] { $"ContentType {content.Name} does not have a Binary attachment." }
+                    Messages = new[] { Args.ExcludedFields?.Contains("Binary", StringComparer.OrdinalIgnoreCase) == true
+                        ? $"ContentType {content.Name} cannot be imported because its required Binary field is excluded."
+                        : $"ContentType {content.Name} does not have a Binary attachment." }
                 };
             }
 

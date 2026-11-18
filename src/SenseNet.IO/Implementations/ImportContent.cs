@@ -13,15 +13,18 @@ namespace SenseNet.IO.Implementations
         private readonly IContent _source;
         private readonly ContentPathMap _paths;
         private readonly HashSet<string> _referenceFields;
+        private readonly HashSet<string> _excludedFields;
 
         public ImportContent(IContent source, string name, ContentPathMap paths,
-            IEnumerable<string> referenceFields = null, bool remapPermissions = false, bool referenceUpdate = false)
+            IEnumerable<string> referenceFields = null, bool remapPermissions = false, bool referenceUpdate = false,
+            IEnumerable<string> excludedFields = null)
         {
             _source = source;
             Name = name;
             _paths = paths;
             IsReferenceUpdate = referenceUpdate || source is ImportContent { IsReferenceUpdate: true };
             _referenceFields = new HashSet<string>(referenceFields ?? Array.Empty<string>(), StringComparer.Ordinal);
+            _excludedFields = new HashSet<string>(excludedFields ?? Array.Empty<string>(), StringComparer.OrdinalIgnoreCase);
             Permissions = remapPermissions && source.Permissions != null
                 ? new PermissionInfo
                 {
@@ -36,7 +39,8 @@ namespace SenseNet.IO.Implementations
                 : source.Permissions;
         }
 
-        public string[] FieldNames => _source.FieldNames;
+        public string[] FieldNames => _excludedFields.Count == 0 ? _source.FieldNames
+            : _source.FieldNames.Where(name => !_excludedFields.Contains(name)).ToArray();
         public object this[string fieldName]
         {
             get => fieldName == "Name" ? Name : _referenceFields.Contains(fieldName)
@@ -66,6 +70,23 @@ namespace SenseNet.IO.Implementations
         public PermissionInfo Permissions { get; set; }
         public bool IsFolder => _source.IsFolder;
         public bool HasData => _source.HasData;
-        public Task<Attachment[]> GetAttachmentsAsync(CancellationToken cancel) => _source.GetAttachmentsAsync(cancel);
+        public async Task<Attachment[]> GetAttachmentsAsync(CancellationToken cancel)
+        {
+            var attachments = await _source.GetAttachmentsAsync(cancel).ConfigureAwait(false);
+            if (_excludedFields.Count == 0)
+                return attachments;
+            var included = new List<Attachment>();
+            foreach (var attachment in attachments)
+            {
+                if (_excludedFields.Contains(attachment.FieldName))
+                {
+                    if (attachment.Stream != null)
+                        await attachment.Stream.DisposeAsync().ConfigureAwait(false);
+                }
+                else
+                    included.Add(attachment);
+            }
+            return included.ToArray();
+        }
     }
 }
