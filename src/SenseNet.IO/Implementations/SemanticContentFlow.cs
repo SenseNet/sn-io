@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -26,6 +27,8 @@ namespace SenseNet.IO.Implementations
         private string _currentBatchAction;
         private int _errorCount;
         private string _rootName;
+        private readonly ContentPathMap _paths = new();
+        private readonly Dictionary<string, TransferTask> _referenceTasks = new(StringComparer.OrdinalIgnoreCase);
         public override async Task TransferAsync(IProgress<TransferState> progress, CancellationToken cancel = default)
         {
             await InitializeAsync().ConfigureAwait(false);
@@ -192,7 +195,12 @@ namespace SenseNet.IO.Implementations
             _currentBatchAction = "Update references";
             WriteLog($"------------ {_currentBatchAction.ToUpper()} ------------");
 
-            var tasks = LoadTasks();
+            var tasks = LoadTasks().ToArray();
+            foreach (var task in tasks)
+            {
+                _referenceTasks[task.ReaderPath] = task;
+                _paths.Record(ContentPath.Combine(Writer.ContainerPath, _rootName, task.ReaderPath), task.WriterPath);
+            }
             Reader.SetReferenceUpdateTasks(tasks, _referenceUpdatesCount);
 
             while (await Reader.ReadByReferenceUpdateTasksAsync(cancel))
@@ -202,12 +210,22 @@ namespace SenseNet.IO.Implementations
         private async Task<WriterState> WriteAsync(IProgress<TransferState> progress, bool updateReferences, CancellationToken cancel = default)
         {
             var readerPath = Reader.RelativePath;
-            var writerPath = ContentPath.Combine(Writer.ContainerPath, _rootName, readerPath);
+            var requestedPath = ContentPath.Combine(Writer.ContainerPath, _rootName, readerPath);
+            var writerPath = _paths.Resolve(requestedPath);
+            _referenceTasks.TryGetValue(readerPath, out var task);
+            var name = _paths.TryGetExact(requestedPath, out var actualPath)
+                ? ContentPath.GetName(actualPath) : Reader.Content.Name;
+            var content = new ImportContent(Reader.Content, name, _paths,
+                updateReferences ? task?.BrokenReferences : null,
+                updateReferences && task?.RetryPermissions == true, updateReferences);
             var state = Reader.Content.CutOff
                 ? new WriterState {Action = WriterAction.CutOff, WriterPath = writerPath/*, Messages = new[] {"--cutoff--"}*/}
-                : await Writer.WriteAsync(writerPath, Reader.Content, cancel);
+                : await Writer.WriteAsync(writerPath, content, cancel);
             state.ReaderPath = readerPath;
-            state.WriterPath = writerPath;
+            if (string.IsNullOrEmpty(state.WriterPath))
+                state.WriterPath = writerPath;
+            if (!Reader.Content.CutOff)
+                _paths.Record(requestedPath, state.WriterPath);
             Progress(ref _contentCount, state, updateReferences, progress);
             return state;
         }
