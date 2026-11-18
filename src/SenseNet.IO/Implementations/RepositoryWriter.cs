@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -57,6 +58,8 @@ namespace SenseNet.IO.Implementations
         private readonly IRepositoryCollection _repositoryCollection;
         private readonly ILogger<RepositoryWriter> _logger;
         private IRepository _repository;
+        private readonly ContentPathMap _paths = new();
+        private readonly HashSet<string> _createdPaths = new(StringComparer.OrdinalIgnoreCase);
 
         public RepositoryWriterArgs Args { get; }
         public string Url => Args.Url;
@@ -101,10 +104,13 @@ namespace SenseNet.IO.Implementations
         {
             await InitializeAsync();
 
-            var repositoryPath = ContentPath.Combine(ContainerPath, path);
+            var requestedPath = ContentPath.Combine(ContainerPath, path);
+            var repositoryPath = _paths.Resolve(requestedPath);
+            if (_paths.TryGetExact(requestedPath, out var actualPath))
+                content = new ImportContent(content, ContentPath.GetName(actualPath), _paths);
 
             string skipReason;
-            if(null != (skipReason = await ApplyFilters(repositoryPath, cancel)))
+            if(null != (skipReason = await ApplyFilters(repositoryPath, content, cancel)))
                 return new WriterState
                 {
                     Action = WriterAction.Skipped,
@@ -112,13 +118,18 @@ namespace SenseNet.IO.Implementations
                     Messages = new[] { skipReason }
                 };
 
-            if (content.Type == "ContentType")
-                return await WriteContentTypeAsync(repositoryPath, content, cancel);
-            return await WriteContentAsync(repositoryPath, content, cancel);
+            var state = content.Type == "ContentType"
+                ? await WriteContentTypeAsync(repositoryPath, content, cancel)
+                : await WriteContentAsync(repositoryPath, content, cancel);
+            _paths.Record(requestedPath, state.WriterPath);
+            return state;
         }
-        private async Task<string> ApplyFilters(string repositoryPath, CancellationToken cancel)
+        private async Task<string> ApplyFilters(string repositoryPath, IContent content, CancellationToken cancel)
         {
-            if (Args.CreateOnly)
+            // Completing deferred fields on content created by this writer is part of creation.
+            // Existing content skipped by CreateOnly must still never be updated.
+            if (Args.CreateOnly && !(content is ImportContent { IsReferenceUpdate: true }
+                                    && _createdPaths.Contains(repositoryPath)))
             {
                 if(await _repository.IsContentExistsAsync(repositoryPath, cancel))
                     return "Existing content.";
@@ -131,6 +142,7 @@ namespace SenseNet.IO.Implementations
             //TODO: ? ContainerPath can be "/"? See TestRepositoryWriter.IsContentExists()
             if (!path.StartsWith("/"))
                 path = ContentPath.Combine(ContainerPath, path);
+            path = _paths.Resolve(path);
             return !await _repository.IsContentExistsAsync(path, cancel).ConfigureAwait(false);
         }
 
@@ -143,12 +155,19 @@ namespace SenseNet.IO.Implementations
             if (binary?.Stream != null)
             {
                 await using var stream = binary.Stream;
-                await _repository.UploadAsync(new UploadRequest
+                var uploaded = await _repository.UploadAsync(new UploadRequest
                 {
                     ParentPath = "/Root/System/Schema/ContentTypes",
                     ContentName = content.Name,
                     ContentType = "ContentType"
                 }, stream, cancel).ConfigureAwait(false);
+                // Content types are created by uploading their definition before Import.
+                // Use the path returned by that upload for subsequent operations as well.
+                if (!string.IsNullOrEmpty(uploaded?.Url))
+                    repositoryPath = uploaded.Url;
+                else if (!string.IsNullOrEmpty(uploaded?.Name))
+                    repositoryPath = ContentPath.Combine(ContentPath.GetParentPath(repositoryPath), uploaded.Name);
+                content = new ImportContent(content, ContentPath.GetName(repositoryPath), _paths);
             }
             else
             {
@@ -167,8 +186,8 @@ namespace SenseNet.IO.Implementations
                 await using var stream = attachment.Stream;
                 await _repository.UploadAsync(new UploadRequest
                 {
-                    ParentPath = "/Root/System/Schema/ContentTypes",
-                    ContentName = content.Name,
+                    ParentPath = ContentPath.GetParentPath(repositoryPath),
+                    ContentName = ContentPath.GetName(repositoryPath),
                     ContentType = "ContentType",
                     PropertyName = attachment.FieldName
                 }, stream, cancel).ConfigureAwait(false);
@@ -210,23 +229,9 @@ namespace SenseNet.IO.Implementations
                 };
             }
 
-            if (JsonConvert.DeserializeObject(resultString) is not JObject result)
-                return new WriterState{Action = WriterAction.Unknown, WriterPath = repositoryPath};
-
-            Enum.TryParse(typeof(WriterAction), result["action"]?.Value<string>(), true, out var rawAction);
-            var action = rawAction == null ? WriterAction.Unknown : (WriterAction)rawAction;
-            var writerPath = result["path"]?.Value<string>();
-            var retryPermissions = result["retryPermissions"]?.Value<bool>() ?? false;
-            var brokenReferences = result["brokenReferences"]?.Values<string>().ToArray();
-            var messages = result["messages"]?.Values<string>().ToArray();
-            return new WriterState
-            {
-                WriterPath = writerPath,
-                RetryPermissions = retryPermissions,
-                BrokenReferences = brokenReferences,
-                Messages = messages,
-                Action = action
-            };
+            var state = ParseResult(resultString, repositoryPath);
+            RememberCreation(state);
+            return state;
         }
         private async Task<WriterState> WriteContentAsync(string repositoryPath, IContent content, CancellationToken cancel)
         {
@@ -302,7 +307,20 @@ namespace SenseNet.IO.Implementations
                 };
             }
 
-            // Upload binaries if there are.
+            // Import may normalize the leaf name and path. Parse before any upload and
+            // retain that path even when an attachment subsequently fails.
+            var state = ParseResult(resultString, repositoryPath);
+            RememberCreation(state);
+            _paths.Record(repositoryPath, state.WriterPath);
+            if (state.Action is not (WriterAction.Created or WriterAction.Creating or WriterAction.Updated or WriterAction.Updating))
+            {
+                foreach (var attachment in attachments)
+                    attachment.Stream?.Dispose();
+                return state;
+            }
+
+            // Upload binaries to the actual content, never the source metadata name.
+            repositoryPath = state.WriterPath;
             var parentPath = ContentPath.GetParentPath(repositoryPath);
             foreach (var attachment in attachments)
             {
@@ -319,7 +337,7 @@ namespace SenseNet.IO.Implementations
                     await _repository.UploadAsync(new UploadRequest
                     {
                         ParentPath = parentPath,
-                        ContentName = content.Name,
+                        ContentName = ContentPath.GetName(repositoryPath),
                         PropertyName = attachment.FieldName
                     }, stream, cancel).ConfigureAwait(false);
                 }
@@ -328,36 +346,40 @@ namespace SenseNet.IO.Implementations
                     _logger.LogError(ex, $"Error during {attachment.FieldName} attachment upload for {repositoryPath}: " +
                                            $"{ex.Message}. {ex.ErrorData?.ErrorCode} {ex.StatusCode}");
 
-                    return new WriterState
-                    {
-                        WriterPath = repositoryPath,
-                        Action = WriterAction.Failed,
-                        Messages = new[] { ex.Message }
-                    };
+                    state.Action = WriterAction.Failed;
+                    state.Messages = state.Messages.Concat(new[] { ex.Message }).ToArray();
+                    return state;
                 }
                 catch (Exception e)
                 {
                     _logger.LogError(e, $"Error during {attachment.FieldName} attachment upload for {repositoryPath}: " +
                                         $"{e.Message}.");
 
-                    return new WriterState
-                    {
-                        WriterPath = repositoryPath,
-                        Action = WriterAction.Failed,
-                        Messages = new[] { e.Message }
-                    };
+                    state.Action = WriterAction.Failed;
+                    state.Messages = state.Messages.Concat(new[] { e.Message }).ToArray();
+                    return state;
                 }
             }
 
-            // Process result
+            return state;
+        }
+
+        private WriterState ParseResult(string resultString, string requestedPath)
+        {
             var result = JsonConvert.DeserializeObject(resultString) as JObject;
             if (result == null)
-                return new WriterState { Action = WriterAction.Unknown, WriterPath = repositoryPath };
+                return new WriterState { Action = WriterAction.Unknown, WriterPath = requestedPath };
 
             var writerPath = result["path"]?.Value<string>();
+            if (string.IsNullOrEmpty(writerPath))
+            {
+                var name = result["name"]?.Value<string>();
+                writerPath = string.IsNullOrEmpty(name) ? requestedPath
+                    : ContentPath.Combine(ContentPath.GetParentPath(requestedPath), name);
+            }
             var retryPermissions = result["retryPermissions"]?.Value<bool>() ?? false;
             var brokenReferences = result["brokenReferences"]?.Values<string>().ToArray() ?? Array.Empty<string>();
-            var messages = result["messages"]?.Values<string>().ToArray();
+            var messages = result["messages"]?.Values<string>().ToArray() ?? Array.Empty<string>();
             var action = ParseWriterAction(result["action"]?.Value<string>(), retryPermissions || brokenReferences.Length > 0);
             return new WriterState
             {
@@ -367,6 +389,12 @@ namespace SenseNet.IO.Implementations
                 Messages = messages,
                 Action = action
             };
+        }
+
+        private void RememberCreation(WriterState state)
+        {
+            if (state.Action is WriterAction.Created or WriterAction.Creating)
+                _createdPaths.Add(state.WriterPath);
         }
 
         private bool IsParentNotFoundException(string path, Exception exception)
